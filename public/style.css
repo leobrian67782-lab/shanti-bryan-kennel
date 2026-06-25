@@ -1174,3 +1174,83 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   .hero-stat .counter, .hero-stat .counter-percent { font-size: 1.7rem; }
   .logo { font-size: 1rem; }
 }
+
+/* ===== MOBILE POLISH PASS ===== */
+
+/* Overflow protection — stops sideways scrolling (huge mobile fix) */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  /* Global typography */
+  body { font-size: 15px; }
+
+  /* Hero sizing */
+  .hero { padding: 60px 20px; }
+  .hero h1 { font-size: 1.8rem; }
+  .hero p { font-size: 0.95rem; }
+  .hero-inner h1 { font-size: 1.8rem; }
+
+  /* Buttons: comfortable, easy to tap */
+  .btn {
+    padding: 13px 20px;
+    font-size: 0.9rem;
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .form-submit { min-height: 48px; }
+  .main-nav a { min-height: 48px; display: flex; align-items: center; }
+
+  /* Card images shorter on phones */
+  .card img { height: 190px; }
+
+  /* Card padding tighter */
+  .card-body { padding: 16px; }
+
+  /* Contact cards full width */
+  .contact-info-card { min-width: 100%; width: 100%; }
+
+  /* Footer centered */
+  .footer-grid { grid-template-columns: 1fr; text-align: center; }
+  .footer-links { display: inline-block; text-align: left; }
+}
+
+/* Slide-in mobile menu with dark overlay */
+@media (max-width: 768px) {
+  .main-nav {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 75%;
+    max-width: 300px;
+    height: 100vh;
+    background: var(--navy);
+    flex-direction: column;
+    gap: 0;
+    margin-top: 0;
+    padding: 80px 24px 24px;
+    transition: right 0.3s ease;
+    z-index: 999;
+    box-shadow: -8px 0 24px rgba(0,0,0,0.3);
+    overflow-y: auto;
+  }
+  .main-nav.nav-open { right: 0; }
+  .main-nav a { border-top: 1px solid #1e2d40; }
+
+  /* Dark overlay behind the menu */
+  .nav-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 998;
+  }
+  .nav-overlay.show { display: block; }
+
+  /* Keep the toggle above the menu */
+  .menu-toggle { position: relative; z-index: 1000; }
+}
