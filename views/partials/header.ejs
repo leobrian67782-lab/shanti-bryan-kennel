@@ -44,13 +44,19 @@
     document.addEventListener('DOMContentLoaded', function() {
       var toggle = document.getElementById('menuToggle');
       var nav = document.getElementById('mainNav');
+
+var overlay = document.getElementById('navOverlay');
       if (toggle && nav) {
         toggle.addEventListener('click', function() {
           nav.classList.toggle('nav-open');
           toggle.classList.toggle('active');
+          if (overlay) overlay.classList.toggle('show');
         });
       }
-    });
-  </script>
-
-  <main>
+      if (overlay) {
+        overlay.addEventListener('click', function() {
+          nav.classList.remove('nav-open');
+          toggle.classList.remove('active');
+          overlay.classList.remove('show');
+        });
+      }
