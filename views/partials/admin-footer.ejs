@@ -1,16 +1,107 @@
-</div>
+</main>
+  <footer class="site-footer">
+    <div class="footer-top container">
+
+      <!-- About + socials -->
+      <div class="footer-about-col">
+        <h3 class="footer-logo">Shanti & Bryan <span>Pinscher Kennel</span></h3>
+        <p class="footer-about">Shanti & Bryan Pinscher puppies raised with love in our home. Family breeders with 15+ years of experience placing healthy, happy puppies into loving homes across the world.</p>
+        <div class="footer-socials">
+          <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+          <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+          <a href="#" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a>
+          <a href="#" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+          <a href="#" aria-label="Pinterest"><i class="fa-brands fa-pinterest-p"></i></a>
+        </div>
+      </div>
+
+      <!-- Link columns -->
+      <div class="footer-links-wrap">
+        <div class="footer-col">
+          <h4>Quick Links</h4>
+          <ul class="footer-links">
+            <li><a href="/"><i class="fa-solid fa-chevron-right"></i> Home</a></li>
+            <li><a href="/about"><i class="fa-solid fa-chevron-right"></i> About Us</a></li>
+            <li><a href="/puppies"><i class="fa-solid fa-chevron-right"></i> Available Puppies</a></li>
+            <li><a href="/litters"><i class="fa-solid fa-chevron-right"></i> Litters</a></li>
+            <li><a href="/deposit"><i class="fa-solid fa-chevron-right"></i> Deposit Info</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Resources</h4>
+          <ul class="footer-links">
+            <li><a href="/faq"><i class="fa-solid fa-chevron-right"></i> FAQ</a></li>
+            <li><a href="/testimonials"><i class="fa-solid fa-chevron-right"></i> Testimonials</a></li>
+            <li><a href="/blog"><i class="fa-solid fa-chevron-right"></i> Blog</a></li>
+            <li><a href="/contact"><i class="fa-solid fa-chevron-right"></i> Contact Us</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Stay connected -->
+      <div class="footer-connect">
+        <h4>Stay Connected</h4>
+        <% if (settings && settings.phone) { %>
+          <p class="footer-contact"><i class="fa-solid fa-phone"></i> <%= settings.phone %></p>
+        <% } %>
+        <% if (settings && settings.email) { %>
+          <p class="footer-contact"><i class="fa-solid fa-envelope"></i> <%= settings.email %></p>
+        <% } %>
+        <a href="/contact" class="footer-message-btn"><i class="fa-solid fa-envelope"></i> Send a Message</a>
+      </div>
+
     </div>
-  </div>
+
+    <div class="footer-bottom">
+      <div class="container footer-bottom-inner">
+        <p>&copy; <%= new Date().getFullYear() %> Shanti & Bryan Pinscher Kennel. All rights reserved.</p>
+        <p class="footer-bottom-sub">Proudly raising Pinschers with <i class="fa-solid fa-heart" style="color:var(--gold);"></i> &nbsp;•&nbsp; <a href="/admin/login"><i class="fa-solid fa-shield-halved"></i> Admin Login</a></p>
+      </div>
+    </div>
+  </footer>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      var toggle = document.getElementById('adminMenuToggle');
-      var sidebar = document.getElementById('adminSidebar');
-      if (toggle && sidebar) {
-        toggle.addEventListener('click', function() {
-          sidebar.classList.toggle('open');
-        });
+    window.addEventListener('load', function() {
+      var loader = document.getElementById('loader');
+      if (loader) {
+        if (sessionStorage.getItem('visited')) {
+          loader.style.display = 'none';
+        } else {
+          setTimeout(function() {
+            loader.classList.add('loader-hidden');
+            sessionStorage.setItem('visited', 'true');
+          }, 1500);
+        }
       }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+      var revealEls = document.querySelectorAll('.reveal');
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) { entry.target.classList.add('revealed'); }
+        });
+      }, { threshold: 0.15 });
+      revealEls.forEach(function(el) { observer.observe(el); });
+
+      var counters = document.querySelectorAll('.counter, .counter-percent');
+      var counterObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting && !entry.target.dataset.done) {
+            entry.target.dataset.done = 'true';
+            var target = parseInt(entry.target.dataset.target);
+            var isPercent = entry.target.classList.contains('counter-percent');
+            var count = 0;
+            var step = Math.ceil(target / 50);
+            var timer = setInterval(function() {
+              count += step;
+              if (count >= target) { count = target; clearInterval(timer); }
+              entry.target.textContent = count + (isPercent ? '%' : '+');
+            }, 30);
+          }
+        });
+      }, { threshold: 0.5 });
+      counters.forEach(function(c) { counterObserver.observe(c); });
     });
   </script>
 </body>
