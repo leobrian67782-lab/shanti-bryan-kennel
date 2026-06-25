@@ -1093,16 +1093,142 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
 .admin-content .form-success { background: #15311f; color: #6ee7a0; border-color: #1e4d2f; }
 
 @media (max-width: 768px) {
+  /* Admin Sidebar */
   .admin-sidebar {
     position: fixed;
     left: -260px;
     z-index: 200;
     transition: left 0.3s ease;
+    width: 240px;
   }
   .admin-sidebar.open { left: 0; }
   .admin-menu-toggle { display: block; }
-  .admin-content { padding: 18px; }
-  .admin-table th:nth-child(1), .admin-table td:nth-child(1) { }
+  .admin-content { padding: 14px; }
+  
+  /* Admin Brand */
+  .admin-brand-name { font-size: 1.2rem; }
+  .admin-brand-sub { font-size: 0.65rem; }
+  
+  /* Admin Navigation */
+  .admin-nav a { 
+    padding: 10px 14px; 
+    font-size: 0.85rem;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+  }
+  .admin-nav-group { 
+    font-size: 0.65rem; 
+    padding: 14px 14px 6px;
+  }
+  
+  /* Admin Topbar */
+  .admin-topbar { 
+    padding: 12px 14px; 
+    gap: 12px;
+  }
+  .admin-topbar h2 { font-size: 1.1rem; }
+  
+  /* Admin Overview Cards */
+  .admin-overview-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .admin-overview-card {
+    padding: 14px;
+    gap: 12px;
+  }
+  .admin-overview-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 1.2rem;
+  }
+  .admin-overview-num { font-size: 1.6rem; }
+  .admin-overview-label { font-size: 0.75rem; }
+  .admin-overview-sub { font-size: 0.7rem; }
+  
+  /* Admin Section */
+  .admin-section {
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .admin-section-head { margin-bottom: 14px; }
+  .admin-section-head h3 { 
+    font-size: 1rem; 
+    gap: 8px;
+  }
+  
+  /* Admin Buttons */
+  .admin-btn {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    min-height: 36px;
+    gap: 6px;
+  }
+  
+  /* Admin Quick Cards */
+  .admin-quick-grid {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 10px;
+  }
+  .admin-quick-card {
+    padding: 16px 10px;
+    font-size: 0.8rem;
+    gap: 8px;
+  }
+  .admin-quick-card i { font-size: 1.3rem; }
+  
+  /* Admin Table */
+  .admin-table th {
+    padding: 8px;
+    font-size: 0.65rem;
+  }
+  .admin-table td { 
+    padding: 10px 8px; 
+    font-size: 0.8rem;
+  }
+  .admin-thumb { width: 40px; height: 40px; }
+  
+  /* Admin Actions */
+  .admin-btn-sm {
+    width: 30px;
+    height: 30px;
+    font-size: 0.85rem;
+  }
+  
+  /* Admin Forms - Mobile Optimization */
+  .admin-content .form-group { margin-bottom: 14px; }
+  .admin-content .form-group label { 
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+  }
+  .admin-content .form-group input,
+  .admin-content .form-group textarea,
+  .admin-content .form-group select {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 10px;
+    min-height: 40px;
+  }
+  .admin-content .form-group textarea {
+    min-height: 100px;
+    font-size: 16px;
+  }
+  .form-submit {
+    font-size: 0.9rem;
+    padding: 12px 20px;
+    min-height: 44px;
+  }
+  
+  /* Recent rows */
+  .admin-recent-row { padding: 10px 0; }
+  .admin-recent-title { font-size: 0.9rem; }
+  .admin-recent-sub { font-size: 0.75rem; }
+  .admin-recent-date { font-size: 0.7rem; }
+  .admin-badge-new { font-size: 0.65rem; }
+  
+  /* Layout adjustments */
+  .admin-section-head { flex-direction: column; align-items: flex-start; }
 }
 /* Blog post detail */
 .post-detail { max-width: 760px; margin: 0 auto; text-align: left; }
@@ -1339,8 +1465,32 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   /* Testimonials */
   .testimonial-card { padding: 24px; }
 
-  /* Forms */
-  .contact-form { padding: 24px; }
+  /* Forms - Enhanced for Mobile */
+  .contact-form { 
+    padding: 20px; 
+    margin: 24px auto 0;
+    max-width: 100%;
+  }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { 
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+  }
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    font-size: 16px; /* Prevents auto-zoom on iOS */
+    padding: 11px;
+    min-height: 44px;
+  }
+  .form-group textarea {
+    min-height: 100px;
+  }
+  .form-submit {
+    font-size: 0.95rem;
+    padding: 12px 20px;
+    min-height: 44px;
+  }
   .contact-info-grid { flex-direction: column; }
   .contact-info-card { min-width: 0; width: 100%; }
 
@@ -1356,6 +1506,16 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   .hero-stats { gap: 16px; }
   .hero-stat .counter, .hero-stat .counter-percent { font-size: 1.7rem; }
   .logo { font-size: 1rem; }
+  
+  /* Admin adjustments for extra-small screens */
+  .admin-sidebar { width: 220px; }
+  .admin-nav a { font-size: 0.8rem; padding: 8px 12px; }
+  .admin-section-head h3 { font-size: 0.95rem; }
+  .admin-overview-num { font-size: 1.4rem; }
+  
+  /* Form adjustments for tiny screens */
+  .contact-form { padding: 16px; }
+  .form-submit { font-size: 0.9rem; padding: 10px 16px; }
 }
 
 /* ===== MOBILE POLISH PASS ===== */

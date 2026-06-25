@@ -1,0 +1,46 @@
+<%- include('partials/admin-header', {title: 'Dog Form | Admin', active: 'dog', heading: dog ? 'Edit Dog' : 'Add Dog'}) %>
+
+<div class="admin-section" style="max-width:640px;">
+  <form method="POST" action="<%= dog ? '/admin/dogs/edit/' + dog._id : '/admin/dogs/new' %>" enctype="multipart/form-data">
+
+    <div class="form-group">
+      <label>Name *</label>
+      <input type="text" name="name" value="<%= dog ? dog.name : '' %>" required>
+    </div>
+
+    <div class="form-group">
+      <label>Gender *</label>
+      <select name="gender" required>
+        <option value="Male" <%= dog && dog.gender === 'Male' ? 'selected' : '' %>>Male</option>
+        <option value="Female" <%= dog && dog.gender === 'Female' ? 'selected' : '' %>>Female</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Role / Title (optional)</label>
+      <input type="text" name="role" value="<%= dog ? dog.role : '' %>" placeholder="e.g. Sire, Dam, Foundation Female">
+    </div>
+
+    <div class="form-group">
+      <label>Display Order (lower shows first)</label>
+      <input type="number" name="order" value="<%= dog ? dog.order : 0 %>">
+    </div>
+
+    <div class="form-group">
+      <label>Description</label>
+      <textarea name="description"><%= dog ? dog.description : '' %></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Photo</label>
+      <input type="file" name="photo" accept="image/*">
+      <% if (dog && dog.photo) { %>
+        <img src="<%= dog.photo %>" style="max-width:140px;border-radius:8px;margin-top:8px;">
+      <% } %>
+    </div>
+
+    <button type="submit" class="form-submit"><i class="fa-solid fa-floppy-disk"></i> <%= dog ? 'Update Dog' : 'Add Dog' %></button>
+  </form>
+</div>
+
+<%- include('partials/admin-footer') %>
