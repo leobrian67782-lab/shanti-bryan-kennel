@@ -1,0 +1,36 @@
+<%- include('partials/header', {title: 'Blog | Shanti & Bryan Pinscher Kennel'}) %>
+
+<section class="page-section">
+  <p class="section-label">News & Stories</p>
+  <h1>Our Blog</h1>
+  <div class="section-underline"></div>
+  <p style="margin-top:20px;">Updates, tips, and stories from our kennel family.</p>
+
+  <% if (posts.length === 0) { %>
+    <p style="margin-top:40px;">No posts yet — check back soon!</p>
+  <% } else { %>
+    <div class="card-grid">
+      <% posts.forEach(function(post) { %>
+        <a href="/blog/<%= post.slug %>" style="text-decoration:none;color:inherit;">
+          <div class="card">
+            <% if (post.image) { %>
+              <img src="<%= post.image %>" alt="<%= post.title %>">
+            <% } %>
+            <div class="card-body">
+              <h3 style="font-size:1.3rem;"><%= post.title %></h3>
+              <p style="color:var(--text-light);font-size:0.85rem;margin:8px 0;">
+                <i class="fa-solid fa-calendar"></i> <%= post.createdAt.toDateString() %>
+              </p>
+              <% if (post.excerpt) { %>
+                <p style="color:#5c5c5c;font-size:0.95rem;"><%= post.excerpt %></p>
+              <% } %>
+              <p style="color:var(--maroon);font-weight:600;margin-top:12px;">Read More <i class="fa-solid fa-arrow-right"></i></p>
+            </div>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+  <% } %>
+</section>
+
+<%- include('partials/footer') %>

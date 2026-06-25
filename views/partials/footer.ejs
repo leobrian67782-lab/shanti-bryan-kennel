@@ -1,0 +1,84 @@
+</main>
+  <footer class="site-footer">
+    <div class="container footer-grid">
+
+      <div class="footer-col">
+        <h3 class="footer-logo">Shanti & Bryan <span>Pinscher Kennel</span></h3>
+        <p class="footer-about">Raising healthy, well-socialized Miniature Pinschers with love, health, and care.</p>
+      </div>
+
+      <div class="footer-col">
+        <h4>Quick Links</h4>
+        <ul class="footer-links">
+          <li><a href="/">Home</a></li>
+          <li><a href="/puppies">Available Puppies</a></li>
+          <li><a href="/litters">Litters</a></li>
+          <li><a href="/testimonials">Testimonials</a></li>
+          <li><a href="/faq">FAQ</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="/contact">Contact</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Get In Touch</h4>
+        <% if (settings && settings.email) { %>
+          <p class="footer-contact"><i class="fa-solid fa-envelope" style="color:var(--gold);margin-right:8px;"></i><a href="mailto:<%= settings.email %>"><%= settings.email %></a></p>
+        <% } %>
+        <% if (settings && settings.phone) { %>
+          <p class="footer-contact"><i class="fa-solid fa-phone" style="color:var(--gold);margin-right:8px;"></i><a href="tel:<%= settings.phone %>"><%= settings.phone %></a></p>
+        <% } %>
+      </div>
+
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; <%= new Date().getFullYear() %> Shanti & Bryan Pinscher Kennel. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    window.addEventListener('load', function() {
+      var loader = document.getElementById('loader');
+      if (loader) {
+        if (sessionStorage.getItem('visited')) {
+          loader.style.display = 'none';
+        } else {
+          setTimeout(function() {
+            loader.classList.add('loader-hidden');
+            sessionStorage.setItem('visited', 'true');
+          }, 1500);
+        }
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+      var revealEls = document.querySelectorAll('.reveal');
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) { entry.target.classList.add('revealed'); }
+        });
+      }, { threshold: 0.15 });
+      revealEls.forEach(function(el) { observer.observe(el); });
+
+      var counters = document.querySelectorAll('.counter, .counter-percent');
+      var counterObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting && !entry.target.dataset.done) {
+            entry.target.dataset.done = 'true';
+            var target = parseInt(entry.target.dataset.target);
+            var isPercent = entry.target.classList.contains('counter-percent');
+            var count = 0;
+            var step = Math.ceil(target / 50);
+            var timer = setInterval(function() {
+              count += step;
+              if (count >= target) { count = target; clearInterval(timer); }
+              entry.target.textContent = count + (isPercent ? '%' : '+');
+            }, 30);
+          }
+        });
+      }, { threshold: 0.5 });
+      counters.forEach(function(c) { counterObserver.observe(c); });
+    });
+  </script>
+</body>
+</html>

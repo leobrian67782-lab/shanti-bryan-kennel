@@ -1,0 +1,81 @@
+<%- include('partials/header', {title: puppy.name + ' | Shanti & Bryan Pinscher Kennel'}) %>
+
+<section class="page-section">
+  <div class="container" style="max-width: 950px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; text-align: left; align-items: start;">
+
+      <div>
+        <% if (puppy.photos && puppy.photos.length > 0) { %>
+          <div class="gallery">
+            <img id="mainPhoto" src="<%= puppy.photos[0] %>" alt="<%= puppy.name %>" class="gallery-main" onclick="openLightbox(this.src)">
+            <% if (puppy.photos.length > 1) { %>
+              <div class="gallery-thumbs">
+                <% puppy.photos.forEach(function(p, i) { %>
+                  <img src="<%= p %>" alt="thumb" class="gallery-thumb <%= i === 0 ? 'active' : '' %>" onclick="setMain('<%= p %>', this)">
+                <% }); %>
+              </div>
+            <% } %>
+          </div>
+        <% } else { %>
+          <div style="width:100%;height:300px;background:#eee;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#999;">No photo</div>
+        <% } %>
+      </div>
+
+      <div>
+        <h1 style="font-size: 2.2rem; margin-bottom: 8px;"><%= puppy.name %></h1>
+        <span class="status-badge status-<%= puppy.status.toLowerCase() %>" style="margin-bottom:20px;display:inline-block;"><%= puppy.status %></span>
+
+        <p style="font-size: 1.8rem; color: #c9a35d; font-weight: 700; margin: 16px 0;">$<%= puppy.price %></p>
+
+        <p style="margin-bottom: 8px;"><strong>Gender:</strong> <%= puppy.gender %></p>
+        <p style="margin-bottom: 8px;"><strong>Color:</strong> <%= puppy.color %></p>
+        <% if (puppy.weight) { %><p style="margin-bottom: 8px;"><strong>Weight:</strong> <%= puppy.weight %></p><% } %>
+        <p style="margin-bottom: 8px;"><strong>Date of Birth:</strong> <%= puppy.dateOfBirth.toDateString() %></p>
+        <% if (puppy.sireName) { %><p style="margin-bottom: 8px;"><strong>Sire:</strong> <%= puppy.sireName %></p><% } %>
+        <% if (puppy.damName) { %><p style="margin-bottom: 8px;"><strong>Dam:</strong> <%= puppy.damName %></p><% } %>
+
+        <div style="margin: 16px 0;">
+          <% if (puppy.vaccinated) { %><span style="margin-right:12px;">✅ Vaccinated</span><% } %>
+          <% if (puppy.dewormed) { %><span style="margin-right:12px;">✅ Dewormed</span><% } %>
+          <% if (puppy.microchipped) { %><span>✅ Microchipped</span><% } %>
+        </div>
+
+        <a href="/contact" class="btn" style="margin-top: 16px;">Reserve <%= puppy.name %></a>
+      </div>
+    </div>
+
+    <% if (puppy.description) { %>
+      <div style="margin-top: 40px; text-align: left;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 12px;">About <%= puppy.name %></h2>
+        <p style="color: #5c4f44; line-height: 1.8;"><%= puppy.description %></p>
+      </div>
+    <% } %>
+
+    <div style="margin-top: 40px;">
+      <a href="/puppies" class="btn" style="background:#888;">← Back to All Puppies</a>
+    </div>
+  </div>
+</section>
+
+<!-- Lightbox -->
+<div id="lightbox" class="lightbox" onclick="closeLightbox()">
+  <span class="lightbox-close">&times;</span>
+  <img id="lightbox-img" src="" alt="Full size">
+</div>
+
+<script>
+  function setMain(src, el) {
+    document.getElementById('mainPhoto').src = src;
+    document.querySelectorAll('.gallery-thumb').forEach(function(t) { t.classList.remove('active'); });
+    el.classList.add('active');
+  }
+  function openLightbox(src) {
+    document.getElementById('lightbox-img').src = src;
+    document.getElementById('lightbox').style.display = 'flex';
+  }
+  function closeLightbox() {
+    document.getElementById('lightbox').style.display = 'none';
+  }
+</script>
+
+<%- include('partials/footer') %>

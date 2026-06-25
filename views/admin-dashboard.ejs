@@ -1,0 +1,167 @@
+<%- include('partials/admin-header', {title: 'Dashboard | Admin', active: 'dashboard', heading: 'Dashboard Overview'}) %>
+
+<!-- Summary cards -->
+<div class="admin-overview-grid">
+  <div class="admin-overview-card">
+    <div class="admin-overview-icon" style="background:#faf3e0;color:var(--gold);"><i class="fa-solid fa-heart"></i></div>
+    <div>
+      <span class="admin-overview-num"><%= puppies.length %></span>
+      <span class="admin-overview-label">Total Puppies</span>
+      <span class="admin-overview-sub">
+        <span style="color:#2e9e4f;"><%= puppies.filter(p => p.status === 'Available').length %> available</span> •
+        <span style="color:var(--gold);"><%= puppies.filter(p => p.status === 'Reserved').length %> reserved</span> •
+        <span style="color:var(--text-light);"><%= puppies.filter(p => p.status === 'Sold').length %> sold</span>
+      </span>
+    </div>
+  </div>
+
+  <div class="admin-overview-card">
+    <div class="admin-overview-icon" style="background:#e3edf7;color:#2b6cb0;"><i class="fa-solid fa-newspaper"></i></div>
+    <div>
+      <span class="admin-overview-num"><%= posts.length %></span>
+      <span class="admin-overview-label">Blog Posts</span>
+      <span class="admin-overview-sub">
+        <span style="color:#2e9e4f;"><%= posts.filter(p => p.published).length %> published</span> •
+        <span style="color:var(--gold);"><%= posts.filter(p => !p.published).length %> drafts</span>
+      </span>
+    </div>
+  </div>
+
+  <div class="admin-overview-card">
+    <div class="admin-overview-icon" style="background:#fdecea;color:var(--maroon);"><i class="fa-solid fa-envelope"></i></div>
+    <div>
+      <span class="admin-overview-num"><%= inquiries.length %></span>
+      <span class="admin-overview-label">Messages</span>
+      <span class="admin-overview-sub"><%= inquiries.length %> total messages received</span>
+    </div>
+  </div>
+
+  <div class="admin-overview-card">
+    <div class="admin-overview-icon" style="background:#e6f4ea;color:#2e9e4f;"><i class="fa-solid fa-star"></i></div>
+    <div>
+      <span class="admin-overview-num"><%= testimonials.length %></span>
+      <span class="admin-overview-label">Testimonials</span>
+      <span class="admin-overview-sub">Customer reviews & success stories</span>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="admin-section">
+  <div class="admin-section-head">
+    <h3><i class="fa-solid fa-bolt" style="color:var(--gold);"></i> Quick Actions</h3>
+  </div>
+  <div class="admin-quick-grid">
+    <a href="/admin/puppies/new" class="admin-quick-card admin-quick-primary">
+      <i class="fa-solid fa-plus"></i>
+      <span>Add Puppy</span>
+    </a>
+    <a href="/admin/posts/new" class="admin-quick-card admin-quick-outline">
+      <i class="fa-solid fa-pen"></i>
+      <span>New Post</span>
+    </a>
+    <a href="/admin/inquiries" class="admin-quick-card">
+      <i class="fa-solid fa-envelope"></i>
+      <span>Messages (<%= inquiries.length %>)</span>
+    </a>
+    <a href="/admin/testimonials/new" class="admin-quick-card">
+      <i class="fa-solid fa-star"></i>
+      <span>Add Review</span>
+    </a>
+    <a href="/admin/faqs/new" class="admin-quick-card">
+      <i class="fa-solid fa-circle-question"></i>
+      <span>Add FAQ</span>
+    </a>
+    <a href="/admin/settings" class="admin-quick-card">
+      <i class="fa-solid fa-gear"></i>
+      <span>Settings</span>
+    </a>
+  </div>
+</div>
+
+<!-- Recent Messages -->
+<div class="admin-section">
+  <div class="admin-section-head">
+    <h3><i class="fa-solid fa-envelope" style="color:var(--maroon);"></i> Recent Messages</h3>
+    <a href="/admin/inquiries" class="admin-btn">View All</a>
+  </div>
+  <% if (inquiries.length === 0) { %>
+    <p class="admin-empty">No messages yet.</p>
+  <% } else { %>
+    <% inquiries.slice(0, 5).forEach(function(inq) { %>
+      <div class="admin-recent-row">
+        <div>
+          <span class="admin-recent-title"><%= inq.name %></span>
+          <span class="admin-recent-sub"><%= inq.subject %></span>
+        </div>
+        <div style="text-align:right;">
+          <span class="admin-badge-new">NEW</span>
+          <span class="admin-recent-date"><%= inq.createdAt.toLocaleDateString() %></span>
+        </div>
+      </div>
+    <% }); %>
+  <% } %>
+</div>
+
+<!-- Recent Puppies -->
+<div class="admin-section">
+  <div class="admin-section-head">
+    <h3><i class="fa-solid fa-heart" style="color:var(--gold);"></i> Recent Puppies</h3>
+    <a href="/admin/puppies/new" class="admin-btn">Add Puppy</a>
+  </div>
+  <% if (puppies.length === 0) { %>
+    <p class="admin-empty">No puppies yet.</p>
+  <% } else { %>
+    <table class="admin-table">
+      <thead><tr><th>Name</th><th>Status</th><th>Price</th><th>Added</th><th></th></tr></thead>
+      <tbody>
+        <% puppies.slice(0, 5).forEach(function(p) { %>
+          <tr>
+            <td>
+              <span style="font-weight:600;"><%= p.name %></span><br>
+              <span style="color:var(--text-light);font-size:0.82rem;"><%= p.gender %> • <%= p.color %></span>
+            </td>
+            <td><span class="status-badge status-<%= p.status.toLowerCase() %>"><%= p.status %></span></td>
+            <td style="color:var(--maroon);font-weight:600;">$<%= p.price %></td>
+            <td style="color:var(--text-light);font-size:0.85rem;"><%= p.createdAt.toLocaleDateString() %></td>
+            <td class="admin-actions">
+              <a href="/admin/puppies/edit/<%= p._id %>" class="admin-btn-sm"><i class="fa-solid fa-pen"></i></a>
+              <a href="/admin/puppies/delete/<%= p._id %>" class="admin-btn-sm admin-btn-danger" onclick="return confirm('Delete this puppy?')"><i class="fa-solid fa-trash"></i></a>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
+<!-- Recent Blog Posts -->
+<div class="admin-section">
+  <div class="admin-section-head">
+    <h3><i class="fa-solid fa-newspaper" style="color:#2b6cb0;"></i> Recent Blog Posts</h3>
+    <a href="/admin/posts/new" class="admin-btn">New Post</a>
+  </div>
+  <% if (posts.length === 0) { %>
+    <p class="admin-empty">No posts yet.</p>
+  <% } else { %>
+    <table class="admin-table">
+      <thead><tr><th>Title</th><th>Status</th><th>Date</th><th></th></tr></thead>
+      <tbody>
+        <% posts.slice(0, 5).forEach(function(p) { %>
+          <tr>
+            <td><%= p.title %></td>
+            <td><span class="status-badge status-available">Published</span></td>
+            <td style="color:var(--text-light);font-size:0.85rem;"><%= p.createdAt.toLocaleDateString() %></td>
+            <td class="admin-actions">
+              <a href="/blog/<%= p.slug %>" target="_blank" class="admin-btn-sm"><i class="fa-solid fa-eye"></i></a>
+              <a href="/admin/posts/edit/<%= p._id %>" class="admin-btn-sm"><i class="fa-solid fa-pen"></i></a>
+              <a href="/admin/posts/delete/<%= p._id %>" class="admin-btn-sm admin-btn-danger" onclick="return confirm('Delete this post?')"><i class="fa-solid fa-trash"></i></a>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
+<%- include('partials/admin-footer') %>

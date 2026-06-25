@@ -1,0 +1,39 @@
+<%- include('partials/admin-header', {title: 'Settings | Admin', active: 'settings', heading: 'Site Settings'}) %>
+
+<div class="admin-section" style="max-width:640px;">
+  <% if (saved) { %>
+    <div class="form-success"><i class="fa-solid fa-circle-check"></i> Settings saved successfully!</div>
+  <% } %>
+
+  <form method="POST" action="/admin/settings">
+    <h3 style="margin-bottom:20px;">Contact Information</h3>
+
+    <div class="form-group">
+      <label>Contact Email</label>
+      <input type="email" name="email" value="<%= settings.email %>" required>
+    </div>
+    <div class="form-group">
+      <label>Phone Number</label>
+      <input type="text" name="phone" value="<%= settings.phone %>" placeholder="e.g. +1 234 567 8900">
+    </div>
+
+    <h3 style="margin:30px 0 20px;">Homepage Statistics</h3>
+
+    <div class="form-group">
+      <label>Years of Experience</label>
+      <input type="number" name="statYears" value="<%= settings.statYears %>" required>
+    </div>
+    <div class="form-group">
+      <label>Puppies Placed</label>
+      <input type="number" name="statPuppies" value="<%= settings.statPuppies %>" required>
+    </div>
+    <div class="form-group">
+      <label>Health Guaranteed (%)</label>
+      <input type="number" name="statHealth" value="<%= settings.statHealth %>" required>
+    </div>
+
+    <button type="submit" class="form-submit"><i class="fa-solid fa-floppy-disk"></i> Save Settings</button>
+  </form>
+</div>
+
+<%- include('partials/admin-footer') %>

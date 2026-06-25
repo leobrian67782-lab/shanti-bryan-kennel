@@ -1,0 +1,52 @@
+<%- include('partials/header', {title: 'Testimonial Form | Admin'}) %>
+
+<section class="page-section">
+  <h1><%= testimonial ? 'Edit Testimonial' : 'Add New Testimonial' %></h1>
+
+  <form method="POST" action="<%= testimonial ? '/admin/testimonials/edit/' + testimonial._id : '/admin/testimonials/new' %>" class="contact-form" enctype="multipart/form-data">
+
+    <div class="form-group">
+      <label>Customer Name *</label>
+      <input type="text" name="customerName" value="<%= testimonial ? testimonial.customerName : '' %>" required>
+    </div>
+
+    <div class="form-group">
+      <label>Location</label>
+      <input type="text" name="location" value="<%= testimonial ? testimonial.location : '' %>" placeholder="e.g. Texas">
+    </div>
+
+    <div class="form-group">
+      <label>Tag</label>
+      <input type="text" name="tag" value="<%= testimonial ? testimonial.tag : '' %>" placeholder="e.g. Owner of Molly">
+    </div>
+
+    <div class="form-group">
+      <label>Rating *</label>
+      <select name="rating" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;">
+        <option value="5" <%= testimonial && testimonial.rating === 5 ? 'selected' : '' %>>5 Stars</option>
+        <option value="4" <%= testimonial && testimonial.rating === 4 ? 'selected' : '' %>>4 Stars</option>
+        <option value="3" <%= testimonial && testimonial.rating === 3 ? 'selected' : '' %>>3 Stars</option>
+        <option value="2" <%= testimonial && testimonial.rating === 2 ? 'selected' : '' %>>2 Stars</option>
+        <option value="1" <%= testimonial && testimonial.rating === 1 ? 'selected' : '' %>>1 Star</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Message *</label>
+      <textarea name="message" required><%= testimonial ? testimonial.message : '' %></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Customer Photo (optional)</label>
+      <input type="file" name="photo" accept="image/*">
+      <% if (testimonial && testimonial.photo) { %>
+        <p style="margin-top:8px;">Current photo:</p>
+        <img src="<%= testimonial.photo %>" style="max-width:120px;border-radius:8px;margin-top:6px;">
+      <% } %>
+    </div>
+
+    <button type="submit" class="form-submit"><%= testimonial ? 'Update Testimonial' : 'Add Testimonial' %></button>
+  </form>
+</section>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,37 @@
+<%- include('partials/header', {title: 'Our Litters | Shanti & Bryan Pinscher Kennel'}) %>
+
+<section class="page-section">
+  <p class="section-label">Our Bloodlines</p>
+  <h1>Our Litters</h1>
+  <div class="section-underline"></div>
+  <p style="margin-top:20px;">Information about our current and past litters, each from carefully selected parents.</p>
+
+  <% if (litters.length === 0) { %>
+    <p style="margin-top:40px;">No litters listed right now — check back soon!</p>
+  <% } else { %>
+    <div class="card-grid">
+      <% litters.forEach(function(litter) { %>
+        <a href="/litters/<%= litter._id %>" style="text-decoration:none;color:inherit;">
+          <div class="card">
+            <% if (litter.photos && litter.photos.length > 0) { %>
+              <img src="<%= litter.photos[0] %>" alt="<%= litter.litterName %>">
+            <% } %>
+            <div class="card-body">
+              <h3><%= litter.litterName %></h3>
+              <div class="info-pills">
+                <span class="info-pill"><i class="fa-solid fa-mars"></i> <%= litter.sireName %></span>
+                <span class="info-pill"><i class="fa-solid fa-venus"></i> <%= litter.damName %></span>
+              </div>
+              <p style="color:var(--text-light);font-size:0.9rem;margin-top:8px;"><i class="fa-solid fa-calendar" style="color:var(--gold);"></i> Born <%= litter.birthDate.toDateString() %></p>
+              <div style="margin-top:12px;">
+                <span style="color:var(--maroon);font-weight:600;font-size:0.9rem;">View Details <i class="fa-solid fa-arrow-right"></i></span>
+              </div>
+            </div>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+  <% } %>
+</section>
+
+<%- include('partials/footer') %>

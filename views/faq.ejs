@@ -1,0 +1,40 @@
+<%- include('partials/header', {title: 'FAQ | Shanti & Bryan Pinscher Kennel'}) %>
+
+<section class="page-section">
+  <p class="section-label">Got Questions?</p>
+  <h1>Frequently Asked Questions</h1>
+  <div class="section-underline"></div>
+  <p style="margin-top:20px;">Everything you need to know about getting a puppy from us.</p>
+
+  <% if (faqs.length === 0) { %>
+    <p style="margin-top:40px;">No FAQs yet — check back soon!</p>
+  <% } else { %>
+    <div class="faq-list">
+      <% faqs.forEach(function(faq) { %>
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            <span><%= faq.question %></span>
+            <span class="faq-icon"><i class="fa-solid fa-plus"></i></span>
+          </button>
+          <div class="faq-answer">
+            <p><%= faq.answer %></p>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+
+    <div style="margin-top:40px;">
+      <p style="color:var(--text-light);">Still have questions?</p>
+      <a href="/contact" class="btn" style="margin-top:12px;">Contact Us</a>
+    </div>
+  <% } %>
+</section>
+
+<script>
+  function toggleFaq(btn) {
+    var item = btn.parentElement;
+    item.classList.toggle('open');
+  }
+</script>
+
+<%- include('partials/footer') %>

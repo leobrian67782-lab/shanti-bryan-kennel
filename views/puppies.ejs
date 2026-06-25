@@ -1,0 +1,43 @@
+<%- include('partials/header', {title: 'Available Puppies | Shanti & Bryan Pinscher Kennel'}) %>
+
+<section class="page-section">
+  <p class="section-label">Find Your Perfect Companion</p>
+  <h1>Available Puppies</h1>
+  <div class="section-underline"></div>
+  <p style="margin-top:20px;">Meet our adorable Miniature Pinscher puppies looking for their forever homes. Each one comes with full vet records, vaccinations, and our written 1-year health guarantee.</p>
+
+  <% if (puppies.length === 0) { %>
+    <p style="margin-top:40px;">No puppies listed right now — check back soon!</p>
+  <% } else { %>
+    <div class="card-grid">
+      <% puppies.forEach(function(puppy) { %>
+        <a href="/puppies/<%= puppy._id %>" style="text-decoration:none;color:inherit;">
+          <div class="card">
+            <% if (puppy.photos && puppy.photos.length > 0) { %>
+              <div style="position:relative;">
+                <img src="<%= puppy.photos[0] %>" alt="<%= puppy.name %>">
+                <span class="status-badge status-<%= puppy.status.toLowerCase() %>" style="position:absolute;top:14px;left:14px;"><%= puppy.status %></span>
+              </div>
+            <% } %>
+            <div class="card-body">
+              <h3><%= puppy.name %></h3>
+              <div class="info-pills">
+                <span class="info-pill"><%= puppy.gender %></span>
+                <span class="info-pill"><%= puppy.color %></span>
+              </div>
+              <% if (puppy.description) { %>
+                <p style="color:#5c5c5c;font-size:0.95rem;"><%= puppy.description.substring(0, 70) %><%= puppy.description.length > 70 ? '...' : '' %></p>
+              <% } %>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;">
+                <p class="card-price" style="margin:0;">$<%= puppy.price %></p>
+                <span style="color:var(--maroon);font-weight:600;font-size:0.9rem;">View Details <i class="fa-solid fa-arrow-right"></i></span>
+              </div>
+            </div>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+  <% } %>
+</section>
+
+<%- include('partials/footer') %>

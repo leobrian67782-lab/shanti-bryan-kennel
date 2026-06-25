@@ -1,0 +1,44 @@
+<%- include('partials/admin-header', {title: 'Inquiries | Admin', active: 'inquiries', heading: 'Contact Inquiries'}) %>
+
+<div class="admin-section">
+  <div class="admin-section-head">
+    <h3><i class="fa-solid fa-envelope" style="color:var(--maroon);"></i> Messages from your Contact form</h3>
+  </div>
+  <% if (inquiries.length === 0) { %>
+    <p class="admin-empty">No inquiries yet.</p>
+  <% } else { %>
+    <table class="admin-table">
+      <thead><tr><th>Date</th><th>Name</th><th>Contact</th><th>Location</th><th>Subject</th><th>Message</th><th></th></tr></thead>
+      <tbody>
+        <% inquiries.forEach(function(inq) { %>
+          <tr>
+            <td style="white-space:nowrap;"><%= inq.createdAt.toLocaleDateString() %></td>
+            <td style="font-weight:600;color:#fff;"><%= inq.name %></td>
+            <td>
+              <a href="mailto:<%= inq.email %>" style="color:var(--gold);"><%= inq.email %></a>
+              <% if (inq.phone) { %><br><span style="color:#6b7585;font-size:0.85rem;"><%= inq.phone %></span><% } %>
+            </td>
+            <td style="font-size:0.85rem;">
+              <% if (inq.location) { %>
+                <span style="color:#c5cdd8;"><i class="fa-solid fa-location-dot" style="color:var(--gold);"></i> <%= inq.location %></span>
+              <% } %>
+              <% if (inq.detectedLocation) { %>
+                <br><span style="color:#6b7585;" title="Auto-detected from IP"><i class="fa-solid fa-globe"></i> <%= inq.detectedLocation %></span>
+              <% } %>
+              <% if (!inq.location && !inq.detectedLocation) { %>
+                <span style="color:#6b7585;">—</span>
+              <% } %>
+            </td>
+            <td><%= inq.subject %></td>
+            <td style="max-width:280px;"><%= inq.message %></td>
+            <td class="admin-actions">
+              <a href="/admin/inquiries/delete/<%= inq._id %>" class="admin-btn-sm admin-btn-danger" onclick="return confirm('Delete this inquiry?')"><i class="fa-solid fa-trash"></i></a>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
+<%- include('partials/admin-footer') %>

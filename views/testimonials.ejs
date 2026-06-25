@@ -1,0 +1,59 @@
+<%- include('partials/header', {title: 'Testimonials | Shanti & Bryan Pinscher Kennel'}) %>
+
+<section class="page-section">
+  <p class="section-label">Happy Families</p>
+  <h1>What Our Families Say</h1>
+  <div class="section-underline"></div>
+  <p style="margin-top:20px;">Hear from the happy families who've welcomed our puppies into their homes.</p>
+
+  <% if (testimonials.length === 0) { %>
+    <p style="margin-top:40px;">No testimonials yet — check back soon!</p>
+  <% } else { %>
+    <div class="testimonial-list">
+      <% testimonials.forEach(function(t) { %>
+        <div class="testimonial-card">
+          <div class="testimonial-quote-mark">"</div>
+          <div class="testimonial-stars">
+            <% for (let i = 0; i < t.rating; i++) { %><i class="fa-solid fa-star"></i><% } %>
+            <% for (let i = t.rating; i < 5; i++) { %><i class="fa-regular fa-star"></i><% } %>
+          </div>
+          <p class="testimonial-message"><%= t.message %></p>
+          <div class="testimonial-author">
+            <% if (t.photo) { %>
+              <img src="<%= t.photo %>" class="testimonial-avatar" alt="<%= t.customerName %>" onclick="openLightbox('<%= t.photo %>')" style="cursor:zoom-in;">
+            <% } else { %>
+              <div class="testimonial-avatar-placeholder"><i class="fa-solid fa-user"></i></div>
+            <% } %>
+            <div>
+              <div class="testimonial-name"><%= t.customerName %></div>
+              <% if (t.location || t.tag) { %>
+                <div class="testimonial-location">
+                  <% if (t.location) { %><i class="fa-solid fa-location-dot"></i> <%= t.location %><% } %>
+                  <% if (t.tag) { %> • <%= t.tag %><% } %>
+                </div>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  <% } %>
+</section>
+
+<!-- Lightbox -->
+<div id="lightbox" class="lightbox" onclick="closeLightbox()">
+  <span class="lightbox-close">&times;</span>
+  <img id="lightbox-img" src="" alt="Full size">
+</div>
+
+<script>
+  function openLightbox(src) {
+    document.getElementById('lightbox-img').src = src;
+    document.getElementById('lightbox').style.display = 'flex';
+  }
+  function closeLightbox() {
+    document.getElementById('lightbox').style.display = 'none';
+  }
+</script>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,630 @@
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const path = require('path');
+const session = require('express-session');
+const multer = require('multer');
+const { v2: cloudinary } = require('cloudinary');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+
+const Puppy = require('./models/Puppy');
+const Litter = require('./models/Litter');
+const Contact = require('./models/Contact');
+const Testimonial = require('./models/Testimonial');
+const Faq = require('./models/Faq');
+const Settings = require('./models/Settings');
+const Post = require('./models/Post');
+
+const app = express();
+app.set('trust proxy', true);
+const PORT = process.env.PORT || 3000;
+
+// Cloudinary config
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'shanti-bryan-kennel',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp']
+  }
+});
+const upload = multer({ storage: storage });
+
+// View engine
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+// Static + body parsing
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
+// Sessions
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'fallback-secret',
+  resave: false,
+  saveUninitialized: false
+}));
+
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('✅ Connected to MongoDB'))
+  .catch((err) => console.error('❌ MongoDB connection error:', err));
+
+// Auth middleware
+function requireLogin(req, res, next) {
+  if (req.session.isAdmin) {
+    next();
+  } else {
+    res.redirect('/admin/login');
+  }
+}
+
+// Helper for litter photo fields
+const litterUpload = upload.fields([
+  { name: 'photo', maxCount: 1 },
+  { name: 'sirePhoto', maxCount: 1 },
+  { name: 'damPhoto', maxCount: 1 }
+]);
+
+// Turns a title into a URL-friendly slug
+function makeSlug(title) {
+  return title.toLowerCase().trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+}
+
+// Always returns the single settings document, creating it if missing
+async function getSettings() {
+  let settings = await Settings.findOne();
+  if (!settings) settings = await Settings.create({});
+  return settings;
+}
+
+// Make settings available to ALL views automatically
+app.use(async (req, res, next) => {
+  try {
+    res.locals.settings = await getSettings();
+  } catch (err) {
+    res.locals.settings = {};
+  }
+  next();
+});
+
+// ===== PUBLIC ROUTES =====
+app.get('/', async (req, res) => {
+  try {
+    const featuredPuppies = await Puppy.find({ status: 'Available' }).sort({ createdAt: -1 }).limit(3);
+    const testimonials = await Testimonial.find().sort({ createdAt: -1 }).limit(3);
+    res.render('home', { featuredPuppies, testimonials });
+  } catch (err) {
+    console.error(err);
+    res.render('home', { featuredPuppies: [], testimonials: [] });
+  }
+});
+
+app.get('/puppies', async (req, res) => {
+  try {
+    const puppies = await Puppy.find().sort({ createdAt: -1 });
+    res.render('puppies', { puppies });
+  } catch (err) {
+    console.error(err);
+    res.render('puppies', { puppies: [] });
+  }
+});
+
+app.get('/puppies/:id', async (req, res) => {
+  try {
+    const puppy = await Puppy.findById(req.params.id);
+    if (!puppy) return res.redirect('/puppies');
+    res.render('puppy-detail', { puppy });
+  } catch (err) {
+    console.error(err);
+    res.redirect('/puppies');
+  }
+});
+
+app.get('/litters', async (req, res) => {
+  try {
+    const litters = await Litter.find().sort({ createdAt: -1 });
+    res.render('litters', { litters });
+  } catch (err) {
+    console.error(err);
+    res.render('litters', { litters: [] });
+  }
+});
+
+app.get('/litters/:id', async (req, res) => {
+  try {
+    const litter = await Litter.findById(req.params.id);
+    if (!litter) return res.redirect('/litters');
+    res.render('litter-detail', { litter });
+  } catch (err) {
+    console.error(err);
+    res.redirect('/litters');
+  }
+});
+
+app.get('/testimonials', async (req, res) => {
+  try {
+    const testimonials = await Testimonial.find().sort({ createdAt: -1 });
+    res.render('testimonials', { testimonials });
+  } catch (err) {
+    console.error(err);
+    res.render('testimonials', { testimonials: [] });
+  }
+});
+
+app.get('/faq', async (req, res) => {
+  try {
+    const faqs = await Faq.find().sort({ order: 1, createdAt: 1 });
+    res.render('faq', { faqs });
+  } catch (err) {
+    console.error(err);
+    res.render('faq', { faqs: [] });
+  }
+});
+
+app.get('/blog', async (req, res) => {
+  try {
+    const posts = await Post.find({ published: true }).sort({ createdAt: -1 });
+    res.render('blog', { posts });
+  } catch (err) {
+    console.error(err);
+    res.render('blog', { posts: [] });
+  }
+});
+
+app.get('/blog/:slug', async (req, res) => {
+  try {
+    const post = await Post.findOne({ slug: req.params.slug });
+    if (!post) return res.redirect('/blog');
+    res.render('post-detail', { post });
+  } catch (err) {
+    console.error(err);
+    res.redirect('/blog');
+  }
+});
+
+app.get('/deposit', (req, res) => {
+  res.render('deposit');
+});
+
+app.get('/seed-faqs', async (req, res) => {
+  try {
+    await Faq.deleteMany({});
+    await Faq.insertMany([
+      { question: 'How much do your puppies cost?', answer: 'Our puppy prices vary depending on bloodline, conformation, and availability. Please contact us for current pricing on available puppies.', order: 1 },
+      { question: 'Are the puppies vaccinated and dewormed?', answer: 'Yes. All our puppies are up to date on age-appropriate vaccinations and deworming before going to their new homes, and come with a health record.', order: 2 },
+      { question: 'Do you offer delivery?', answer: 'Yes, we offer safe delivery arrangements. Delivery options and costs depend on your location — please contact us to discuss.', order: 3 },
+      { question: 'Are your puppies registered?', answer: 'Our puppies come from quality bloodlines. Registration details are available per litter — please ask us about a specific puppy.', order: 4 },
+      { question: 'Do you offer a health guarantee?', answer: 'Yes, all our puppies come with a health guarantee. We are committed to the lifelong health and wellbeing of every puppy we place.', order: 5 },
+      { question: 'How do I reserve a puppy?', answer: 'Reach out through our Contact page with the puppy you are interested in. We will guide you through the reservation process step by step.', order: 6 }
+    ]);
+    res.send('✅ FAQs seeded! Visit <a href="/faq">/faq</a> to see them.');
+  } catch (err) {
+    res.send('Error: ' + err.message);
+  }
+});
+
+app.get('/about', (req, res) => {
+  res.render('about');
+});
+
+app.get('/contact', (req, res) => {
+  res.render('contact', { message: '' });
+});
+
+app.post('/contact', async (req, res) => {
+  try {
+    const { name, email, phone, location, subject, message } = req.body;
+    if (!name || !email || !subject || !message) {
+      return res.render('contact', { message: 'All fields are required.' });
+    }
+
+    // Try to auto-detect location from the visitor's IP (best-effort, never blocks the message)
+    let detectedLocation = '';
+    try {
+      let ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || '';
+      ip = ip.replace('::ffff:', '');
+      // Skip lookup for local addresses (development)
+      if (ip && ip !== '127.0.0.1' && ip !== '::1' && !ip.startsWith('192.168.') && !ip.startsWith('10.')) {
+        const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,regionName,city`);
+        const geo = await geoRes.json();
+        if (geo && geo.status === 'success') {
+          detectedLocation = [geo.city, geo.regionName, geo.country].filter(Boolean).join(', ');
+        }
+      }
+    } catch (geoErr) {
+      console.log('Geo lookup skipped:', geoErr.message);
+    }
+
+    await new Contact({ name, email, phone, location, detectedLocation, subject, message }).save();
+    res.render('contact', { message: '✅ Thank you! Your message has been received. We\'ll get back to you soon.' });
+  } catch (err) {
+    console.error(err);
+    res.render('contact', { message: '❌ Something went wrong. Please try again.' });
+  }
+});
+
+// ===== ADMIN AUTH =====
+app.get('/admin/login', (req, res) => {
+  res.render('admin-login', { error: '' });
+});
+
+app.post('/admin/login', (req, res) => {
+  const { username, password } = req.body;
+  if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
+    req.session.isAdmin = true;
+    res.redirect('/admin/dashboard');
+  } else {
+    res.render('admin-login', { error: 'Invalid username or password.' });
+  }
+});
+
+app.get('/admin/logout', (req, res) => {
+  req.session.destroy(() => {
+    res.redirect('/admin/login');
+  });
+});
+
+// ===== ADMIN DASHBOARD =====
+app.get('/admin/dashboard', requireLogin, async (req, res) => {
+  const puppies = await Puppy.find().sort({ createdAt: -1 });
+  const litters = await Litter.find().sort({ createdAt: -1 });
+  const testimonials = await Testimonial.find().sort({ createdAt: -1 });
+  const faqs = await Faq.find().sort({ order: 1 });
+  const posts = await Post.find().sort({ createdAt: -1 });
+  const inquiries = await Contact.find().sort({ createdAt: -1 });
+  res.render('admin-dashboard', { puppies, litters, testimonials, faqs, posts, inquiries });
+});
+
+// ===== ADMIN PUPPIES =====
+app.get('/admin/puppies/new', requireLogin, (req, res) => {
+  res.render('admin-puppy-form', { puppy: null });
+});
+
+app.post('/admin/puppies/new', requireLogin, upload.array('photos', 5), async (req, res) => {
+  try {
+    const data = req.body;
+    const puppy = new Puppy({
+      name: data.name,
+      price: data.price,
+      gender: data.gender,
+      dateOfBirth: data.dateOfBirth,
+      color: data.color,
+      weight: data.weight,
+      status: data.status,
+      description: data.description,
+      sireName: data.sireName,
+      damName: data.damName,
+      vaccinated: data.vaccinated === 'on',
+      dewormed: data.dewormed === 'on',
+      microchipped: data.microchipped === 'on',
+      photos: req.files ? req.files.map(f => f.path) : []
+    });
+    await puppy.save();
+    res.redirect('/admin/dashboard');
+  } catch (err) {
+    console.error('ADD PUPPY ERROR:', err);
+    res.send('Error adding puppy: ' + err.message);
+  }
+});
+
+app.get('/admin/puppies/edit/:id', requireLogin, async (req, res) => {
+  try {
+    const puppy = await Puppy.findById(req.params.id);
+    res.render('admin-puppy-form', { puppy });
+  } catch (err) {
+    console.error('EDIT PUPPY ERROR:', err);
+    res.send('Error: ' + err.message);
+  }
+});
+
+app.post('/admin/puppies/edit/:id', requireLogin, upload.array('photos', 5), async (req, res) => {
+  try {
+    const data = req.body;
+    const updateData = {
+      name: data.name,
+      price: data.price,
+      gender: data.gender,
+      dateOfBirth: data.dateOfBirth,
+      color: data.color,
+      weight: data.weight,
+      status: data.status,
+      description: data.description,
+      sireName: data.sireName,
+      damName: data.damName,
+      vaccinated: data.vaccinated === 'on',
+      dewormed: data.dewormed === 'on',
+      microchipped: data.microchipped === 'on'
+    };
+    if (req.files && req.files.length > 0) {
+      updateData.photos = req.files.map(f => f.path);
+    }
+    await Puppy.findByIdAndUpdate(req.params.id, updateData);
+    res.redirect('/admin/dashboard');
+  } catch (err) {
+    console.error('UPDATE PUPPY ERROR:', err);
+    res.send('Error updating puppy: ' + err.message);
+  }
+});
+
+app.get('/admin/puppies/delete/:id', requireLogin, async (req, res) => {
+  await Puppy.findByIdAndDelete(req.params.id);
+  res.redirect('/admin/dashboard');
+});
+
+// ===== ADMIN LITTERS =====
+app.get('/admin/litters/new', requireLogin, (req, res) => {
+  res.render('admin-litter-form', { litter: null });
+});
+
+app.post('/admin/litters/new', requireLogin, litterUpload, async (req, res) => {
+  try {
+    const data = req.body;
+    const files = req.files || {};
+    const litter = new Litter({
+      litterName: data.litterName,
+      birthDate: data.birthDate,
+      numberOfPuppies: data.numberOfPuppies,
+      description: data.description,
+      photos: files.photo ? [files.photo[0].path] : [],
+      sireName: data.sireName,
+      sireWeight: data.sireWeight,
+      sireRegistration: data.sireRegistration,
+      sireAwards: data.sireAwards,
+      sirePhoto: files.sirePhoto ? files.sirePhoto[0].path : '',
+      damName: data.damName,
+      damWeight: data.damWeight,
+      damRegistration: data.damRegistration,
+      damAwards: data.damAwards,
+      damPhoto: files.damPhoto ? files.damPhoto[0].path : ''
+    });
+    await litter.save();
+    res.redirect('/admin/dashboard');
+  } catch (err) {
+    console.error('ADD LITTER ERROR:', err);
+    res.send('Error adding litter: ' + err.message);
+  }
+});
+
+app.get('/admin/litters/edit/:id', requireLogin, async (req, res) => {
+  try {
+    const litter = await Litter.findById(req.params.id);
+    res.render('admin-litter-form', { litter });
+  } catch (err) {
+    console.error('EDIT LITTER ERROR:', err);
+    res.send('Error: ' + err.message);
+  }
+});
+
+app.post('/admin/litters/edit/:id', requireLogin, litterUpload, async (req, res) => {
+  try {
+    const data = req.body;
+    const files = req.files || {};
+    const updateData = {
+      litterName: data.litterName,
+      birthDate: data.birthDate,
+      numberOfPuppies: data.numberOfPuppies,
+      description: data.description,
+      sireName: data.sireName,
+      sireWeight: data.sireWeight,
+      sireRegistration: data.sireRegistration,
+      sireAwards: data.sireAwards,
+      damName: data.damName,
+      damWeight: data.damWeight,
+      damRegistration: data.damRegistration,
+      damAwards: data.damAwards
+    };
+    if (files.photo) updateData.photos = [files.photo[0].path];
+    if (files.sirePhoto) updateData.sirePhoto = files.sirePhoto[0].path;
+    if (files.damPhoto) updateData.damPhoto = files.damPhoto[0].path;
+
+    await Litter.findByIdAndUpdate(req.params.id, updateData);
+    res.redirect('/admin/dashboard');
+  } catch (err) {
+    console.error('UPDATE LITTER ERROR:', err);
+    res.send('Error updating litter: ' + err.message);
+  }
+});
+
+app.get('/admin/litters/delete/:id', requireLogin, async (req, res) => {
+  await Litter.findByIdAndDelete(req.params.id);
+  res.redirect('/admin/dashboard');
+});
+
+// ===== ADMIN TESTIMONIALS =====
+app.get('/admin/testimonials/new', requireLogin, (req, res) => {
+  res.render('admin-testimonial-form', { testimonial: null });
+});
+
+app.post('/admin/testimonials/new', requireLogin, upload.single('photo'), async (req, res) => {
+  try {
+    const data = req.body;
+    const testimonial = new Testimonial({
+      customerName: data.customerName,
+      location: data.location,
+      tag: data.tag,
+      rating: parseInt(data.rating),
+      message: data.message,
+      photo: req.file ? req.file.path : ''
+    });
+    await testimonial.save();
+    res.redirect('/admin/dashboard');
+  } catch (err) {
+    console.error('ADD TESTIMONIAL ERROR:', err);
+    res.send('Error adding testimonial: ' + err.message);
+  }
+});
+
+app.get('/admin/testimonials/edit/:id', requireLogin, async (req, res) => {
+  try {
+    const testimonial = await Testimonial.findById(req.params.id);
+    res.render('admin-testimonial-form', { testimonial });
+  } catch (err) {
+    console.error('EDIT TESTIMONIAL ERROR:', err);
+    res.send('Error: ' + err.message);
+  }
+});
+
+app.post('/admin/testimonials/edit/:id', requireLogin, upload.single('photo'), async (req, res) => {
+  try {
+    const data = req.body;
+    const updateData = {
+      customerName: data.customerName,
+      location: data.location,
+      tag: data.tag,
+      rating: parseInt(data.rating),
+      message: data.message
+    };
+    if (req.file) {
+      updateData.photo = req.file.path;
+    }
+    await Testimonial.findByIdAndUpdate(req.params.id, updateData);
+    res.redirect('/admin/dashboard');
+  } catch (err) {
+    console.error('UPDATE TESTIMONIAL ERROR:', err);
+    res.send('Error updating testimonial: ' + err.message);
+  }
+});
+
+app.get('/admin/testimonials/delete/:id', requireLogin, async (req, res) => {
+  await Testimonial.findByIdAndDelete(req.params.id);
+  res.redirect('/admin/dashboard');
+});
+
+// ===== ADMIN FAQS =====
+app.get('/admin/faqs/new', requireLogin, (req, res) => {
+  res.render('admin-faq-form', { faq: null });
+});
+
+app.post('/admin/faqs/new', requireLogin, async (req, res) => {
+  try {
+    await new Faq({ question: req.body.question, answer: req.body.answer, order: req.body.order || 0 }).save();
+    res.redirect('/admin/dashboard');
+  } catch (err) {
+    res.send('Error: ' + err.message);
+  }
+});
+
+app.get('/admin/faqs/edit/:id', requireLogin, async (req, res) => {
+  try {
+    const faq = await Faq.findById(req.params.id);
+    res.render('admin-faq-form', { faq });
+  } catch (err) {
+    res.send('Error: ' + err.message);
+  }
+});
+
+app.post('/admin/faqs/edit/:id', requireLogin, async (req, res) => {
+  try {
+    await Faq.findByIdAndUpdate(req.params.id, { question: req.body.question, answer: req.body.answer, order: req.body.order || 0 });
+    res.redirect('/admin/dashboard');
+  } catch (err) {
+    res.send('Error: ' + err.message);
+  }
+});
+
+app.get('/admin/faqs/delete/:id', requireLogin, async (req, res) => {
+  await Faq.findByIdAndDelete(req.params.id);
+  res.redirect('/admin/dashboard');
+});
+
+// ===== ADMIN INQUIRIES =====
+app.get('/admin/inquiries', requireLogin, async (req, res) => {
+  const inquiries = await Contact.find().sort({ createdAt: -1 });
+  res.render('admin-inquiries', { inquiries });
+});
+
+app.get('/admin/inquiries/delete/:id', requireLogin, async (req, res) => {
+  await Contact.findByIdAndDelete(req.params.id);
+  res.redirect('/admin/inquiries');
+});
+
+// ===== ADMIN SETTINGS =====
+app.get('/admin/settings', requireLogin, async (req, res) => {
+  const settings = await getSettings();
+  res.render('admin-settings', { settings, saved: req.query.saved === '1' });
+});
+
+app.post('/admin/settings', requireLogin, async (req, res) => {
+  try {
+    const settings = await getSettings();
+    settings.email = req.body.email;
+    settings.phone = req.body.phone;
+    settings.statYears = req.body.statYears;
+    settings.statPuppies = req.body.statPuppies;
+    settings.statHealth = req.body.statHealth;
+    settings.updatedAt = Date.now();
+    await settings.save();
+    res.redirect('/admin/settings?saved=1');
+  } catch (err) {
+    res.send('Error saving settings: ' + err.message);
+  }
+});
+
+// ===== ADMIN POSTS =====
+app.get('/admin/posts/new', requireLogin, (req, res) => {
+  res.render('admin-post-form', { post: null });
+});
+
+app.post('/admin/posts/new', requireLogin, upload.single('image'), async (req, res) => {
+  try {
+    let slug = makeSlug(req.body.title);
+    const existing = await Post.findOne({ slug });
+    if (existing) slug = slug + '-' + Date.now();
+    const post = new Post({
+      title: req.body.title,
+      slug: slug,
+      excerpt: req.body.excerpt,
+      content: req.body.content,
+      image: req.file ? req.file.path : ''
+    });
+    await post.save();
+    res.redirect('/admin/dashboard');
+  } catch (err) {
+    console.error('ADD POST ERROR:', err);
+    res.send('Error adding post: ' + err.message);
+  }
+});
+
+app.get('/admin/posts/edit/:id', requireLogin, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    res.render('admin-post-form', { post });
+  } catch (err) {
+    res.send('Error: ' + err.message);
+  }
+});
+
+app.post('/admin/posts/edit/:id', requireLogin, upload.single('image'), async (req, res) => {
+  try {
+    const updateData = {
+      title: req.body.title,
+      excerpt: req.body.excerpt,
+      content: req.body.content
+    };
+    if (req.file) updateData.image = req.file.path;
+    await Post.findByIdAndUpdate(req.params.id, updateData);
+    res.redirect('/admin/dashboard');
+  } catch (err) {
+    console.error('UPDATE POST ERROR:', err);
+    res.send('Error updating post: ' + err.message);
+  }
+});
+
+app.get('/admin/posts/delete/:id', requireLogin, async (req, res) => {
+  await Post.findByIdAndDelete(req.params.id);
+  res.redirect('/admin/dashboard');
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
+});

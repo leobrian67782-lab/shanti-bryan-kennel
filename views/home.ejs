@@ -1,0 +1,177 @@
+<%- include('partials/header', {title: 'Shanti & Bryan Pinscher Kennel'}) %>
+
+<!-- HERO -->
+<section class="hero-main">
+  <div class="hero-overlay"></div>
+  <div class="hero-inner">
+    <h1>Shanti <span class="amp">&amp;</span> Bryan<br>Pinscher's Raised With Love</h1>
+    <p>Shanti & Bryan Pinscher puppies home-raised with daily care, socialization, and full veterinary health checks — placed in loving homes across the world.</p>
+
+    <div class="hero-buttons">
+      <a href="/puppies" class="btn"><i class="fa-solid fa-heart"></i> View Available Puppies</a>
+      <a href="/contact" class="btn btn-outline"><i class="fa-solid fa-comment-dots"></i> Ask a Question</a>
+    </div>
+    <a href="/deposit" class="btn-dashed"><i class="fa-solid fa-circle-question"></i> Do We Require a Deposit?</a>
+
+    <!-- Hero stats -->
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span class="counter" data-target="<%= settings.statYears %>">0+</span>
+        <div class="hero-stat-label">Years<br>Experience</div>
+      </div>
+      <div class="hero-stat">
+        <span class="counter" data-target="<%= settings.statPuppies %>">0+</span>
+        <div class="hero-stat-label">Puppies<br>Placed</div>
+      </div>
+      <div class="hero-stat">
+        <span class="counter-percent" data-target="<%= settings.statHealth %>">0%</span>
+        <div class="hero-stat-label">Health<br>Guaranteed</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Maroon feature bar -->
+  <div class="hero-feature-bar">
+    <div class="hero-feature"><i class="fa-solid fa-shield-heart"></i> 1-Year Health Guarantee</div>
+    <div class="hero-feature"><i class="fa-solid fa-syringe"></i> Up-to-Date Vaccinations</div>
+    <div class="hero-feature"><i class="fa-solid fa-house"></i> Home Raised & Socialized</div>
+    <div class="hero-feature"><i class="fa-solid fa-truck"></i> Nationwide Delivery</div>
+  </div>
+</section>
+
+<!-- FEATURED PUPPIES -->
+<% if (featuredPuppies && featuredPuppies.length > 0) { %>
+<section class="page-section reveal">
+  <p class="section-label">Find Your Perfect Companion</p>
+  <h2>Available Puppies</h2>
+  <div class="section-underline"></div>
+  <p style="margin-top:20px;">Each puppy comes with full vet records, vaccinations, and our written 1-year health guarantee.</p>
+
+  <div class="card-grid">
+    <% featuredPuppies.forEach(function(puppy) { %>
+      <a href="/puppies/<%= puppy._id %>" style="text-decoration:none;color:inherit;">
+        <div class="card">
+          <% if (puppy.photos && puppy.photos.length > 0) { %>
+            <div style="position:relative;">
+              <img src="<%= puppy.photos[0] %>" alt="<%= puppy.name %>">
+              <span class="status-badge status-<%= puppy.status.toLowerCase() %>" style="position:absolute;top:14px;left:14px;"><%= puppy.status %></span>
+            </div>
+          <% } %>
+          <div class="card-body">
+            <h3><%= puppy.name %></h3>
+            <div class="info-pills">
+              <span class="info-pill"><%= puppy.gender %></span>
+              <span class="info-pill"><%= puppy.color %></span>
+            </div>
+            <% if (puppy.description) { %><p style="color:#5c5c5c;font-size:0.95rem;"><%= puppy.description %></p><% } %>
+            <p class="card-price" style="margin-top:12px;">$<%= puppy.price %></p>
+          </div>
+        </div>
+      </a>
+    <% }); %>
+  </div>
+  <div style="margin-top:40px;">
+    <a href="/puppies" class="btn btn-gold">View All Puppies</a>
+  </div>
+</section>
+<% } %>
+
+<!-- WHY CHOOSE US -->
+<section class="page-section reveal" style="background:#fff;">
+  <p class="section-label">Why Choose Us</p>
+  <h2>A Family Passion for 15+ Years</h2>
+  <div class="section-underline"></div>
+  <p style="margin-top:20px;">We are a small family breeder specializing exclusively in Miniature Pinschers. Our puppies grow up in our home where they receive daily interaction from our entire family. Every puppy is health-checked by a licensed veterinarian and goes home with complete documentation and a written one-year health guarantee.</p>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon"><i class="fa-solid fa-award"></i></div>
+      <h3>Registered</h3>
+      <p>Pure-bred registered puppies from quality bloodlines.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><i class="fa-solid fa-people-group"></i></div>
+      <h3>Family Raised</h3>
+      <p>Home socialized daily with love and care.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+      <h3>Vet Certified</h3>
+      <p>Full veterinary check-up before going home.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><i class="fa-solid fa-phone"></i></div>
+      <h3>Ongoing Support</h3>
+      <p>We're here for you after you buy, for life.</p>
+    </div>
+  </div>
+</section>
+
+<!-- EVERY PUPPY INCLUDES -->
+<section class="page-section reveal">
+  <div class="includes-card">
+    <h2 style="color:#fff;text-align:left;"><i class="fa-solid fa-gift" style="color:var(--gold);"></i> Every Puppy Includes:</h2>
+    <ul class="includes-list">
+      <li>Complete veterinary health check</li>
+      <li>Veterinary health papers</li>
+      <li>Up-to-date vaccinations</li>
+      <li>Written 1-year health guarantee</li>
+      <li>Clear sales contract</li>
+      <li>Lifetime breeder support</li>
+    </ul>
+  </div>
+</section>
+
+<!-- FEATURED TESTIMONIALS -->
+<% if (testimonials && testimonials.length > 0) { %>
+<section class="page-section reveal" style="background:#fff;">
+  <p class="section-label">Happy Families</p>
+  <h2>What Our Families Say</h2>
+  <div class="section-underline"></div>
+
+  <div class="testimonial-list">
+    <% testimonials.forEach(function(t) { %>
+      <div class="testimonial-card">
+        <div class="testimonial-quote-mark">"</div>
+        <div class="testimonial-stars">
+          <% for (let i = 0; i < t.rating; i++) { %><i class="fa-solid fa-star"></i><% } %>
+          <% for (let i = t.rating; i < 5; i++) { %><i class="fa-regular fa-star"></i><% } %>
+        </div>
+        <p class="testimonial-message"><%= t.message %></p>
+        <div class="testimonial-author">
+          <% if (t.photo) { %>
+            <img src="<%= t.photo %>" class="testimonial-avatar" alt="<%= t.customerName %>">
+          <% } else { %>
+            <div class="testimonial-avatar-placeholder"><i class="fa-solid fa-user"></i></div>
+          <% } %>
+          <div>
+            <div class="testimonial-name"><%= t.customerName %></div>
+            <% if (t.location || t.tag) { %>
+              <div class="testimonial-location">
+                <% if (t.location) { %><i class="fa-solid fa-location-dot"></i> <%= t.location %><% } %>
+                <% if (t.tag) { %> • <%= t.tag %><% } %>
+              </div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    <% }); %>
+  </div>
+
+  <div style="margin-top:36px;">
+    <a href="/testimonials" class="btn btn-gold">Read More Reviews</a>
+  </div>
+</section>
+<% } %>
+
+<!-- CTA -->
+<section class="cta-section reveal">
+  <h2>Ready to Meet Your New Best Friend?</h2>
+  <p>Browse our available puppies or reach out — we'd love to help you find the perfect Min Pin companion.</p>
+  <div class="hero-buttons" style="margin-top:28px;">
+    <a href="/puppies" class="btn">View Available Puppies</a>
+    <a href="/contact" class="btn btn-outline">Contact Us Today</a>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

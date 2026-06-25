@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="adminSidebar">
+      <div class="admin-brand">
+        <span class="admin-brand-name">Shanti & Bryan</span>
+        <span class="admin-brand-sub">Admin Dashboard</span>
+      </div>
+
+      <nav class="admin-nav">
+        <p class="admin-nav-group">Overview</p>
+        <a href="/admin/dashboard" class="<%= active === 'dashboard' ? 'active' : '' %>"><i class="fa-solid fa-table-columns"></i> Dashboard</a>
+
+        <p class="admin-nav-group">Content</p>
+        <a href="/admin/puppies/new" class="<%= active === 'puppy' ? 'active' : '' %>"><i class="fa-solid fa-heart"></i> Puppies</a>
+        <a href="/admin/litters/new" class="<%= active === 'litter' ? 'active' : '' %>"><i class="fa-solid fa-paw"></i> Litters</a>
+        <a href="/admin/posts/new" class="<%= active === 'post' ? 'active' : '' %>"><i class="fa-solid fa-newspaper"></i> Blog Posts</a>
+        <a href="/admin/testimonials/new" class="<%= active === 'testimonial' ? 'active' : '' %>"><i class="fa-solid fa-star"></i> Testimonials</a>
+        <a href="/admin/faqs/new" class="<%= active === 'faq' ? 'active' : '' %>"><i class="fa-solid fa-circle-question"></i> FAQs</a>
+
+        <p class="admin-nav-group">Inbox</p>
+        <a href="/admin/inquiries" class="<%= active === 'inquiries' ? 'active' : '' %>"><i class="fa-solid fa-envelope"></i> Messages</a>
+
+        <p class="admin-nav-group">Configuration</p>
+        <a href="/admin/settings" class="<%= active === 'settings' ? 'active' : '' %>"><i class="fa-solid fa-gear"></i> Site Settings</a>
+
+        <p class="admin-nav-group">Website</p>
+        <a href="/" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square"></i> View Live Site</a>
+
+        <a href="/admin/logout" class="admin-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout (admin)</a>
+      </nav>
+    </aside>
+
+    <!-- Main content area -->
+    <div class="admin-main">
+      <header class="admin-topbar">
+        <button class="admin-menu-toggle" id="adminMenuToggle"><i class="fa-solid fa-bars"></i></button>
+        <h2><%= heading %></h2>
+        <div class="admin-avatar">A</div>
+      </header>
+      <div class="admin-content">

@@ -1,0 +1,30 @@
+<%- include('partials/header', {title: post.title + ' | Shanti & Bryan Pinscher Kennel'}) %>
+
+<section class="page-section">
+  <div class="post-detail">
+    <p class="section-label">News & Stories</p>
+    <h1><%= post.title %></h1>
+    <div class="section-underline"></div>
+    <p class="post-meta">
+      <i class="fa-solid fa-user"></i> <%= post.author %>
+      &nbsp;•&nbsp;
+      <i class="fa-solid fa-calendar"></i> <%= post.createdAt.toDateString() %>
+    </p>
+
+    <% if (post.image) { %>
+      <img src="<%= post.image %>" alt="<%= post.title %>" class="post-image">
+    <% } %>
+
+    <div class="post-content">
+      <% post.content.split('\n').forEach(function(para) { %>
+        <% if (para.trim()) { %><p><%= para %></p><% } %>
+      <% }); %>
+    </div>
+
+    <div style="margin-top:44px;">
+      <a href="/blog" class="btn" style="background:#888;"><i class="fa-solid fa-arrow-left"></i> Back to Blog</a>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

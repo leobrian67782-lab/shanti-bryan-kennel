@@ -1,0 +1,27 @@
+<%- include('partials/header', {title: 'FAQ Form | Admin'}) %>
+
+<section class="page-section">
+  <h1><%= faq ? 'Edit FAQ' : 'Add New FAQ' %></h1>
+
+  <form method="POST" action="<%= faq ? '/admin/faqs/edit/' + faq._id : '/admin/faqs/new' %>" class="contact-form">
+
+    <div class="form-group">
+      <label>Question *</label>
+      <input type="text" name="question" value="<%= faq ? faq.question : '' %>" required>
+    </div>
+
+    <div class="form-group">
+      <label>Answer *</label>
+      <textarea name="answer" required><%= faq ? faq.answer : '' %></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Display Order (lower = shows first)</label>
+      <input type="number" name="order" value="<%= faq ? faq.order : 0 %>">
+    </div>
+
+    <button type="submit" class="form-submit"><%= faq ? 'Update FAQ' : 'Add FAQ' %></button>
+  </form>
+</section>
+
+<%- include('partials/footer') %>
