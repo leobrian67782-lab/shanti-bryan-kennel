@@ -1,0 +1,36 @@
+<%- include('partials/header', {title: 'Meet Our Dogs | Shanti & Bryan Pinscher Kennel'}) %>
+
+<section class="page-section">
+  <p class="section-label">Our Family</p>
+  <h1>Meet Our Dogs</h1>
+  <div class="section-underline"></div>
+  <p style="margin-top:20px;">The heart of our breeding program. Every puppy we raise carries the temperament, health, and beauty of these beloved dogs.</p>
+
+  <% if (dogs.length === 0) { %>
+    <p style="margin-top:40px;">Our dogs will be introduced here soon — check back shortly!</p>
+  <% } else { %>
+    <div class="dogs-grid">
+      <% dogs.forEach(function(dog) { %>
+        <div class="dog-card">
+          <div class="dog-photo-wrap">
+            <% if (dog.photo) { %>
+              <img src="<%= dog.photo %>" alt="<%= dog.name %>">
+            <% } else { %>
+              <div class="dog-photo-placeholder"><i class="fa-solid fa-dog"></i></div>
+            <% } %>
+            <span class="dog-gender dog-gender-<%= dog.gender.toLowerCase() %>">
+              <i class="fa-solid fa-<%= dog.gender === 'Male' ? 'mars' : 'venus' %>"></i> <%= dog.gender %>
+            </span>
+          </div>
+          <div class="dog-body">
+            <% if (dog.role) { %><span class="dog-role"><%= dog.role %></span><% } %>
+            <h3><%= dog.name %></h3>
+            <% if (dog.description) { %><p><%= dog.description %></p><% } %>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  <% } %>
+</section>
+
+<%- include('partials/footer') %>
