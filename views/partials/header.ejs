@@ -27,7 +27,7 @@
       </button>
 
       <div class="nav-overlay" id="navOverlay"></div>
-<nav class="main-nav" id="mainNav">
+      <nav class="main-nav" id="mainNav">
         <a href="/">Home</a>
         <a href="/puppies">Available Puppies</a>
         <a href="/litters">Litters</a>
@@ -44,8 +44,7 @@
     document.addEventListener('DOMContentLoaded', function() {
       var toggle = document.getElementById('menuToggle');
       var nav = document.getElementById('mainNav');
-
-var overlay = document.getElementById('navOverlay');
+      var overlay = document.getElementById('navOverlay');
       if (toggle && nav) {
         toggle.addEventListener('click', function() {
           nav.classList.toggle('nav-open');
@@ -60,4 +59,7 @@ var overlay = document.getElementById('navOverlay');
           overlay.classList.remove('show');
         });
       }
+    });
+  </script>
+
   <main>
