@@ -195,6 +195,9 @@ app.get('/blog/:slug', async (req, res) => {
 app.get('/deposit', (req, res) => {
   res.render('deposit');
 });
+app.get('/process', (req, res) => {
+     res.render('process');
+   });
 
 app.get('/seed-faqs', async (req, res) => {
   try {
