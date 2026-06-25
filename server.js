@@ -14,6 +14,7 @@ const Testimonial = require('./models/Testimonial');
 const Faq = require('./models/Faq');
 const Settings = require('./models/Settings');
 const Post = require('./models/Post');
+const Dog = require('./models/Dog');
 
 const app = express();
 app.set('trust proxy', true);
@@ -102,10 +103,11 @@ app.get('/', async (req, res) => {
   try {
     const featuredPuppies = await Puppy.find({ status: 'Available' }).sort({ createdAt: -1 }).limit(3);
     const testimonials = await Testimonial.find().sort({ createdAt: -1 }).limit(3);
-    res.render('home', { featuredPuppies, testimonials });
+    const dogs = await Dog.find().sort({ order: 1, createdAt: 1 });
+    res.render('home', { featuredPuppies, testimonials, dogs });
   } catch (err) {
     console.error(err);
-    res.render('home', { featuredPuppies: [], testimonials: [] });
+    res.render('home', { featuredPuppies: [], testimonials: [], dogs: [] });
   }
 });
 
@@ -195,9 +197,20 @@ app.get('/blog/:slug', async (req, res) => {
 app.get('/deposit', (req, res) => {
   res.render('deposit');
 });
+
 app.get('/process', (req, res) => {
-     res.render('process');
-   });
+  res.render('process');
+});
+
+app.get('/our-dogs', async (req, res) => {
+  try {
+    const dogs = await Dog.find().sort({ order: 1, createdAt: 1 });
+    res.render('our-dogs', { dogs });
+  } catch (err) {
+    console.error(err);
+    res.render('our-dogs', { dogs: [] });
+  }
+});
 
 app.get('/seed-faqs', async (req, res) => {
   try {
@@ -236,7 +249,6 @@ app.post('/contact', async (req, res) => {
     try {
       let ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || '';
       ip = ip.replace('::ffff:', '');
-      // Skip lookup for local addresses (development)
       if (ip && ip !== '127.0.0.1' && ip !== '::1' && !ip.startsWith('192.168.') && !ip.startsWith('10.')) {
         const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,regionName,city`);
         const geo = await geoRes.json();
@@ -285,7 +297,8 @@ app.get('/admin/dashboard', requireLogin, async (req, res) => {
   const faqs = await Faq.find().sort({ order: 1 });
   const posts = await Post.find().sort({ createdAt: -1 });
   const inquiries = await Contact.find().sort({ createdAt: -1 });
-  res.render('admin-dashboard', { puppies, litters, testimonials, faqs, posts, inquiries });
+  const dogs = await Dog.find().sort({ order: 1 });
+  res.render('admin-dashboard', { puppies, litters, testimonials, faqs, posts, inquiries, dogs });
 });
 
 // ===== ADMIN PUPPIES =====
@@ -540,17 +553,6 @@ app.get('/admin/faqs/delete/:id', requireLogin, async (req, res) => {
   res.redirect('/admin/dashboard');
 });
 
-// ===== ADMIN INQUIRIES =====
-app.get('/admin/inquiries', requireLogin, async (req, res) => {
-  const inquiries = await Contact.find().sort({ createdAt: -1 });
-  res.render('admin-inquiries', { inquiries });
-});
-
-app.get('/admin/inquiries/delete/:id', requireLogin, async (req, res) => {
-  await Contact.findByIdAndDelete(req.params.id);
-  res.redirect('/admin/inquiries');
-});
-
 // ===== ADMIN SETTINGS =====
 app.get('/admin/settings', requireLogin, async (req, res) => {
   const settings = await getSettings();
@@ -625,6 +627,61 @@ app.post('/admin/posts/edit/:id', requireLogin, upload.single('image'), async (r
 
 app.get('/admin/posts/delete/:id', requireLogin, async (req, res) => {
   await Post.findByIdAndDelete(req.params.id);
+  res.redirect('/admin/dashboard');
+});
+
+// ===== ADMIN DOGS =====
+app.get('/admin/dogs/new', requireLogin, (req, res) => {
+  res.render('admin-dog-form', { dog: null });
+});
+
+app.post('/admin/dogs/new', requireLogin, upload.single('photo'), async (req, res) => {
+  try {
+    const dog = new Dog({
+      name: req.body.name,
+      gender: req.body.gender,
+      role: req.body.role,
+      order: req.body.order || 0,
+      description: req.body.description,
+      photo: req.file ? req.file.path : ''
+    });
+    await dog.save();
+    res.redirect('/admin/dashboard');
+  } catch (err) {
+    console.error('ADD DOG ERROR:', err);
+    res.send('Error adding dog: ' + err.message);
+  }
+});
+
+app.get('/admin/dogs/edit/:id', requireLogin, async (req, res) => {
+  try {
+    const dog = await Dog.findById(req.params.id);
+    res.render('admin-dog-form', { dog });
+  } catch (err) {
+    res.send('Error: ' + err.message);
+  }
+});
+
+app.post('/admin/dogs/edit/:id', requireLogin, upload.single('photo'), async (req, res) => {
+  try {
+    const updateData = {
+      name: req.body.name,
+      gender: req.body.gender,
+      role: req.body.role,
+      order: req.body.order || 0,
+      description: req.body.description
+    };
+    if (req.file) updateData.photo = req.file.path;
+    await Dog.findByIdAndUpdate(req.params.id, updateData);
+    res.redirect('/admin/dashboard');
+  } catch (err) {
+    console.error('UPDATE DOG ERROR:', err);
+    res.send('Error updating dog: ' + err.message);
+  }
+});
+
+app.get('/admin/dogs/delete/:id', requireLogin, async (req, res) => {
+  await Dog.findByIdAndDelete(req.params.id);
   res.redirect('/admin/dashboard');
 });
 
