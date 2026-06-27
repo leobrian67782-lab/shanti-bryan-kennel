@@ -1558,8 +1558,9 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   .footer-socials { justify-content: center; }
   .footer-links-wrap { grid-template-columns: 1fr 1fr; gap: 28px 16px; text-align: left; }
   .footer-col h4, .footer-connect h4 { text-align: left; }
-  .footer-connect { text-align: center; }
-  .footer-connect .footer-contact { justify-content: center; }
+  .footer-connect { text-align: left; }
+  .footer-connect .footer-contact { justify-content: flex-start; }
+  .footer-message-btn { margin-left: 0; }
   .footer-bottom-inner { flex-direction: column; text-align: center; gap: 8px; }
   .back-to-top { width: 44px; height: 44px; right: 16px; bottom: 16px; }
 }
