@@ -61,13 +61,17 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   flex-wrap: wrap;
 }
 .logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   color: #fff;
   font-family: 'Playfair Display', serif;
   font-size: 1.4rem;
   font-weight: 700;
   text-decoration: none;
 }
-.logo span { color: var(--gold); }
+.logo-img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.logo-text span { color: var(--gold); }
 .main-nav { display: flex; gap: 26px; flex-wrap: wrap; }
 .main-nav a {
   color: #e8e2d8;
@@ -633,7 +637,9 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   gap: 40px;
   padding: 60px 24px 40px;
 }
-.footer-logo { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: #fff; margin-bottom: 14px; }
+.footer-logo-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.footer-logo-img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.footer-logo { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: #fff; margin-bottom: 0; }
 .footer-logo span { color: var(--gold); }
 .footer-about { font-size: 0.92rem; color: #8a93a0; line-height: 1.8; margin-bottom: 20px; }
 .footer-socials { display: flex; gap: 12px; }
@@ -1031,13 +1037,17 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   padding: 24px;
   border-bottom: 1px solid #1a1f2a;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
+.admin-brand-img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.admin-brand > div { display: flex; flex-direction: column; }
 .admin-brand-name {
   font-family: 'Playfair Display', serif;
-  font-size: 1.4rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--gold);
+  line-height: 1.2;
 }
 .admin-brand-sub {
   font-size: 0.72rem;
@@ -1770,7 +1780,8 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   .main-nav.nav-open { display: flex; }
   .main-nav a { padding: 14px 0; border-top: 1px solid #1e2d40; width: 100%; }
   .header-inner { flex-wrap: wrap; }
-  .logo { font-size: 1.15rem; }
+  .logo { font-size: 1.15rem; gap: 8px; }
+  .logo-img { width: 34px; height: 34px; }
 
   /* Tighter section spacing */
   .page-section { padding: 44px 18px; }
@@ -1874,6 +1885,7 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
     text-align: center;
   }
   .footer-about { max-width: 100%; margin: 0 auto 20px; }
+  .footer-logo-row { justify-content: center; }
   .footer-socials { justify-content: center; }
   .footer-links-wrap { grid-template-columns: 1fr 1fr; gap: 28px 16px; text-align: left; }
   .footer-col h4, .footer-connect h4 { text-align: left; }
@@ -1890,7 +1902,8 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   .page-section h1 { font-size: 1.7rem; }
   .hero-stats { gap: 16px; }
   .hero-stat .counter, .hero-stat .counter-percent { font-size: 1.7rem; }
-  .logo { font-size: 1rem; }
+  .logo { font-size: 1rem; gap: 6px; }
+  .logo-img { width: 28px; height: 28px; }
   
   /* Admin adjustments for extra-small screens */
   .admin-sidebar { width: 220px; }
