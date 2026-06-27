@@ -1,690 +1,1583 @@
-require('dotenv').config();
-const express = require('express');
-const mongoose = require('mongoose');
-const path = require('path');
-const session = require('express-session');
-const multer = require('multer');
-const { v2: cloudinary } = require('cloudinary');
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-const Puppy = require('./models/Puppy');
-const Litter = require('./models/Litter');
-const Contact = require('./models/Contact');
-const Testimonial = require('./models/Testimonial');
-const Faq = require('./models/Faq');
-const Settings = require('./models/Settings');
-const Post = require('./models/Post');
-const Dog = require('./models/Dog');
-
-const app = express();
-app.set('trust proxy', true);
-const PORT = process.env.PORT || 3000;
-
-// Cloudinary config
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
-
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'shanti-bryan-kennel',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp']
-  }
-});
-const upload = multer({ storage: storage });
-
-// View engine
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-
-// Static + body parsing
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-
-// Sessions
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'fallback-secret',
-  resave: false,
-  saveUninitialized: false
-}));
-
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('✅ Connected to MongoDB'))
-  .catch((err) => console.error('❌ MongoDB connection error:', err));
-
-// Auth middleware
-function requireLogin(req, res, next) {
-  if (req.session.isAdmin) {
-    next();
-  } else {
-    res.redirect('/admin/login');
-  }
+:root {
+  --navy: #0d1b2a;
+  --navy-light: #16263a;
+  --maroon: #7a1f1f;
+  --maroon-dark: #5e1717;
+  --gold: #c9a227;
+  --gold-light: #d4af37;
+  --cream: #f5f0e8;
+  --text: #222;
+  --text-light: #5c5c5c;
 }
 
-// Helper for litter photo fields
-const litterUpload = upload.fields([
-  { name: 'photo', maxCount: 1 },
-  { name: 'sirePhoto', maxCount: 1 },
-  { name: 'damPhoto', maxCount: 1 }
-]);
-
-// Turns a title into a URL-friendly slug
-function makeSlug(title) {
-  return title.toLowerCase().trim()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-');
+body {
+  font-family: 'Poppins', sans-serif;
+  color: var(--text);
+  background: var(--cream);
+  line-height: 1.6;
 }
 
-// Always returns the single settings document, creating it if missing
-async function getSettings() {
-  let settings = await Settings.findOne();
-  if (!settings) settings = await Settings.create({});
-  return settings;
+h1, h2, h3 { font-family: 'Playfair Display', serif; }
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
 }
 
-// Make settings available to ALL views automatically
-app.use(async (req, res, next) => {
-  try {
-    res.locals.settings = await getSettings();
-  } catch (err) {
-    res.locals.settings = {};
+/* Section label + heading */
+.section-label {
+  color: var(--maroon);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 12px;
+}
+.section-underline {
+  width: 70px;
+  height: 3px;
+  background: var(--gold);
+  margin: 16px auto 0;
+  border-radius: 2px;
+}
+
+/* Header */
+.site-header {
+  background: var(--navy);
+  padding: 16px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+}
+.header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.logo {
+  color: #fff;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.logo span { color: var(--gold); }
+.main-nav { display: flex; gap: 26px; flex-wrap: wrap; }
+.main-nav a {
+  color: #e8e2d8;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  position: relative;
+  transition: color 0.3s ease;
+}
+.main-nav a::after {
+  content: '';
+  position: absolute;
+  bottom: -6px; left: 0;
+  width: 0; height: 2px;
+  background: var(--gold);
+  transition: width 0.3s ease;
+}
+.main-nav a:hover { color: var(--gold); }
+.main-nav a:hover::after { width: 100%; }
+
+/* Hamburger */
+.menu-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+}
+.menu-toggle span {
+  display: block;
+  width: 26px;
+  height: 3px;
+  background: #fff;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+.menu-toggle.active span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+.menu-toggle.active span:nth-child(2) { opacity: 0; }
+.menu-toggle.active span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+
+/* Hero buttons (used in hero-main and CTA section) */
+.hero-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  background: var(--maroon);
+  color: #fff;
+  padding: 15px 34px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+}
+.btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(122,31,31,0.35);
+  background: var(--maroon-dark);
+}
+.btn-gold {
+  background: var(--gold);
+  color: var(--navy);
+}
+.btn-gold:hover {
+  background: var(--gold-light);
+  box-shadow: 0 8px 20px rgba(201,162,39,0.4);
+}
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--gold);
+  color: var(--gold);
+}
+.btn-outline:hover {
+  background: var(--gold);
+  color: var(--navy);
+  box-shadow: 0 8px 20px rgba(201,162,39,0.3);
+}
+
+/* Page sections */
+.page-section {
+  padding: 70px 24px;
+  text-align: center;
+  animation: fadeIn 1s ease;
+}
+.page-section h1 {
+  font-size: 2.6rem;
+  margin-bottom: 16px;
+  color: var(--navy);
+}
+.page-section h2 {
+  font-size: 2.2rem;
+  margin-bottom: 16px;
+  color: var(--navy);
+}
+.page-section > p {
+  font-size: 1.1rem;
+  color: var(--text-light);
+  max-width: 650px;
+  margin: 0 auto;
+}
+
+/* Stats */
+.stats-section {
+  background: var(--maroon);
+  color: #fff;
+  padding: 60px 24px;
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 30px;
+  max-width: 1000px;
+  margin: 0 auto;
+  text-align: center;
+}
+.counter {
+  font-family: 'Playfair Display', serif;
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--gold);
+  display: block;
+}
+.stat-label {
+  font-size: 0.95rem;
+  color: #f0e8d8;
+  margin-top: 6px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Card grid */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 28px;
+  margin-top: 44px;
+}
+.card {
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.07);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 14px 32px rgba(0,0,0,0.13);
+}
+.card img { width: 100%; height: 240px; object-fit: cover; }
+.card-body { padding: 22px; text-align: left; }
+.card-body h3 { color: var(--navy); font-size: 1.4rem; }
+.card-price { color: var(--maroon); font-weight: 700; font-size: 1.5rem; font-family: 'Playfair Display', serif; }
+
+/* Info pills (Male, 4 wks, etc) */
+.info-pills { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+.info-pill {
+  background: #faf7f0;
+  border: 1px solid #e6ddc8;
+  color: var(--text-light);
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-block;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.status-available { background: #2e9e4f; color: #fff; }
+.status-reserved { background: var(--gold); color: var(--navy); }
+.status-sold { background: #888; color: #fff; }
+
+/* Feature cards */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
+  max-width: 1000px;
+  margin: 44px auto 0;
+}
+.feature-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 36px 24px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.feature-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 14px 30px rgba(0,0,0,0.12);
+}
+.feature-icon { font-size: 2.4rem; margin-bottom: 16px; color: var(--gold); }
+.feature-card h3 { font-size: 1.3rem; color: var(--navy); margin-bottom: 10px; }
+.feature-card p { color: var(--text-light); font-size: 0.95rem; }
+
+/* Puppy Gallery */
+.gallery-main {
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  cursor: zoom-in;
+  max-height: 420px;
+  object-fit: cover;
+}
+.gallery-thumbs { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.gallery-thumb {
+  width: 70px; height: 70px;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.gallery-thumb:hover { transform: scale(1.05); }
+.gallery-thumb.active { border-color: var(--gold); }
+
+/* Bloodline / Parents */
+.bloodline-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.parent-card {
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  transition: transform 0.3s ease;
+}
+.parent-card:hover { transform: translateY(-5px); }
+.parent-card img { width: 100%; height: 260px; object-fit: cover; display: block; }
+.parent-body { padding: 22px; text-align: left; }
+.parent-label {
+  display: inline-block;
+  background: #faf7f0;
+  color: var(--gold);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+}
+.parent-body h3 { font-size: 1.4rem; color: var(--navy); margin-bottom: 12px; }
+.parent-body p { color: var(--text-light); font-size: 0.95rem; margin-bottom: 6px; }
+
+/* Testimonials */
+.testimonial-list {
+  max-width: 750px;
+  margin: 44px auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.testimonial-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 30px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.07);
+  text-align: left;
+}
+.testimonial-stars { color: var(--gold); font-size: 1.3rem; margin-bottom: 14px; }
+.testimonial-quote-mark {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.5rem;
+  color: var(--gold);
+  line-height: 0.5;
+}
+.testimonial-message {
+  font-size: 1.05rem;
+  color: var(--text);
+  line-height: 1.7;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
+}
+.testimonial-author { display: flex; align-items: center; gap: 14px; }
+.testimonial-avatar {
+  width: 54px; height: 54px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--gold);
+}
+.testimonial-avatar-placeholder {
+  width: 54px; height: 54px;
+  border-radius: 50%;
+  border: 2px solid var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #faf7f0;
+  color: var(--gold);
+  font-size: 1.2rem;
+}
+.testimonial-name { font-weight: 700; color: var(--navy); font-size: 1.05rem; }
+.testimonial-location { font-size: 0.88rem; color: var(--text-light); }
+
+/* Lightbox */
+.lightbox {
+  display: none;
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.9);
+  z-index: 1000;
+  align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.lightbox img { max-width: 90%; max-height: 90%; border-radius: 8px; }
+.lightbox-close { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 2.5rem; cursor: pointer; }
+
+/* FAQ */
+.faq-list { max-width: 750px; margin: 44px auto 0; text-align: left; }
+.faq-item {
+  background: #fff;
+  border-radius: 10px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  overflow: hidden;
+}
+.faq-question {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 20px 24px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--navy);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+}
+.faq-icon { color: var(--gold); font-size: 1.5rem; transition: transform 0.3s ease; flex-shrink: 0; margin-left: 16px; }
+.faq-item.open .faq-icon { transform: rotate(45deg); }
+.faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; padding: 0 24px; }
+.faq-item.open .faq-answer { max-height: 500px; padding: 0 24px 20px; }
+.faq-answer p { color: var(--text-light); line-height: 1.7; margin: 0; }
+
+/* Forms */
+.contact-form {
+  max-width: 600px;
+  margin: 44px auto 0;
+  background: #fff;
+  padding: 36px;
+  border-radius: 14px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.07);
+}
+.form-group { margin-bottom: 20px; text-align: left; }
+.form-group label { display: block; font-weight: 600; margin-bottom: 8px; color: var(--navy); }
+.form-group input, .form-group textarea, .form-group select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  transition: border-color 0.3s ease;
+}
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,162,39,0.12);
+}
+.form-group textarea { resize: vertical; min-height: 120px; }
+.form-submit {
+  background: var(--maroon);
+  color: #fff;
+  padding: 14px 32px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+  width: 100%;
+}
+.form-submit:hover { transform: translateY(-2px); background: var(--maroon-dark); box-shadow: 0 8px 20px rgba(122,31,31,0.3); }
+.form-success { background: #d4edda; color: #155724; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #c3e6cb; }
+
+/* Footer */
+.site-footer { background: var(--navy); color: #b8c0cc; }
+.footer-top {
+  display: grid;
+  grid-template-columns: 1.6fr 2fr 1.2fr;
+  gap: 40px;
+  padding: 60px 24px 40px;
+}
+.footer-logo { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: #fff; margin-bottom: 14px; }
+.footer-logo span { color: var(--gold); }
+.footer-about { font-size: 0.92rem; color: #8a93a0; line-height: 1.8; margin-bottom: 20px; }
+.footer-socials { display: flex; gap: 12px; }
+.footer-socials a {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  border: 1px solid #2a3650;
+  color: #b8c0cc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+.footer-socials a:hover { border-color: var(--gold); color: var(--gold); transform: translateY(-3px); }
+
+.footer-links-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+.footer-col h4 {
+  color: var(--gold);
+  font-size: 0.9rem;
+  margin-bottom: 18px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #1e2d40;
+}
+.footer-links { list-style: none; }
+.footer-links li { margin-bottom: 14px; }
+.footer-links a {
+  color: #8a93a0;
+  text-decoration: none;
+  font-size: 0.92rem;
+  transition: color 0.3s ease, padding-left 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.footer-links a i { color: var(--gold); font-size: 0.7rem; }
+.footer-links a:hover { color: var(--gold); padding-left: 4px; }
+
+.footer-connect h4 {
+  color: var(--gold);
+  font-size: 0.9rem;
+  margin-bottom: 18px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #1e2d40;
+}
+.footer-contact { font-size: 0.92rem; color: #b8c0cc; margin-bottom: 14px; display: flex; align-items: center; gap: 12px; }
+.footer-contact i { color: var(--gold); }
+.footer-message-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--gold);
+  color: var(--navy);
+  padding: 13px 26px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.92rem;
+  margin-top: 10px;
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+.footer-message-btn:hover { background: var(--gold-light); transform: translateY(-2px); }
+
+.footer-bottom {
+  border-top: 1px solid #1e2d40;
+  padding: 22px 0;
+}
+.footer-bottom-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: #6b7585;
+}
+.footer-bottom-sub { display: flex; align-items: center; gap: 6px; }
+.footer-bottom-sub a { color: var(--gold); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.footer-bottom-sub a:hover { text-decoration: underline; }
+
+/* Loader */
+.loader {
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: var(--navy);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+.loader-hidden { opacity: 0; visibility: hidden; }
+.loader-ring {
+  width: 90px; height: 90px;
+  border: 4px solid rgba(201,162,39,0.2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  animation: spin 1s linear infinite;
+}
+.loader-paw { font-size: 2rem; color: var(--gold); animation: spin-reverse 1s linear infinite; }
+.loader-text { color: var(--gold); font-family: 'Playfair Display', serif; font-size: 1.2rem; margin-top: 24px; letter-spacing: 1px; animation: pulse 1.5s ease infinite; }
+
+/* Scroll Reveal */
+.reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.8s ease, transform 0.8s ease; }
+.reveal.revealed { opacity: 1; transform: translateY(0); }
+
+/* Animations */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin-reverse { to { transform: rotate(-360deg); } }
+@keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+/* New Hero */
+.hero-main {
+  position: relative;
+  background: linear-gradient(135deg, var(--maroon-dark) 0%, #3a1414 40%, var(--navy) 100%);
+  color: #fff;
+  overflow: hidden;
+}
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(201,162,39,0.08) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+}
+.hero-inner {
+  position: relative;
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+  padding: 90px 24px 50px;
+  animation: fadeIn 1.2s ease;
+}
+.hero-inner h1 {
+  font-size: 3.2rem;
+  line-height: 1.15;
+  margin-bottom: 24px;
+  animation: slideUp 1s ease;
+}
+.hero-inner h1 .amp { color: var(--gold); }
+.hero-inner > p {
+  font-size: 1.1rem;
+  color: #d8d2c8;
+  max-width: 620px;
+  margin: 0 auto 32px;
+}
+.btn-dashed {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 14px 28px;
+  border: 2px dashed var(--gold);
+  border-radius: 6px;
+  color: var(--gold);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background 0.3s ease;
+}
+.btn-dashed:hover { background: rgba(201,162,39,0.1); }
+
+.hero-stats {
+  display: flex;
+  justify-content: center;
+  gap: 60px;
+  margin-top: 50px;
+  flex-wrap: wrap;
+}
+.hero-stat { text-align: center; }
+.hero-stat .counter, .hero-stat .counter-percent {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.6rem;
+  font-weight: 700;
+  color: var(--gold);
+  display: block;
+}
+.hero-stat-label {
+  font-size: 0.85rem;
+  color: #d8d2c8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+.hero-feature-bar {
+  position: relative;
+  background: var(--maroon);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  padding: 24px 32px;
+  max-width: 1000px;
+  margin: 0 auto;
+  border-radius: 10px 10px 0 0;
+  transform: translateY(1px);
+}
+.hero-feature {
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+/* Every Puppy Includes card */
+.includes-card {
+  background: linear-gradient(135deg, var(--navy) 0%, #2a1818 100%);
+  border-radius: 16px;
+  padding: 44px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+.includes-list {
+  list-style: none;
+  margin-top: 20px;
+  text-align: left;
+}
+.includes-list li {
+  color: #e8e2d8;
+  padding: 10px 0;
+  font-size: 1.05rem;
+  position: relative;
+  padding-left: 36px;
+}
+.includes-list li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  width: 24px; height: 24px;
+  background: var(--gold);
+  color: var(--navy);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+/* CTA */
+.cta-section {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--maroon-dark) 100%);
+  color: #fff;
+  text-align: center;
+  padding: 80px 24px;
+}
+.cta-section h2 {
+  font-size: 2.4rem;
+  color: var(--gold);
+  margin-bottom: 16px;
+}
+.cta-section p {
+  color: #d8d2c8;
+  max-width: 550px;
+  margin: 0 auto;
+  font-size: 1.1rem;
+}
+
+/* Deposit page */
+.deposit-answer {
+  margin-top: 40px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 36px;
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.07);
+}
+.deposit-yes {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  color: #2e9e4f;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+.deposit-yes i { margin-right: 8px; }
+.deposit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+  max-width: 900px;
+  margin: 44px auto 0;
+}
+.deposit-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 32px 24px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.deposit-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 14px 30px rgba(0,0,0,0.12);
+}
+.deposit-card h3 { color: var(--navy); font-size: 1.2rem; margin-bottom: 10px; }
+.deposit-card p { color: var(--text-light); font-size: 0.95rem; }
+.deposit-note {
+  background: #faf7f0;
+  border: 1px solid #e6ddc8;
+  border-radius: 10px;
+  padding: 20px 24px;
+  max-width: 760px;
+  margin: 44px auto 0;
+}
+.deposit-note p { color: var(--text-light); font-size: 0.95rem; margin: 0; }
+
+/* About page */
+.about-content {
+  max-width: 760px;
+  margin: 36px auto 0;
+  text-align: left;
+}
+.about-content p {
+  color: var(--text-light);
+  font-size: 1.05rem;
+  line-height: 1.9;
+  margin-bottom: 20px;
+}
+.about-values {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+  max-width: 900px;
+  margin: 50px auto 0;
+}
+/* ===== ADMIN PANEL ===== */
+.admin-layout { display: flex; min-height: 100vh; background: #0d1117; }
+
+.admin-sidebar {
+  width: 260px;
+  background: #0a0e14;
+  color: #fff;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  border-right: 1px solid #1a1f2a;
+}
+.admin-brand {
+  padding: 24px;
+  border-bottom: 1px solid #1a1f2a;
+  display: flex;
+  flex-direction: column;
+}
+.admin-brand-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+.admin-brand-sub {
+  font-size: 0.72rem;
+  color: #6b7585;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-top: 4px;
+}
+.admin-nav { display: flex; flex-direction: column; padding: 12px 0 24px; }
+.admin-nav-group {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #5a6472;
+  padding: 18px 24px 8px;
+  font-weight: 600;
+}
+.admin-nav a {
+  color: #c5cdd8;
+  text-decoration: none;
+  padding: 12px 24px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.admin-nav a i { width: 20px; text-align: center; font-size: 1rem; }
+.admin-nav a:hover { background: #141a24; color: var(--gold); }
+.admin-nav a.active {
+  background: #1a1410;
+  color: var(--gold);
+  border-left: 3px solid var(--gold);
+}
+.admin-logout { margin-top: 12px; border-top: 1px solid #1a1f2a; color: #e8a0a0 !important; }
+
+.admin-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.admin-topbar {
+  background: #0a0e14;
+  padding: 18px 32px;
+  border-bottom: 1px solid #1a1f2a;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.admin-topbar h2 { font-size: 1.4rem; color: #fff; margin: 0; flex: 1; }
+.admin-menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  color: #fff;
+  cursor: pointer;
+}
+.admin-avatar {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--maroon));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-family: 'Playfair Display', serif;
+}
+.admin-content { padding: 28px; background: #0d1117; flex: 1; }
+
+/* Overview cards */
+.admin-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  margin-bottom: 28px;
+}
+.admin-overview-card {
+  background: #151b26;
+  border: 1px solid #1f2733;
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+.admin-overview-icon {
+  width: 52px; height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+.admin-overview-num {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+  display: block;
+  line-height: 1;
+  font-family: 'Playfair Display', serif;
+}
+.admin-overview-label {
+  font-size: 0.92rem;
+  color: #c5cdd8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: block;
+  margin: 6px 0;
+}
+.admin-overview-sub { font-size: 0.82rem; color: #6b7585; display: block; }
+
+/* Sections (dark) */
+.admin-section {
+  background: #151b26;
+  border: 1px solid #1f2733;
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.admin-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.admin-section-head h3 { font-size: 1.2rem; color: #fff; margin: 0; display: flex; align-items: center; gap: 10px; }
+.admin-empty { color: #6b7585; font-style: italic; }
+
+.admin-btn {
+  background: var(--maroon);
+  color: #fff;
+  padding: 9px 18px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s ease;
+}
+.admin-btn:hover { background: var(--maroon-dark); }
+
+/* Quick actions */
+.admin-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+}
+.admin-quick-card {
+  background: #1c2430;
+  border: 1px solid #2a3441;
+  border-radius: 12px;
+  padding: 26px 16px;
+  text-decoration: none;
+  color: #c5cdd8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+.admin-quick-card i { font-size: 1.5rem; }
+.admin-quick-card:hover { transform: translateY(-4px); border-color: var(--gold); }
+.admin-quick-primary {
+  background: var(--gold);
+  color: var(--navy);
+  border-color: var(--gold);
+}
+.admin-quick-primary i { color: var(--navy); }
+.admin-quick-outline {
+  background: transparent;
+  border: 1px solid var(--gold);
+  color: var(--gold);
+}
+
+/* Recent rows */
+.admin-recent-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid #1f2733;
+}
+.admin-recent-row:last-child { border-bottom: none; }
+.admin-recent-title { font-weight: 600; color: #fff; display: block; }
+.admin-recent-sub { font-size: 0.85rem; color: #6b7585; display: block; margin-top: 2px; }
+.admin-recent-date { font-size: 0.8rem; color: #6b7585; display: block; margin-top: 4px; }
+.admin-badge-new {
+  background: #1e3a5f;
+  color: #5e9be0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+}
+
+/* Tables (dark) */
+.admin-table { width: 100%; border-collapse: collapse; }
+.admin-table th {
+  text-align: left;
+  padding: 12px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6b7585;
+  border-bottom: 1px solid #1f2733;
+}
+.admin-table td { padding: 14px 12px; border-bottom: 1px solid #1f2733; font-size: 0.9rem; color: #c5cdd8; vertical-align: middle; }
+.admin-table tr:last-child td { border-bottom: none; }
+.admin-thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 8px; }
+.admin-actions { display: flex; gap: 8px; }
+.admin-btn-sm {
+  width: 34px; height: 34px;
+  border-radius: 6px;
+  background: #1c2430;
+  color: #c5cdd8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.admin-btn-sm:hover { background: var(--gold); color: var(--navy); }
+.admin-btn-danger { background: #2a1518; color: #e8848f; }
+.admin-btn-danger:hover { background: #c0392b; color: #fff; }
+
+/* Admin forms on dark bg */
+.admin-content .form-group label { color: #c5cdd8; }
+.admin-content .form-group input,
+.admin-content .form-group textarea,
+.admin-content .form-group select {
+  background: #1c2430;
+  border-color: #2a3441;
+  color: #fff;
+}
+.admin-content .form-success { background: #15311f; color: #6ee7a0; border-color: #1e4d2f; }
+
+@media (max-width: 768px) {
+  /* Admin Sidebar */
+  .admin-sidebar {
+    position: fixed;
+    left: -260px;
+    z-index: 200;
+    transition: left 0.3s ease;
+    width: 240px;
   }
-  next();
-});
-
-// ===== PUBLIC ROUTES =====
-app.get('/', async (req, res) => {
-  try {
-    const featuredPuppies = await Puppy.find({ status: 'Available' }).sort({ createdAt: -1 }).limit(3);
-    const testimonials = await Testimonial.find().sort({ createdAt: -1 }).limit(3);
-    const dogs = await Dog.find().sort({ order: 1, createdAt: 1 });
-    res.render('home', { featuredPuppies, testimonials, dogs });
-  } catch (err) {
-    console.error(err);
-    res.render('home', { featuredPuppies: [], testimonials: [], dogs: [] });
+  .admin-sidebar.open { left: 0; }
+  .admin-menu-toggle { display: block; }
+  .admin-content { padding: 14px; }
+  
+  /* Admin Brand */
+  .admin-brand-name { font-size: 1.2rem; }
+  .admin-brand-sub { font-size: 0.65rem; }
+  
+  /* Admin Navigation */
+  .admin-nav a { 
+    padding: 10px 14px; 
+    font-size: 0.85rem;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
   }
-});
-
-app.get('/puppies', async (req, res) => {
-  try {
-    const puppies = await Puppy.find().sort({ createdAt: -1 });
-    res.render('puppies', { puppies });
-  } catch (err) {
-    console.error(err);
-    res.render('puppies', { puppies: [] });
+  .admin-nav-group { 
+    font-size: 0.65rem; 
+    padding: 14px 14px 6px;
   }
-});
-
-app.get('/puppies/:id', async (req, res) => {
-  try {
-    const puppy = await Puppy.findById(req.params.id);
-    if (!puppy) return res.redirect('/puppies');
-    res.render('puppy-detail', { puppy });
-  } catch (err) {
-    console.error(err);
-    res.redirect('/puppies');
+  
+  /* Admin Topbar */
+  .admin-topbar { 
+    padding: 12px 14px; 
+    gap: 12px;
   }
-});
-
-app.get('/litters', async (req, res) => {
-  try {
-    const litters = await Litter.find().sort({ createdAt: -1 });
-    res.render('litters', { litters });
-  } catch (err) {
-    console.error(err);
-    res.render('litters', { litters: [] });
+  .admin-topbar h2 { font-size: 1.1rem; }
+  
+  /* Admin Overview Cards */
+  .admin-overview-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 18px;
   }
-});
-
-app.get('/litters/:id', async (req, res) => {
-  try {
-    const litter = await Litter.findById(req.params.id);
-    if (!litter) return res.redirect('/litters');
-    res.render('litter-detail', { litter });
-  } catch (err) {
-    console.error(err);
-    res.redirect('/litters');
+  .admin-overview-card {
+    padding: 14px;
+    gap: 12px;
   }
-});
-
-app.get('/testimonials', async (req, res) => {
-  try {
-    const testimonials = await Testimonial.find().sort({ createdAt: -1 });
-    res.render('testimonials', { testimonials });
-  } catch (err) {
-    console.error(err);
-    res.render('testimonials', { testimonials: [] });
+  .admin-overview-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 1.2rem;
   }
-});
-
-app.get('/faq', async (req, res) => {
-  try {
-    const faqs = await Faq.find().sort({ order: 1, createdAt: 1 });
-    res.render('faq', { faqs });
-  } catch (err) {
-    console.error(err);
-    res.render('faq', { faqs: [] });
+  .admin-overview-num { font-size: 1.6rem; }
+  .admin-overview-label { font-size: 0.75rem; }
+  .admin-overview-sub { font-size: 0.7rem; }
+  
+  /* Admin Section */
+  .admin-section {
+    padding: 14px;
+    margin-bottom: 14px;
   }
-});
-
-app.get('/blog', async (req, res) => {
-  try {
-    const posts = await Post.find({ published: true }).sort({ createdAt: -1 });
-    res.render('blog', { posts });
-  } catch (err) {
-    console.error(err);
-    res.render('blog', { posts: [] });
+  .admin-section-head { margin-bottom: 14px; }
+  .admin-section-head h3 { 
+    font-size: 1rem; 
+    gap: 8px;
   }
-});
-
-app.get('/blog/:slug', async (req, res) => {
-  try {
-    const post = await Post.findOne({ slug: req.params.slug });
-    if (!post) return res.redirect('/blog');
-    res.render('post-detail', { post });
-  } catch (err) {
-    console.error(err);
-    res.redirect('/blog');
+  
+  /* Admin Buttons */
+  .admin-btn {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    min-height: 36px;
+    gap: 6px;
   }
-});
-
-app.get('/deposit', (req, res) => {
-  res.render('deposit');
-});
-
-app.get('/process', (req, res) => {
-  res.render('process');
-});
-
-app.get('/our-dogs', async (req, res) => {
-  try {
-    const dogs = await Dog.find().sort({ order: 1, createdAt: 1 });
-    res.render('our-dogs', { dogs });
-  } catch (err) {
-    console.error(err);
-    res.render('our-dogs', { dogs: [] });
+  
+  /* Admin Quick Cards */
+  .admin-quick-grid {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 10px;
   }
-});
-
-app.get('/seed-faqs', async (req, res) => {
-  try {
-    await Faq.deleteMany({});
-    await Faq.insertMany([
-      { question: 'How much do your puppies cost?', answer: 'Our puppy prices vary depending on bloodline, conformation, and availability. Please contact us for current pricing on available puppies.', order: 1 },
-      { question: 'Are the puppies vaccinated and dewormed?', answer: 'Yes. All our puppies are up to date on age-appropriate vaccinations and deworming before going to their new homes, and come with a health record.', order: 2 },
-      { question: 'Do you offer delivery?', answer: 'Yes, we offer safe delivery arrangements. Delivery options and costs depend on your location — please contact us to discuss.', order: 3 },
-      { question: 'Are your puppies registered?', answer: 'Our puppies come from quality bloodlines. Registration details are available per litter — please ask us about a specific puppy.', order: 4 },
-      { question: 'Do you offer a health guarantee?', answer: 'Yes, all our puppies come with a health guarantee. We are committed to the lifelong health and wellbeing of every puppy we place.', order: 5 },
-      { question: 'How do I reserve a puppy?', answer: 'Reach out through our Contact page with the puppy you are interested in. We will guide you through the reservation process step by step.', order: 6 }
-    ]);
-    res.send('✅ FAQs seeded! Visit <a href="/faq">/faq</a> to see them.');
-  } catch (err) {
-    res.send('Error: ' + err.message);
+  .admin-quick-card {
+    padding: 16px 10px;
+    font-size: 0.8rem;
+    gap: 8px;
   }
-});
-
-app.get('/about', (req, res) => {
-  res.render('about');
-});
-
-app.get('/contact', (req, res) => {
-  res.render('contact', { message: '' });
-});
-
-app.post('/contact', async (req, res) => {
-  try {
-    const { name, email, phone, location, subject, message } = req.body;
-    if (!name || !email || !subject || !message) {
-      return res.render('contact', { message: 'All fields are required.' });
-    }
-
-    // Try to auto-detect location from the visitor's IP (best-effort, never blocks the message)
-    let detectedLocation = '';
-    try {
-      let ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || '';
-      ip = ip.replace('::ffff:', '');
-      if (ip && ip !== '127.0.0.1' && ip !== '::1' && !ip.startsWith('192.168.') && !ip.startsWith('10.')) {
-        const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,regionName,city`);
-        const geo = await geoRes.json();
-        if (geo && geo.status === 'success') {
-          detectedLocation = [geo.city, geo.regionName, geo.country].filter(Boolean).join(', ');
-        }
-      }
-    } catch (geoErr) {
-      console.log('Geo lookup skipped:', geoErr.message);
-    }
-
-    await new Contact({ name, email, phone, location, detectedLocation, subject, message }).save();
-    res.render('contact', { message: '✅ Thank you! Your message has been received. We\'ll get back to you soon.' });
-  } catch (err) {
-    console.error(err);
-    res.render('contact', { message: '❌ Something went wrong. Please try again.' });
+  .admin-quick-card i { font-size: 1.3rem; }
+  
+  /* Admin Table */
+  .admin-table th {
+    padding: 8px;
+    font-size: 0.65rem;
   }
-});
-
-// ===== ADMIN AUTH =====
-app.get('/admin/login', (req, res) => {
-  res.render('admin-login', { error: '' });
-});
-
-app.post('/admin/login', (req, res) => {
-  const { username, password } = req.body;
-  if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
-    req.session.isAdmin = true;
-    res.redirect('/admin/dashboard');
-  } else {
-    res.render('admin-login', { error: 'Invalid username or password.' });
+  .admin-table td { 
+    padding: 10px 8px; 
+    font-size: 0.8rem;
   }
-});
-
-app.get('/admin/logout', (req, res) => {
-  req.session.destroy(() => {
-    res.redirect('/admin/login');
-  });
-});
-
-// ===== ADMIN DASHBOARD =====
-app.get('/admin/dashboard', requireLogin, async (req, res) => {
-  const puppies = await Puppy.find().sort({ createdAt: -1 });
-  const litters = await Litter.find().sort({ createdAt: -1 });
-  const testimonials = await Testimonial.find().sort({ createdAt: -1 });
-  const faqs = await Faq.find().sort({ order: 1 });
-  const posts = await Post.find().sort({ createdAt: -1 });
-  const inquiries = await Contact.find().sort({ createdAt: -1 });
-  const dogs = await Dog.find().sort({ order: 1 });
-  res.render('admin-dashboard', { puppies, litters, testimonials, faqs, posts, inquiries, dogs });
-});
-
-// ===== ADMIN PUPPIES =====
-app.get('/admin/puppies/new', requireLogin, (req, res) => {
-  res.render('admin-puppy-form', { puppy: null });
-});
-
-app.post('/admin/puppies/new', requireLogin, upload.array('photos', 5), async (req, res) => {
-  try {
-    const data = req.body;
-    const puppy = new Puppy({
-      name: data.name,
-      price: data.price,
-      gender: data.gender,
-      dateOfBirth: data.dateOfBirth,
-      color: data.color,
-      weight: data.weight,
-      status: data.status,
-      description: data.description,
-      sireName: data.sireName,
-      damName: data.damName,
-      vaccinated: data.vaccinated === 'on',
-      dewormed: data.dewormed === 'on',
-      microchipped: data.microchipped === 'on',
-      photos: req.files ? req.files.map(f => f.path) : []
-    });
-    await puppy.save();
-    res.redirect('/admin/dashboard');
-  } catch (err) {
-    console.error('ADD PUPPY ERROR:', err);
-    res.send('Error adding puppy: ' + err.message);
+  .admin-thumb { width: 40px; height: 40px; }
+  
+  /* Admin Actions */
+  .admin-btn-sm {
+    width: 30px;
+    height: 30px;
+    font-size: 0.85rem;
   }
-});
-
-app.get('/admin/puppies/edit/:id', requireLogin, async (req, res) => {
-  try {
-    const puppy = await Puppy.findById(req.params.id);
-    res.render('admin-puppy-form', { puppy });
-  } catch (err) {
-    console.error('EDIT PUPPY ERROR:', err);
-    res.send('Error: ' + err.message);
+  
+  /* Admin Forms - Mobile Optimization */
+  .admin-content .form-group { margin-bottom: 14px; }
+  .admin-content .form-group label { 
+    font-size: 0.85rem;
+    margin-bottom: 6px;
   }
-});
-
-app.post('/admin/puppies/edit/:id', requireLogin, upload.array('photos', 5), async (req, res) => {
-  try {
-    const data = req.body;
-    const updateData = {
-      name: data.name,
-      price: data.price,
-      gender: data.gender,
-      dateOfBirth: data.dateOfBirth,
-      color: data.color,
-      weight: data.weight,
-      status: data.status,
-      description: data.description,
-      sireName: data.sireName,
-      damName: data.damName,
-      vaccinated: data.vaccinated === 'on',
-      dewormed: data.dewormed === 'on',
-      microchipped: data.microchipped === 'on'
-    };
-    if (req.files && req.files.length > 0) {
-      updateData.photos = req.files.map(f => f.path);
-    }
-    await Puppy.findByIdAndUpdate(req.params.id, updateData);
-    res.redirect('/admin/dashboard');
-  } catch (err) {
-    console.error('UPDATE PUPPY ERROR:', err);
-    res.send('Error updating puppy: ' + err.message);
+  .admin-content .form-group input,
+  .admin-content .form-group textarea,
+  .admin-content .form-group select {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 10px;
+    min-height: 40px;
   }
-});
-
-app.get('/admin/puppies/delete/:id', requireLogin, async (req, res) => {
-  await Puppy.findByIdAndDelete(req.params.id);
-  res.redirect('/admin/dashboard');
-});
-
-// ===== ADMIN LITTERS =====
-app.get('/admin/litters/new', requireLogin, (req, res) => {
-  res.render('admin-litter-form', { litter: null });
-});
-
-app.post('/admin/litters/new', requireLogin, litterUpload, async (req, res) => {
-  try {
-    const data = req.body;
-    const files = req.files || {};
-    const litter = new Litter({
-      litterName: data.litterName,
-      birthDate: data.birthDate,
-      numberOfPuppies: data.numberOfPuppies,
-      description: data.description,
-      photos: files.photo ? [files.photo[0].path] : [],
-      sireName: data.sireName,
-      sireWeight: data.sireWeight,
-      sireRegistration: data.sireRegistration,
-      sireAwards: data.sireAwards,
-      sirePhoto: files.sirePhoto ? files.sirePhoto[0].path : '',
-      damName: data.damName,
-      damWeight: data.damWeight,
-      damRegistration: data.damRegistration,
-      damAwards: data.damAwards,
-      damPhoto: files.damPhoto ? files.damPhoto[0].path : ''
-    });
-    await litter.save();
-    res.redirect('/admin/dashboard');
-  } catch (err) {
-    console.error('ADD LITTER ERROR:', err);
-    res.send('Error adding litter: ' + err.message);
+  .admin-content .form-group textarea {
+    min-height: 100px;
+    font-size: 16px;
   }
-});
-
-app.get('/admin/litters/edit/:id', requireLogin, async (req, res) => {
-  try {
-    const litter = await Litter.findById(req.params.id);
-    res.render('admin-litter-form', { litter });
-  } catch (err) {
-    console.error('EDIT LITTER ERROR:', err);
-    res.send('Error: ' + err.message);
+  .form-submit {
+    font-size: 0.9rem;
+    padding: 12px 20px;
+    min-height: 44px;
   }
-});
+  
+  /* Recent rows */
+  .admin-recent-row { padding: 10px 0; }
+  .admin-recent-title { font-size: 0.9rem; }
+  .admin-recent-sub { font-size: 0.75rem; }
+  .admin-recent-date { font-size: 0.7rem; }
+  .admin-badge-new { font-size: 0.65rem; }
+  
+  /* Layout adjustments */
+  .admin-section-head { flex-direction: column; align-items: flex-start; }
+}
+/* Blog post detail */
+.post-detail { max-width: 760px; margin: 0 auto; text-align: left; }
+.post-detail h1 { text-align: center; }
+.post-meta {
+  text-align: center;
+  color: var(--text-light);
+  font-size: 0.9rem;
+  margin-top: 16px;
+}
+.post-meta i { color: var(--gold); }
+.post-image {
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  border-radius: 14px;
+  margin: 30px 0;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+}
+.post-content p {
+  color: var(--text);
+  font-size: 1.05rem;
+  line-height: 1.9;
+  margin-bottom: 20px;
+}
+/* Contact info cards */
+.contact-info-grid {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 40px auto 0;
+  max-width: 700px;
+}
+.contact-info-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px 28px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  text-decoration: none;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  min-width: 260px;
+}
+.contact-info-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.1);
+}
+.contact-info-card i {
+  font-size: 1.4rem;
+  color: var(--gold);
+  background: #faf7f0;
+  width: 50px; height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.contact-info-label { display: block; font-size: 0.8rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
+.contact-info-value { display: block; font-weight: 600; color: var(--navy); }
+/* Adoption Process timeline */
+.process-timeline {
+  max-width: 760px;
+  margin: 50px auto 0;
+  position: relative;
+}
+.process-timeline::before {
+  content: '';
+  position: absolute;
+  left: 27px;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--gold), #e6ddc8);
+}
+.process-step {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  margin-bottom: 36px;
+  position: relative;
+}
+.process-num {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--maroon);
+  color: #fff;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  box-shadow: 0 0 0 5px var(--cream);
+}
+.process-content {
+  background: #fff;
+  border-radius: 14px;
+  padding: 24px 28px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  text-align: left;
+  flex: 1;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.process-content:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.1);
+}
+.process-icon { color: var(--gold); font-size: 1.6rem; margin-bottom: 10px; }
+.process-content h3 { color: var(--navy); font-size: 1.3rem; margin-bottom: 8px; }
+.process-content p { color: var(--text-light); font-size: 0.95rem; line-height: 1.7; }
 
-app.post('/admin/litters/edit/:id', requireLogin, litterUpload, async (req, res) => {
-  try {
-    const data = req.body;
-    const files = req.files || {};
-    const updateData = {
-      litterName: data.litterName,
-      birthDate: data.birthDate,
-      numberOfPuppies: data.numberOfPuppies,
-      description: data.description,
-      sireName: data.sireName,
-      sireWeight: data.sireWeight,
-      sireRegistration: data.sireRegistration,
-      sireAwards: data.sireAwards,
-      damName: data.damName,
-      damWeight: data.damWeight,
-      damRegistration: data.damRegistration,
-      damAwards: data.damAwards
-    };
-    if (files.photo) updateData.photos = [files.photo[0].path];
-    if (files.sirePhoto) updateData.sirePhoto = files.sirePhoto[0].path;
-    if (files.damPhoto) updateData.damPhoto = files.damPhoto[0].path;
+@media (max-width: 768px) {
+  .process-timeline::before { left: 22px; }
+  .process-num { width: 46px; height: 46px; font-size: 1.2rem; }
+  .process-content { padding: 18px 20px; }
+}
+/* Meet Our Dogs */
+.dogs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 28px;
+  margin-top: 44px;
+}
+.dog-card {
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.07);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.dog-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 14px 32px rgba(0,0,0,0.13);
+}
+.dog-photo-wrap { position: relative; }
+.dog-photo-wrap img {
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+  display: block;
+}
+.dog-photo-placeholder {
+  width: 100%;
+  height: 280px;
+  background: #faf7f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold);
+  font-size: 3rem;
+}
+.dog-gender {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #fff;
+}
+.dog-gender-male { background: #2b6cb0; }
+.dog-gender-female { background: #b83280; }
+.dog-body { padding: 22px; text-align: left; }
+.dog-role {
+  display: inline-block;
+  background: #faf7f0;
+  color: var(--gold);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+}
+.dog-body h3 { color: var(--navy); font-size: 1.4rem; margin-bottom: 8px; }
+.dog-body p { color: var(--text-light); font-size: 0.95rem; line-height: 1.7; }
+/* Mobile */
+@media (max-width: 768px) {
+  /* Navigation */
+  .menu-toggle { display: flex; }
+  .main-nav { display: none; width: 100%; flex-direction: column; gap: 0; margin-top: 16px; }
+  .main-nav.nav-open { display: flex; }
+  .main-nav a { padding: 14px 0; border-top: 1px solid #1e2d40; width: 100%; }
+  .header-inner { flex-wrap: wrap; }
+  .logo { font-size: 1.15rem; }
 
-    await Litter.findByIdAndUpdate(req.params.id, updateData);
-    res.redirect('/admin/dashboard');
-  } catch (err) {
-    console.error('UPDATE LITTER ERROR:', err);
-    res.send('Error updating litter: ' + err.message);
+  /* Tighter section spacing */
+  .page-section { padding: 44px 20px; }
+  .page-section h1 { font-size: 2rem; }
+  .page-section h2 { font-size: 1.7rem; }
+  .page-section > p { font-size: 1rem; }
+
+  /* Hero */
+  .hero-inner { padding: 56px 20px 36px; }
+  .hero-inner h1 { font-size: 2.3rem; line-height: 1.25; }
+  .hero-inner > p { font-size: 1rem; margin-bottom: 28px; }
+
+  /* Hero buttons: full width, easy to tap, more breathing room */
+  .hero-buttons { flex-direction: column; width: 100%; gap: 14px; }
+  .hero-buttons .btn { width: 100%; text-align: center; }
+  .btn-dashed { display: block; width: 100%; text-align: center; margin-top: 14px; padding: 15px 24px; }
+
+  /* Hero stats: clear and confident, not squeezed */
+  .hero-stats { gap: 20px; margin-top: 40px; }
+  .hero-stat .counter, .hero-stat .counter-percent { font-size: 2.1rem; }
+  .hero-stat-label { font-size: 0.75rem; }
+
+  /* Feature bar: clean 2x2 grid, icon + text left-aligned per reference */
+  .hero-feature-bar {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px 14px;
+    padding: 24px 18px;
+    border-radius: 0;
   }
-});
-
-app.get('/admin/litters/delete/:id', requireLogin, async (req, res) => {
-  await Litter.findByIdAndDelete(req.params.id);
-  res.redirect('/admin/dashboard');
-});
-
-// ===== ADMIN TESTIMONIALS =====
-app.get('/admin/testimonials/new', requireLogin, (req, res) => {
-  res.render('admin-testimonial-form', { testimonial: null });
-});
-
-app.post('/admin/testimonials/new', requireLogin, upload.single('photo'), async (req, res) => {
-  try {
-    const data = req.body;
-    const testimonial = new Testimonial({
-      customerName: data.customerName,
-      location: data.location,
-      tag: data.tag,
-      rating: parseInt(data.rating),
-      message: data.message,
-      photo: req.file ? req.file.path : ''
-    });
-    await testimonial.save();
-    res.redirect('/admin/dashboard');
-  } catch (err) {
-    console.error('ADD TESTIMONIAL ERROR:', err);
-    res.send('Error adding testimonial: ' + err.message);
+  .hero-feature {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+    font-size: 0.85rem;
+    line-height: 1.3;
   }
-});
 
-app.get('/admin/testimonials/edit/:id', requireLogin, async (req, res) => {
-  try {
-    const testimonial = await Testimonial.findById(req.params.id);
-    res.render('admin-testimonial-form', { testimonial });
-  } catch (err) {
-    console.error('EDIT TESTIMONIAL ERROR:', err);
-    res.send('Error: ' + err.message);
+  /* Cards & grids */
+  .card-grid { gap: 20px; margin-top: 32px; }
+  .features-grid { gap: 16px; margin-top: 32px; }
+  .feature-card { padding: 28px 20px; }
+  .bloodline-grid { grid-template-columns: 1fr; }
+
+  /* Includes + CTA tighter */
+  .includes-card { padding: 30px 24px; }
+  .includes-card h2 { font-size: 1.5rem; }
+  .cta-section { padding: 56px 20px; }
+  .cta-section h2 { font-size: 1.8rem; }
+
+  /* Testimonials */
+  .testimonial-card { padding: 24px; }
+
+  /* Forms - Enhanced for Mobile */
+  .contact-form { 
+    padding: 20px; 
+    margin: 24px auto 0;
+    max-width: 100%;
   }
-});
-
-app.post('/admin/testimonials/edit/:id', requireLogin, upload.single('photo'), async (req, res) => {
-  try {
-    const data = req.body;
-    const updateData = {
-      customerName: data.customerName,
-      location: data.location,
-      tag: data.tag,
-      rating: parseInt(data.rating),
-      message: data.message
-    };
-    if (req.file) {
-      updateData.photo = req.file.path;
-    }
-    await Testimonial.findByIdAndUpdate(req.params.id, updateData);
-    res.redirect('/admin/dashboard');
-  } catch (err) {
-    console.error('UPDATE TESTIMONIAL ERROR:', err);
-    res.send('Error updating testimonial: ' + err.message);
+  .form-group { margin-bottom: 16px; }
+  .form-group label { 
+    font-size: 0.9rem;
+    margin-bottom: 6px;
   }
-});
-
-app.get('/admin/testimonials/delete/:id', requireLogin, async (req, res) => {
-  await Testimonial.findByIdAndDelete(req.params.id);
-  res.redirect('/admin/dashboard');
-});
-
-// ===== ADMIN FAQS =====
-app.get('/admin/faqs/new', requireLogin, (req, res) => {
-  res.render('admin-faq-form', { faq: null });
-});
-
-app.post('/admin/faqs/new', requireLogin, async (req, res) => {
-  try {
-    await new Faq({ question: req.body.question, answer: req.body.answer, order: req.body.order || 0 }).save();
-    res.redirect('/admin/dashboard');
-  } catch (err) {
-    res.send('Error: ' + err.message);
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    font-size: 16px; /* Prevents auto-zoom on iOS */
+    padding: 11px;
+    min-height: 44px;
   }
-});
-
-app.get('/admin/faqs/edit/:id', requireLogin, async (req, res) => {
-  try {
-    const faq = await Faq.findById(req.params.id);
-    res.render('admin-faq-form', { faq });
-  } catch (err) {
-    res.send('Error: ' + err.message);
+  .form-group textarea {
+    min-height: 100px;
   }
-});
-
-app.post('/admin/faqs/edit/:id', requireLogin, async (req, res) => {
-  try {
-    await Faq.findByIdAndUpdate(req.params.id, { question: req.body.question, answer: req.body.answer, order: req.body.order || 0 });
-    res.redirect('/admin/dashboard');
-  } catch (err) {
-    res.send('Error: ' + err.message);
+  .form-submit {
+    font-size: 0.95rem;
+    padding: 12px 20px;
+    min-height: 44px;
   }
-});
+  .contact-info-grid { flex-direction: column; }
+  .contact-info-card { min-width: 0; width: 100%; }
 
-app.get('/admin/faqs/delete/:id', requireLogin, async (req, res) => {
-  await Faq.findByIdAndDelete(req.params.id);
-  res.redirect('/admin/dashboard');
-});
+  /* Footer */
+  .footer-grid { grid-template-columns: 1fr; gap: 28px; text-align: center; }
+  .footer-about { max-width: 100%; margin: 0 auto; }
+}
 
-// ===== ADMIN SETTINGS =====
-app.get('/admin/settings', requireLogin, async (req, res) => {
-  const settings = await getSettings();
-  res.render('admin-settings', { settings, saved: req.query.saved === '1' });
-});
+/* Extra-small phones */
+@media (max-width: 420px) {
+  .hero-inner h1 { font-size: 1.9rem; }
+  .page-section h1 { font-size: 1.7rem; }
+  .hero-stats { gap: 16px; }
+  .hero-stat .counter, .hero-stat .counter-percent { font-size: 1.7rem; }
+  .logo { font-size: 1rem; }
+  
+  /* Admin adjustments for extra-small screens */
+  .admin-sidebar { width: 220px; }
+  .admin-nav a { font-size: 0.8rem; padding: 8px 12px; }
+  .admin-section-head h3 { font-size: 0.95rem; }
+  .admin-overview-num { font-size: 1.4rem; }
+  
+  /* Form adjustments for tiny screens */
+  .contact-form { padding: 16px; }
+  .form-submit { font-size: 0.9rem; padding: 10px 16px; }
+}
 
-app.post('/admin/settings', requireLogin, async (req, res) => {
-  try {
-    const settings = await getSettings();
-    settings.email = req.body.email;
-    settings.phone = req.body.phone;
-    settings.statYears = req.body.statYears;
-    settings.statPuppies = req.body.statPuppies;
-    settings.statHealth = req.body.statHealth;
-    settings.updatedAt = Date.now();
-    await settings.save();
-    res.redirect('/admin/settings?saved=1');
-  } catch (err) {
-    res.send('Error saving settings: ' + err.message);
+/* ===== MOBILE POLISH PASS ===== */
+
+/* Overflow protection — stops sideways scrolling (huge mobile fix) */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  /* Global typography */
+  body { font-size: 15px; }
+
+  /* Buttons: comfortable, easy to tap */
+  .btn {
+    padding: 13px 20px;
+    font-size: 0.9rem;
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
-});
+  .form-submit { min-height: 48px; }
+  .main-nav a { min-height: 48px; display: flex; align-items: center; }
 
-// ===== ADMIN POSTS =====
-app.get('/admin/posts/new', requireLogin, (req, res) => {
-  res.render('admin-post-form', { post: null });
-});
+  /* Card images shorter on phones */
+  .card img { height: 190px; }
 
-app.post('/admin/posts/new', requireLogin, upload.single('image'), async (req, res) => {
-  try {
-    let slug = makeSlug(req.body.title);
-    const existing = await Post.findOne({ slug });
-    if (existing) slug = slug + '-' + Date.now();
-    const post = new Post({
-      title: req.body.title,
-      slug: slug,
-      excerpt: req.body.excerpt,
-      content: req.body.content,
-      image: req.file ? req.file.path : ''
-    });
-    await post.save();
-    res.redirect('/admin/dashboard');
-  } catch (err) {
-    console.error('ADD POST ERROR:', err);
-    res.send('Error adding post: ' + err.message);
+  /* Card padding tighter */
+  .card-body { padding: 16px; }
+
+  /* Contact cards full width */
+  .contact-info-card { min-width: 100%; width: 100%; }
+
+  /* Footer centered */
+  .footer-grid { grid-template-columns: 1fr; text-align: center; }
+  .footer-links { display: inline-block; text-align: left; }
+}
+
+/* Slide-in mobile menu with dark overlay */
+@media (max-width: 768px) {
+  .main-nav {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 75%;
+    max-width: 300px;
+    height: 100vh;
+    background: var(--navy);
+    flex-direction: column;
+    gap: 0;
+    margin-top: 0;
+    padding: 80px 24px 24px;
+    transition: right 0.3s ease;
+    z-index: 999;
+    box-shadow: -8px 0 24px rgba(0,0,0,0.3);
+    overflow-y: auto;
   }
-});
+  .main-nav.nav-open { right: 0; }
+  .main-nav a { border-top: 1px solid #1e2d40; }
 
-app.get('/admin/posts/edit/:id', requireLogin, async (req, res) => {
-  try {
-    const post = await Post.findById(req.params.id);
-    res.render('admin-post-form', { post });
-  } catch (err) {
-    res.send('Error: ' + err.message);
+  /* Dark overlay behind the menu */
+  .nav-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 998;
   }
-});
+  .nav-overlay.show { display: block; }
 
-app.post('/admin/posts/edit/:id', requireLogin, upload.single('image'), async (req, res) => {
-  try {
-    const updateData = {
-      title: req.body.title,
-      excerpt: req.body.excerpt,
-      content: req.body.content
-    };
-    if (req.file) updateData.image = req.file.path;
-    await Post.findByIdAndUpdate(req.params.id, updateData);
-    res.redirect('/admin/dashboard');
-  } catch (err) {
-    console.error('UPDATE POST ERROR:', err);
-    res.send('Error updating post: ' + err.message);
-  }
-});
-
-app.get('/admin/posts/delete/:id', requireLogin, async (req, res) => {
-  await Post.findByIdAndDelete(req.params.id);
-  res.redirect('/admin/dashboard');
-});
-
-// ===== ADMIN DOGS =====
-app.get('/admin/dogs/new', requireLogin, (req, res) => {
-  res.render('admin-dog-form', { dog: null });
-});
-
-app.post('/admin/dogs/new', requireLogin, upload.single('photo'), async (req, res) => {
-  try {
-    const dog = new Dog({
-      name: req.body.name,
-      gender: req.body.gender,
-      role: req.body.role,
-      order: req.body.order || 0,
-      description: req.body.description,
-      photo: req.file ? req.file.path : ''
-    });
-    await dog.save();
-    res.redirect('/admin/dashboard');
-  } catch (err) {
-    console.error('ADD DOG ERROR:', err);
-    res.send('Error adding dog: ' + err.message);
-  }
-});
-
-app.get('/admin/dogs/edit/:id', requireLogin, async (req, res) => {
-  try {
-    const dog = await Dog.findById(req.params.id);
-    res.render('admin-dog-form', { dog });
-  } catch (err) {
-    res.send('Error: ' + err.message);
-  }
-});
-
-app.post('/admin/dogs/edit/:id', requireLogin, upload.single('photo'), async (req, res) => {
-  try {
-    const updateData = {
-      name: req.body.name,
-      gender: req.body.gender,
-      role: req.body.role,
-      order: req.body.order || 0,
-      description: req.body.description
-    };
-    if (req.file) updateData.photo = req.file.path;
-    await Dog.findByIdAndUpdate(req.params.id, updateData);
-    res.redirect('/admin/dashboard');
-  } catch (err) {
-    console.error('UPDATE DOG ERROR:', err);
-    res.send('Error updating dog: ' + err.message);
-  }
-});
-
-app.get('/admin/dogs/delete/:id', requireLogin, async (req, res) => {
-  await Dog.findByIdAndDelete(req.params.id);
-  res.redirect('/admin/dashboard');
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
+  /* Keep the toggle above the menu */
+  .menu-toggle { position: relative; z-index: 1000; }
+}
