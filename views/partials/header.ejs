@@ -12,13 +12,15 @@
   <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
 </head>
 <body>
-  <!-- Loading animation -->
-  <div id="loader" class="loader">
-    <div class="loader-ring">
-      <img src="/images/emblem.png" alt="Loading" class="loader-logo">
+  <!-- Loading animation (home page only) -->
+  <% if (typeof showLoader !== 'undefined' && showLoader) { %>
+    <div id="loader" class="loader">
+      <div class="loader-ring">
+        <img src="/images/emblem.png" alt="Loading" class="loader-logo">
+      </div>
+      <p class="loader-text">Shanti & Bryan Pinscher Kennel</p>
     </div>
-    <p class="loader-text">Shanti & Bryan Pinscher Kennel</p>
-  </div>
+  <% } %>
 
   <header class="site-header">
     <div class="container header-inner">
