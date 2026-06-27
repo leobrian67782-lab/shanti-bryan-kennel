@@ -10,9 +10,17 @@
     document.addEventListener('DOMContentLoaded', function() {
       var toggle = document.getElementById('adminMenuToggle');
       var sidebar = document.getElementById('adminSidebar');
+      var overlay = document.getElementById('adminSidebarOverlay');
       if (toggle && sidebar) {
         toggle.addEventListener('click', function() {
           sidebar.classList.toggle('open');
+          if (overlay) overlay.classList.toggle('show');
+        });
+      }
+      if (overlay && sidebar) {
+        overlay.addEventListener('click', function() {
+          sidebar.classList.remove('open');
+          overlay.classList.remove('show');
         });
       }
     });
