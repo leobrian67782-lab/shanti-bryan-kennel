@@ -64,8 +64,11 @@
               <span class="info-pill"><%= puppy.gender %></span>
               <span class="info-pill"><%= puppy.color %></span>
             </div>
-            <% if (puppy.description) { %><p style="color:#5c5c5c;font-size:0.95rem;"><%= puppy.description %></p><% } %>
-            <p class="card-price" style="margin-top:12px;">$<%= puppy.price %></p>
+            <% if (puppy.description) { %><p class="card-desc"><%= puppy.description.substring(0, 70) %><%= puppy.description.length > 70 ? '...' : '' %></p><% } %>
+            <div class="card-footer">
+              <span class="card-price">$<%= puppy.price %></span>
+              <span class="card-view-link">View Details <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
           </div>
         </div>
       </a>
@@ -133,7 +136,7 @@
   <div class="testimonial-list">
     <% testimonials.forEach(function(t) { %>
       <div class="testimonial-card">
-        <div class="testimonial-quote-mark">"</div>
+        <div class="testimonial-quote-mark"><i class="fa-solid fa-quote-right"></i></div>
         <div class="testimonial-stars">
           <% for (let i = 0; i < t.rating; i++) { %><i class="fa-solid fa-star"></i><% } %>
           <% for (let i = t.rating; i < 5; i++) { %><i class="fa-regular fa-star"></i><% } %>
