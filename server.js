@@ -241,14 +241,14 @@ app.get('/about', (req, res) => {
 });
 
 app.get('/contact', (req, res) => {
-  res.render('contact', { message: '' });
+  res.render('contact', { message: '', success: false });
 });
 
 app.post('/contact', async (req, res) => {
   try {
     const { name, email, phone, location, subject, message } = req.body;
     if (!name || !email || !subject || !message) {
-      return res.render('contact', { message: 'All fields are required.' });
+      return res.render('contact', { message: 'All fields are required.', success: false });
     }
 
     // Try to auto-detect location from the visitor's IP (best-effort, never blocks the message)
@@ -268,10 +268,10 @@ app.post('/contact', async (req, res) => {
     }
 
     await new Contact({ name, email, phone, location, detectedLocation, subject, message }).save();
-    res.render('contact', { message: '✅ Thank you! Your message has been received. We\'ll get back to you soon.' });
+    res.render('contact', { message: 'Thank you! Your message has been received. We\'ll get back to you soon.', success: true });
   } catch (err) {
     console.error(err);
-    res.render('contact', { message: '❌ Something went wrong. Please try again.' });
+    res.render('contact', { message: 'Something went wrong. Please try again.', success: false });
   }
 });
 
