@@ -568,6 +568,31 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
 .footer-bottom-sub a { color: var(--gold); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
 .footer-bottom-sub a:hover { text-decoration: underline; }
 
+.back-to-top {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--navy);
+  border: none;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  transition: opacity 0.3s ease, transform 0.3s ease, background 0.3s ease;
+  z-index: 500;
+}
+.back-to-top.show { opacity: 1; visibility: visible; transform: translateY(0); }
+.back-to-top:hover { background: var(--gold-light); }
+
 /* Loader */
 .loader {
   position: fixed; top: 0; left: 0;
@@ -1523,8 +1548,20 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   .contact-info-card { min-width: 0; width: 100%; }
 
   /* Footer */
-  .footer-grid { grid-template-columns: 1fr; gap: 28px; text-align: center; }
-  .footer-about { max-width: 100%; margin: 0 auto; }
+  .footer-top {
+    grid-template-columns: 1fr;
+    gap: 36px;
+    padding: 48px 18px 32px;
+    text-align: center;
+  }
+  .footer-about { max-width: 100%; margin: 0 auto 20px; }
+  .footer-socials { justify-content: center; }
+  .footer-links-wrap { grid-template-columns: 1fr 1fr; gap: 28px 16px; text-align: left; }
+  .footer-col h4, .footer-connect h4 { text-align: left; }
+  .footer-connect { text-align: center; }
+  .footer-connect .footer-contact { justify-content: center; }
+  .footer-bottom-inner { flex-direction: column; text-align: center; gap: 8px; }
+  .back-to-top { width: 44px; height: 44px; right: 16px; bottom: 16px; }
 }
 
 /* Extra-small phones */
@@ -1580,7 +1617,6 @@ html, body {
   .contact-info-card { min-width: 100%; width: 100%; }
 
   /* Footer centered */
-  .footer-grid { grid-template-columns: 1fr; text-align: center; }
   .footer-links { display: inline-block; text-align: left; }
 }
 
