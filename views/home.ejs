@@ -138,7 +138,7 @@
       <div class="testimonial-card">
         <% if (t.photo) { %>
           <div class="testimonial-photo-wrap">
-            <img src="<%= t.photo %>" class="testimonial-photo" alt="<%= t.customerName %>">
+            <img src="<%= t.photo %>" class="testimonial-photo" alt="<%= t.customerName %>" onclick="openLightbox('<%= t.photo %>')" style="cursor:zoom-in;">
           </div>
         <% } %>
         <div class="testimonial-content">
