@@ -768,7 +768,7 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   display: flex; align-items: center; justify-content: center;
   animation: spin 1s linear infinite;
 }
-.loader-paw { font-size: 2rem; color: var(--gold); animation: spin-reverse 1s linear infinite; }
+.loader-logo { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; }
 .loader-text { color: var(--gold); font-family: 'Playfair Display', serif; font-size: 1.2rem; margin-top: 24px; letter-spacing: 1px; animation: pulse 1.5s ease infinite; }
 
 /* Scroll Reveal */
