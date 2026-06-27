@@ -9,9 +9,27 @@
   <% if (puppies.length === 0) { %>
     <p style="margin-top:40px;">No puppies listed right now. Check back soon!</p>
   <% } else { %>
-    <div class="card-grid">
+    <div class="puppy-filter-bar">
+      <div class="filter-group">
+        <span class="filter-label">Gender</span>
+        <button type="button" class="filter-pill active" data-filter-type="gender" data-filter-value="all">All</button>
+        <button type="button" class="filter-pill" data-filter-type="gender" data-filter-value="male">Male</button>
+        <button type="button" class="filter-pill" data-filter-type="gender" data-filter-value="female">Female</button>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Status</span>
+        <button type="button" class="filter-pill active" data-filter-type="status" data-filter-value="all">All</button>
+        <button type="button" class="filter-pill" data-filter-type="status" data-filter-value="available">Available</button>
+        <button type="button" class="filter-pill" data-filter-type="status" data-filter-value="reserved">Reserved</button>
+        <button type="button" class="filter-pill" data-filter-type="status" data-filter-value="sold">Sold</button>
+      </div>
+    </div>
+
+    <p id="filterEmptyMsg" style="display:none;margin-top:40px;color:var(--text-light);">No puppies match these filters right now. Try adjusting your selection above.</p>
+
+    <div class="card-grid" id="puppyGrid">
       <% puppies.forEach(function(puppy) { %>
-        <a href="/puppies/<%= puppy._id %>" style="text-decoration:none;color:inherit;">
+        <a href="/puppies/<%= puppy._id %>" class="puppy-card-link" data-gender="<%= puppy.gender.toLowerCase() %>" data-status="<%= puppy.status.toLowerCase() %>" style="text-decoration:none;color:inherit;">
           <div class="card">
             <% if (puppy.photos && puppy.photos.length > 0) { %>
               <div style="position:relative;">
@@ -39,5 +57,39 @@
     </div>
   <% } %>
 </section>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var state = { gender: 'all', status: 'all' };
+    var pills = document.querySelectorAll('.filter-pill');
+    var cards = document.querySelectorAll('.puppy-card-link');
+    var emptyMsg = document.getElementById('filterEmptyMsg');
+
+    pills.forEach(function(pill) {
+      pill.addEventListener('click', function() {
+        var type = pill.dataset.filterType;
+        var value = pill.dataset.filterValue;
+        state[type] = value;
+        document.querySelectorAll('.filter-pill[data-filter-type="' + type + '"]').forEach(function(p) {
+          p.classList.remove('active');
+        });
+        pill.classList.add('active');
+        applyFilters();
+      });
+    });
+
+    function applyFilters() {
+      var visibleCount = 0;
+      cards.forEach(function(card) {
+        var matchesGender = state.gender === 'all' || card.dataset.gender === state.gender;
+        var matchesStatus = state.status === 'all' || card.dataset.status === state.status;
+        var show = matchesGender && matchesStatus;
+        card.style.display = show ? '' : 'none';
+        if (show) visibleCount++;
+      });
+      emptyMsg.style.display = visibleCount === 0 ? 'block' : 'none';
+    }
+  });
+</script>
 
 <%- include('partials/footer') %>
