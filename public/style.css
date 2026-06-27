@@ -1410,8 +1410,8 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   .page-section > p { font-size: 1rem; }
 
   /* Hero */
-  .hero-inner { padding: 56px 20px 36px; }
-  .hero-inner h1 { font-size: 2.3rem; line-height: 1.25; }
+  .hero-inner { padding: 56px 14px 36px; }
+  .hero-inner h1 { font-size: 2.6rem; line-height: 1.2; }
   .hero-inner > p { font-size: 1rem; margin-bottom: 28px; }
 
   /* Hero buttons: full width, easy to tap, more breathing room */
@@ -1491,7 +1491,7 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
 
 /* Extra-small phones */
 @media (max-width: 420px) {
-  .hero-inner h1 { font-size: 1.9rem; }
+  .hero-inner h1 { font-size: 2.1rem; }
   .page-section h1 { font-size: 1.7rem; }
   .hero-stats { gap: 16px; }
   .hero-stat .counter, .hero-stat .counter-percent { font-size: 1.7rem; }
