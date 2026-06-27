@@ -5,6 +5,9 @@ const path = require('path');
 const session = require('express-session');
 const multer = require('multer');
 const https = require('https');
+const crypto = require('crypto');
+const rateLimit = require('express-rate-limit');
+const bcrypt = require('bcryptjs');
 const { v2: cloudinary } = require('cloudinary');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
@@ -18,7 +21,23 @@ const Post = require('./models/Post');
 const Dog = require('./models/Dog');
 
 const app = express();
-app.set('trust proxy', true);
+
+// Logs the real error for debugging, but never exposes raw error details
+// (stack traces, database messages, etc.) to whoever is looking at the page.
+function adminError(res, context, err) {
+  if (err) console.error(context, err);
+  res.status(500).send(`
+    <div style="font-family:'Poppins',sans-serif;max-width:480px;margin:80px auto;text-align:center;padding:32px;background:#151b26;color:#fff;border-radius:14px;border:1px solid #1f2733;">
+      <h2 style="color:#e8848f;margin-bottom:12px;">Something Went Wrong</h2>
+      <p style="color:#c5cdd8;margin-bottom:24px;">We couldn't complete that action. Please try again, and if it keeps happening, double-check your connection or try again in a moment.</p>
+      <a href="/admin/dashboard" style="display:inline-block;background:#c9a227;color:#0d1117;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:600;">Back to Dashboard</a>
+    </div>
+  `);
+}
+// Render sits in front of this app behind one reverse proxy hop. Trusting
+// exactly that one hop gives accurate visitor IPs (used for rate limiting and
+// location detection) without letting a spoofed header fake a different IP.
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 
 // Cloudinary config
@@ -53,8 +72,12 @@ app.get('/healthz', (req, res) => {
 });
 
 // Sessions
+if (!process.env.SESSION_SECRET) {
+  console.warn('[security] SESSION_SECRET is not set in your environment variables. Using a random secret generated for this run instead — this means everyone will be logged out every time the server restarts or redeploys. Set SESSION_SECRET in Render for persistent, secure sessions.');
+}
+const sessionSecret = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'fallback-secret',
+  secret: sessionSecret,
   resave: false,
   saveUninitialized: false
 }));
@@ -232,7 +255,7 @@ app.get('/seed-faqs', async (req, res) => {
     ]);
     res.send('✅ FAQs seeded! Visit <a href="/faq">/faq</a> to see them.');
   } catch (err) {
-    res.send('Error: ' + err.message);
+    adminError(res, 'Admin action error', err);
   }
 });
 
@@ -276,17 +299,43 @@ app.post('/contact', async (req, res) => {
 });
 
 // ===== ADMIN AUTH =====
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 5, // 5 attempts per IP per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).render('admin-login', { error: 'Too many login attempts. Please wait 15 minutes and try again.' });
+  }
+});
+
 app.get('/admin/login', (req, res) => {
   res.render('admin-login', { error: '' });
 });
 
-app.post('/admin/login', (req, res) => {
-  const { username, password } = req.body;
-  if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
-    req.session.isAdmin = true;
-    res.redirect('/admin/dashboard');
-  } else {
-    res.render('admin-login', { error: 'Invalid username or password.' });
+app.post('/admin/login', loginLimiter, async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const validUsername = username === process.env.ADMIN_USERNAME;
+
+    let validPassword = false;
+    if (process.env.ADMIN_PASSWORD_HASH) {
+      // Preferred: password stored as a bcrypt hash
+      validPassword = await bcrypt.compare(password, process.env.ADMIN_PASSWORD_HASH);
+    } else if (process.env.ADMIN_PASSWORD) {
+      // Fallback for backward compatibility until ADMIN_PASSWORD_HASH is set up
+      validPassword = password === process.env.ADMIN_PASSWORD;
+    }
+
+    if (validUsername && validPassword) {
+      req.session.isAdmin = true;
+      res.redirect('/admin/dashboard');
+    } else {
+      res.render('admin-login', { error: 'Invalid username or password.' });
+    }
+  } catch (err) {
+    console.error('LOGIN ERROR:', err);
+    res.render('admin-login', { error: 'Something went wrong. Please try again.' });
   }
 });
 
@@ -351,8 +400,7 @@ app.post('/admin/puppies/new', requireLogin, upload.array('photos', 5), async (r
     await puppy.save();
     res.redirect('/admin/dashboard');
   } catch (err) {
-    console.error('ADD PUPPY ERROR:', err);
-    res.send('Error adding puppy: ' + err.message);
+    adminError(res, 'ADD PUPPY ERROR:', err);
   }
 });
 
@@ -361,8 +409,7 @@ app.get('/admin/puppies/edit/:id', requireLogin, async (req, res) => {
     const puppy = await Puppy.findById(req.params.id);
     res.render('admin-puppy-form', { puppy });
   } catch (err) {
-    console.error('EDIT PUPPY ERROR:', err);
-    res.send('Error: ' + err.message);
+    adminError(res, 'EDIT PUPPY ERROR:', err);
   }
 });
 
@@ -398,8 +445,7 @@ app.post('/admin/puppies/edit/:id', requireLogin, upload.array('photos', 5), asy
     await Puppy.findByIdAndUpdate(req.params.id, updateData);
     res.redirect('/admin/dashboard');
   } catch (err) {
-    console.error('UPDATE PUPPY ERROR:', err);
-    res.send('Error updating puppy: ' + err.message);
+    adminError(res, 'UPDATE PUPPY ERROR:', err);
   }
 });
 
@@ -442,8 +488,7 @@ app.post('/admin/litters/new', requireLogin, litterUpload, async (req, res) => {
     await litter.save();
     res.redirect('/admin/dashboard');
   } catch (err) {
-    console.error('ADD LITTER ERROR:', err);
-    res.send('Error adding litter: ' + err.message);
+    adminError(res, 'ADD LITTER ERROR:', err);
   }
 });
 
@@ -452,8 +497,7 @@ app.get('/admin/litters/edit/:id', requireLogin, async (req, res) => {
     const litter = await Litter.findById(req.params.id);
     res.render('admin-litter-form', { litter });
   } catch (err) {
-    console.error('EDIT LITTER ERROR:', err);
-    res.send('Error: ' + err.message);
+    adminError(res, 'EDIT LITTER ERROR:', err);
   }
 });
 
@@ -482,8 +526,7 @@ app.post('/admin/litters/edit/:id', requireLogin, litterUpload, async (req, res)
     await Litter.findByIdAndUpdate(req.params.id, updateData);
     res.redirect('/admin/dashboard');
   } catch (err) {
-    console.error('UPDATE LITTER ERROR:', err);
-    res.send('Error updating litter: ' + err.message);
+    adminError(res, 'UPDATE LITTER ERROR:', err);
   }
 });
 
@@ -516,8 +559,7 @@ app.post('/admin/testimonials/new', requireLogin, upload.single('photo'), async 
     await testimonial.save();
     res.redirect('/admin/dashboard');
   } catch (err) {
-    console.error('ADD TESTIMONIAL ERROR:', err);
-    res.send('Error adding testimonial: ' + err.message);
+    adminError(res, 'ADD TESTIMONIAL ERROR:', err);
   }
 });
 
@@ -526,8 +568,7 @@ app.get('/admin/testimonials/edit/:id', requireLogin, async (req, res) => {
     const testimonial = await Testimonial.findById(req.params.id);
     res.render('admin-testimonial-form', { testimonial });
   } catch (err) {
-    console.error('EDIT TESTIMONIAL ERROR:', err);
-    res.send('Error: ' + err.message);
+    adminError(res, 'EDIT TESTIMONIAL ERROR:', err);
   }
 });
 
@@ -547,8 +588,7 @@ app.post('/admin/testimonials/edit/:id', requireLogin, upload.single('photo'), a
     await Testimonial.findByIdAndUpdate(req.params.id, updateData);
     res.redirect('/admin/dashboard');
   } catch (err) {
-    console.error('UPDATE TESTIMONIAL ERROR:', err);
-    res.send('Error updating testimonial: ' + err.message);
+    adminError(res, 'UPDATE TESTIMONIAL ERROR:', err);
   }
 });
 
@@ -572,7 +612,7 @@ app.post('/admin/faqs/new', requireLogin, async (req, res) => {
     await new Faq({ question: req.body.question, answer: req.body.answer, order: req.body.order || 0 }).save();
     res.redirect('/admin/dashboard');
   } catch (err) {
-    res.send('Error: ' + err.message);
+    adminError(res, 'Admin action error', err);
   }
 });
 
@@ -581,7 +621,7 @@ app.get('/admin/faqs/edit/:id', requireLogin, async (req, res) => {
     const faq = await Faq.findById(req.params.id);
     res.render('admin-faq-form', { faq });
   } catch (err) {
-    res.send('Error: ' + err.message);
+    adminError(res, 'Admin action error', err);
   }
 });
 
@@ -590,7 +630,7 @@ app.post('/admin/faqs/edit/:id', requireLogin, async (req, res) => {
     await Faq.findByIdAndUpdate(req.params.id, { question: req.body.question, answer: req.body.answer, order: req.body.order || 0 });
     res.redirect('/admin/dashboard');
   } catch (err) {
-    res.send('Error: ' + err.message);
+    adminError(res, 'Admin action error', err);
   }
 });
 
@@ -617,7 +657,7 @@ app.post('/admin/settings', requireLogin, async (req, res) => {
     await settings.save();
     res.redirect('/admin/settings?saved=1');
   } catch (err) {
-    res.send('Error saving settings: ' + err.message);
+    adminError(res, 'Admin action error', err);
   }
 });
 
@@ -646,8 +686,7 @@ app.post('/admin/posts/new', requireLogin, upload.single('image'), async (req, r
     await post.save();
     res.redirect('/admin/dashboard');
   } catch (err) {
-    console.error('ADD POST ERROR:', err);
-    res.send('Error adding post: ' + err.message);
+    adminError(res, 'ADD POST ERROR:', err);
   }
 });
 
@@ -656,7 +695,7 @@ app.get('/admin/posts/edit/:id', requireLogin, async (req, res) => {
     const post = await Post.findById(req.params.id);
     res.render('admin-post-form', { post });
   } catch (err) {
-    res.send('Error: ' + err.message);
+    adminError(res, 'Admin action error', err);
   }
 });
 
@@ -671,8 +710,7 @@ app.post('/admin/posts/edit/:id', requireLogin, upload.single('image'), async (r
     await Post.findByIdAndUpdate(req.params.id, updateData);
     res.redirect('/admin/dashboard');
   } catch (err) {
-    console.error('UPDATE POST ERROR:', err);
-    res.send('Error updating post: ' + err.message);
+    adminError(res, 'UPDATE POST ERROR:', err);
   }
 });
 
@@ -704,8 +742,7 @@ app.post('/admin/dogs/new', requireLogin, upload.single('photo'), async (req, re
     await dog.save();
     res.redirect('/admin/dashboard');
   } catch (err) {
-    console.error('ADD DOG ERROR:', err);
-    res.send('Error adding dog: ' + err.message);
+    adminError(res, 'ADD DOG ERROR:', err);
   }
 });
 
@@ -714,7 +751,7 @@ app.get('/admin/dogs/edit/:id', requireLogin, async (req, res) => {
     const dog = await Dog.findById(req.params.id);
     res.render('admin-dog-form', { dog });
   } catch (err) {
-    res.send('Error: ' + err.message);
+    adminError(res, 'Admin action error', err);
   }
 });
 
@@ -731,8 +768,7 @@ app.post('/admin/dogs/edit/:id', requireLogin, upload.single('photo'), async (re
     await Dog.findByIdAndUpdate(req.params.id, updateData);
     res.redirect('/admin/dashboard');
   } catch (err) {
-    console.error('UPDATE DOG ERROR:', err);
-    res.send('Error updating dog: ' + err.message);
+    adminError(res, 'UPDATE DOG ERROR:', err);
   }
 });
 
