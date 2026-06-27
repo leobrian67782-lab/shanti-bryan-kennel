@@ -136,26 +136,31 @@
   <div class="testimonial-list">
     <% testimonials.forEach(function(t) { %>
       <div class="testimonial-card">
-        <div class="testimonial-quote-mark"><i class="fa-solid fa-quote-right"></i></div>
-        <div class="testimonial-stars">
-          <% for (let i = 0; i < t.rating; i++) { %><i class="fa-solid fa-star"></i><% } %>
-          <% for (let i = t.rating; i < 5; i++) { %><i class="fa-regular fa-star"></i><% } %>
-        </div>
-        <p class="testimonial-message"><%= t.message %></p>
-        <div class="testimonial-author">
-          <% if (t.photo) { %>
-            <img src="<%= t.photo %>" class="testimonial-avatar" alt="<%= t.customerName %>">
-          <% } else { %>
-            <div class="testimonial-avatar-placeholder"><i class="fa-solid fa-user"></i></div>
-          <% } %>
-          <div>
-            <div class="testimonial-name"><%= t.customerName %></div>
-            <% if (t.location || t.tag) { %>
-              <div class="testimonial-location">
-                <% if (t.location) { %><i class="fa-solid fa-location-dot"></i> <%= t.location %><% } %>
-                <% if (t.tag) { %> • <%= t.tag %><% } %>
-              </div>
+        <% if (t.photo) { %>
+          <div class="testimonial-photo-wrap">
+            <img src="<%= t.photo %>" class="testimonial-photo" alt="<%= t.customerName %>">
+          </div>
+        <% } %>
+        <div class="testimonial-content">
+          <div class="testimonial-quote-mark"><i class="fa-solid fa-quote-right"></i></div>
+          <div class="testimonial-stars">
+            <% for (let i = 0; i < t.rating; i++) { %><i class="fa-solid fa-star"></i><% } %>
+            <% for (let i = t.rating; i < 5; i++) { %><i class="fa-regular fa-star"></i><% } %>
+          </div>
+          <p class="testimonial-message"><%= t.message %></p>
+          <div class="testimonial-author">
+            <% if (!t.photo) { %>
+              <div class="testimonial-avatar-placeholder"><i class="fa-solid fa-user"></i></div>
             <% } %>
+            <div>
+              <div class="testimonial-name"><%= t.customerName %></div>
+              <% if (t.location || t.tag) { %>
+                <div class="testimonial-location">
+                  <% if (t.location) { %><i class="fa-solid fa-location-dot"></i> <%= t.location %><% } %>
+                  <% if (t.tag) { %> • <%= t.tag %><% } %>
+                </div>
+              <% } %>
+            </div>
           </div>
         </div>
       </div>
