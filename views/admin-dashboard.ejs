@@ -2,8 +2,8 @@
 
 <!-- Summary cards -->
 <div class="admin-overview-grid">
-  <div class="admin-overview-card">
-    <div class="admin-overview-icon" style="background:#faf3e0;color:var(--gold);"><i class="fa-solid fa-heart"></i></div>
+  <div class="admin-overview-card card-gold">
+    <div class="admin-overview-icon"><i class="fa-solid fa-heart"></i></div>
     <div>
       <span class="admin-overview-num"><%= puppies.length %></span>
       <span class="admin-overview-label">Total Puppies</span>
@@ -15,8 +15,8 @@
     </div>
   </div>
 
-  <div class="admin-overview-card">
-    <div class="admin-overview-icon" style="background:#e3edf7;color:#2b6cb0;"><i class="fa-solid fa-newspaper"></i></div>
+  <div class="admin-overview-card card-blue">
+    <div class="admin-overview-icon"><i class="fa-solid fa-newspaper"></i></div>
     <div>
       <span class="admin-overview-num"><%= posts.length %></span>
       <span class="admin-overview-label">Blog Posts</span>
@@ -27,8 +27,8 @@
     </div>
   </div>
 
-  <div class="admin-overview-card">
-    <div class="admin-overview-icon" style="background:#fdecea;color:var(--maroon);"><i class="fa-solid fa-envelope"></i></div>
+  <div class="admin-overview-card card-red">
+    <div class="admin-overview-icon"><i class="fa-solid fa-envelope"></i></div>
     <div>
       <span class="admin-overview-num"><%= inquiries.length %></span>
       <span class="admin-overview-label">Messages</span>
@@ -36,8 +36,8 @@
     </div>
   </div>
 
-  <div class="admin-overview-card">
-    <div class="admin-overview-icon" style="background:#e6f4ea;color:#2e9e4f;"><i class="fa-solid fa-star"></i></div>
+  <div class="admin-overview-card card-green">
+    <div class="admin-overview-icon"><i class="fa-solid fa-star"></i></div>
     <div>
       <span class="admin-overview-num"><%= testimonials.length %></span>
       <span class="admin-overview-label">Testimonials</span>
@@ -83,7 +83,7 @@
 <div class="admin-section">
   <div class="admin-section-head">
     <h3><i class="fa-solid fa-envelope" style="color:var(--maroon);"></i> Recent Messages</h3>
-    <a href="/admin/inquiries" class="admin-btn">View All</a>
+    <a href="/admin/inquiries" class="admin-btn admin-btn-ghost">View All</a>
   </div>
   <% if (inquiries.length === 0) { %>
     <p class="admin-empty">No messages yet.</p>
@@ -107,7 +107,7 @@
 <div class="admin-section">
   <div class="admin-section-head">
     <h3><i class="fa-solid fa-heart" style="color:var(--gold);"></i> Recent Puppies</h3>
-    <a href="/admin/puppies/new" class="admin-btn">Add Puppy</a>
+    <a href="/puppies" target="_blank" class="admin-btn admin-btn-ghost">View All</a>
   </div>
   <% if (puppies.length === 0) { %>
     <p class="admin-empty">No puppies yet.</p>
@@ -139,7 +139,7 @@
 <div class="admin-section">
   <div class="admin-section-head">
     <h3><i class="fa-solid fa-newspaper" style="color:#2b6cb0;"></i> Recent Blog Posts</h3>
-    <a href="/admin/posts/new" class="admin-btn">New Post</a>
+    <a href="/blog" target="_blank" class="admin-btn admin-btn-ghost">View All</a>
   </div>
   <% if (posts.length === 0) { %>
     <p class="admin-empty">No posts yet.</p>
