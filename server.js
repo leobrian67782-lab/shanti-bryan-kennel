@@ -729,7 +729,7 @@ app.get('/admin/dogs/new', requireLogin, (req, res) => {
   res.render('admin-dog-form', { dog: null });
 });
 
-app.post('/admin/dogs/new', requireLogin, upload.single('photo'), async (req, res) => {
+app.post('/admin/dogs/new', requireLogin, upload.array('photos', 8), async (req, res) => {
   try {
     const dog = new Dog({
       name: req.body.name,
@@ -737,7 +737,7 @@ app.post('/admin/dogs/new', requireLogin, upload.single('photo'), async (req, re
       role: req.body.role,
       order: req.body.order || 0,
       description: req.body.description,
-      photo: req.file ? req.file.path : ''
+      photos: req.files ? req.files.map(f => f.path) : []
     });
     await dog.save();
     res.redirect('/admin/dashboard');
@@ -755,16 +755,28 @@ app.get('/admin/dogs/edit/:id', requireLogin, async (req, res) => {
   }
 });
 
-app.post('/admin/dogs/edit/:id', requireLogin, upload.single('photo'), async (req, res) => {
+app.post('/admin/dogs/edit/:id', requireLogin, upload.array('photos', 8), async (req, res) => {
   try {
+    const data = req.body;
+    const dog = await Dog.findById(req.params.id);
     const updateData = {
-      name: req.body.name,
-      gender: req.body.gender,
-      role: req.body.role,
-      order: req.body.order || 0,
-      description: req.body.description
+      name: data.name,
+      gender: data.gender,
+      role: data.role,
+      order: data.order || 0,
+      description: data.description
     };
-    if (req.file) updateData.photo = req.file.path;
+
+    // Migrate the legacy single `photo` field into the photos array if needed,
+    // then apply removals and append any newly uploaded photos.
+    const existingPhotos = (dog.photos && dog.photos.length > 0) ? dog.photos : (dog.photo ? [dog.photo] : []);
+    const deletePhotos = Array.isArray(data.deletePhotos) ? data.deletePhotos : (data.deletePhotos ? [data.deletePhotos] : []);
+    let remainingPhotos = existingPhotos.filter(p => !deletePhotos.includes(p));
+    if (req.files && req.files.length > 0) {
+      remainingPhotos = remainingPhotos.concat(req.files.map(f => f.path));
+    }
+    updateData.photos = remainingPhotos;
+
     await Dog.findByIdAndUpdate(req.params.id, updateData);
     res.redirect('/admin/dashboard');
   } catch (err) {
