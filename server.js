@@ -369,6 +369,7 @@ app.get('/admin/puppies/edit/:id', requireLogin, async (req, res) => {
 app.post('/admin/puppies/edit/:id', requireLogin, upload.array('photos', 5), async (req, res) => {
   try {
     const data = req.body;
+    const puppy = await Puppy.findById(req.params.id);
     const updateData = {
       name: data.name,
       price: data.price,
@@ -384,9 +385,16 @@ app.post('/admin/puppies/edit/:id', requireLogin, upload.array('photos', 5), asy
       dewormed: data.dewormed === 'on',
       microchipped: data.microchipped === 'on'
     };
+
+    // Keep existing photos except any the admin checked for removal,
+    // then append any newly uploaded photos (instead of wiping the whole gallery).
+    const deletePhotos = Array.isArray(data.deletePhotos) ? data.deletePhotos : (data.deletePhotos ? [data.deletePhotos] : []);
+    let remainingPhotos = (puppy.photos || []).filter(p => !deletePhotos.includes(p));
     if (req.files && req.files.length > 0) {
-      updateData.photos = req.files.map(f => f.path);
+      remainingPhotos = remainingPhotos.concat(req.files.map(f => f.path));
     }
+    updateData.photos = remainingPhotos;
+
     await Puppy.findByIdAndUpdate(req.params.id, updateData);
     res.redirect('/admin/dashboard');
   } catch (err) {
