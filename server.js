@@ -301,6 +301,17 @@ app.get('/admin/dashboard', requireLogin, async (req, res) => {
   res.render('admin-dashboard', { puppies, litters, testimonials, faqs, posts, inquiries, dogs });
 });
 
+// ===== ADMIN INQUIRIES =====
+app.get('/admin/inquiries', requireLogin, async (req, res) => {
+  const inquiries = await Contact.find().sort({ createdAt: -1 });
+  res.render('admin-inquiries', { inquiries });
+});
+
+app.get('/admin/inquiries/delete/:id', requireLogin, async (req, res) => {
+  await Contact.findByIdAndDelete(req.params.id);
+  res.redirect('/admin/inquiries');
+});
+
 // ===== ADMIN PUPPIES =====
 app.get('/admin/puppies/new', requireLogin, (req, res) => {
   res.render('admin-puppy-form', { puppy: null });
