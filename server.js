@@ -313,6 +313,11 @@ app.get('/admin/inquiries/delete/:id', requireLogin, async (req, res) => {
 });
 
 // ===== ADMIN PUPPIES =====
+app.get('/admin/puppies', requireLogin, async (req, res) => {
+  const puppies = await Puppy.find().sort({ createdAt: -1 });
+  res.render('admin-puppies-list', { puppies });
+});
+
 app.get('/admin/puppies/new', requireLogin, (req, res) => {
   res.render('admin-puppy-form', { puppy: null });
 });
@@ -389,6 +394,11 @@ app.get('/admin/puppies/delete/:id', requireLogin, async (req, res) => {
 });
 
 // ===== ADMIN LITTERS =====
+app.get('/admin/litters', requireLogin, async (req, res) => {
+  const litters = await Litter.find().sort({ createdAt: -1 });
+  res.render('admin-litters-list', { litters });
+});
+
 app.get('/admin/litters/new', requireLogin, (req, res) => {
   res.render('admin-litter-form', { litter: null });
 });
@@ -468,6 +478,11 @@ app.get('/admin/litters/delete/:id', requireLogin, async (req, res) => {
 });
 
 // ===== ADMIN TESTIMONIALS =====
+app.get('/admin/testimonials', requireLogin, async (req, res) => {
+  const testimonials = await Testimonial.find().sort({ createdAt: -1 });
+  res.render('admin-testimonials-list', { testimonials });
+});
+
 app.get('/admin/testimonials/new', requireLogin, (req, res) => {
   res.render('admin-testimonial-form', { testimonial: null });
 });
@@ -528,6 +543,11 @@ app.get('/admin/testimonials/delete/:id', requireLogin, async (req, res) => {
 });
 
 // ===== ADMIN FAQS =====
+app.get('/admin/faqs', requireLogin, async (req, res) => {
+  const faqs = await Faq.find().sort({ order: 1 });
+  res.render('admin-faqs-list', { faqs });
+});
+
 app.get('/admin/faqs/new', requireLogin, (req, res) => {
   res.render('admin-faq-form', { faq: null });
 });
@@ -587,6 +607,11 @@ app.post('/admin/settings', requireLogin, async (req, res) => {
 });
 
 // ===== ADMIN POSTS =====
+app.get('/admin/posts', requireLogin, async (req, res) => {
+  const posts = await Post.find().sort({ createdAt: -1 });
+  res.render('admin-posts-list', { posts });
+});
+
 app.get('/admin/posts/new', requireLogin, (req, res) => {
   res.render('admin-post-form', { post: null });
 });
@@ -642,6 +667,11 @@ app.get('/admin/posts/delete/:id', requireLogin, async (req, res) => {
 });
 
 // ===== ADMIN DOGS =====
+app.get('/admin/dogs', requireLogin, async (req, res) => {
+  const dogs = await Dog.find().sort({ order: 1 });
+  res.render('admin-dogs-list', { dogs });
+});
+
 app.get('/admin/dogs/new', requireLogin, (req, res) => {
   res.render('admin-dog-form', { dog: null });
 });
