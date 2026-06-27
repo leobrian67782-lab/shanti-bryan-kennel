@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const path = require('path');
 const session = require('express-session');
 const multer = require('multer');
+const https = require('https');
 const { v2: cloudinary } = require('cloudinary');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
@@ -44,6 +45,12 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+// Lightweight health-check (used by the keep-alive self-ping below, and can
+// also be pointed to by an external uptime monitor like UptimeRobot or cron-job.org)
+app.get('/healthz', (req, res) => {
+  res.status(200).send('ok');
+});
 
 // Sessions
 app.use(session({
@@ -729,3 +736,25 @@ app.get('/admin/dogs/delete/:id', requireLogin, async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
+
+// ===== KEEP-ALIVE (prevents Render free-tier from spinning down after 15 min idle) =====
+// Render automatically sets RENDER_EXTERNAL_URL in production to this service's public URL.
+const SELF_URL = process.env.RENDER_EXTERNAL_URL;
+if (SELF_URL) {
+  const PING_INTERVAL = 10 * 60 * 1000; // 10 minutes (under Render's 15-min idle limit)
+  setInterval(() => {
+    try {
+      const u = new URL(`${SELF_URL}/healthz`);
+      https.get({ hostname: u.hostname, path: u.pathname, timeout: 10000 }, (res) => {
+        console.log(`[keep-alive] ping -> ${res.statusCode}`);
+      }).on('error', (err) => {
+        console.log(`[keep-alive] ping failed: ${err.message}`);
+      });
+    } catch (err) {
+      console.log(`[keep-alive] ping setup failed: ${err.message}`);
+    }
+  }, PING_INTERVAL);
+  console.log('[keep-alive] self-ping enabled every 10 minutes');
+} else {
+  console.log('[keep-alive] RENDER_EXTERNAL_URL not set, self-ping disabled (normal for local dev)');
+}
