@@ -1,21 +1,80 @@
-<%- include('partials/header', {title: 'Admin Login | Shanti & Bryan Pinscher Kennel'}) %>
-
-<section class="page-section">
-  <h1>Admin Login</h1>
-  <form method="POST" action="/admin/login" class="contact-form">
-    <% if (error) { %>
-      <div class="form-success" style="background:#f8d7da;color:#721c24;border-color:#f5c6cb;"><%= error %></div>
-    <% } %>
-    <div class="form-group">
-      <label for="username">Username</label>
-      <input type="text" id="username" name="username" required>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login | Shanti & Bryan Pinscher Kennel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, var(--navy) 0%, #1a2b3f 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .admin-login-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 44px 36px;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+    }
+    .admin-login-brand {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .admin-login-brand h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      color: var(--navy);
+      margin-bottom: 6px;
+    }
+    .admin-login-brand h1 span { color: var(--gold); }
+    .admin-login-brand p {
+      color: var(--text-light);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+    .admin-login-card .contact-form { margin: 0; padding: 0; box-shadow: none; max-width: 100%; }
+    .admin-login-back {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      color: var(--text-light);
+      font-size: 0.88rem;
+      text-decoration: none;
+    }
+    .admin-login-back:hover { color: var(--maroon); }
+  </style>
+</head>
+<body>
+  <div class="admin-login-card">
+    <div class="admin-login-brand">
+      <h1>Shanti & Bryan <span>Pinscher Kennel</span></h1>
+      <p>Admin Login</p>
     </div>
-    <div class="form-group">
-      <label for="password">Password</label>
-      <input type="password" id="password" name="password" required>
-    </div>
-    <button type="submit" class="form-submit">Log In</button>
-  </form>
-</section>
-
-<%- include('partials/footer') %>
+    <form method="POST" action="/admin/login" class="contact-form">
+      <% if (error) { %>
+        <div class="form-success" style="background:#f8d7da;color:#721c24;border-color:#f5c6cb;"><%= error %></div>
+      <% } %>
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+      <button type="submit" class="form-submit">Log In</button>
+    </form>
+    <a href="/" class="admin-login-back"><i class="fa-solid fa-arrow-left"></i> Back to site</a>
+  </div>
+</body>
+</html>

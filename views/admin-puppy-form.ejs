@@ -1,9 +1,7 @@
-<%- include('partials/header', {title: 'Puppy Form | Admin'}) %>
+<%- include('partials/admin-header', {title: 'Puppy Form | Admin', active: 'puppy', heading: puppy ? 'Edit Puppy' : 'Add New Puppy'}) %>
 
-<section class="page-section">
-  <h1><%= puppy ? 'Edit Puppy' : 'Add New Puppy' %></h1>
-
-  <form method="POST" action="<%= puppy ? '/admin/puppies/edit/' + puppy._id : '/admin/puppies/new' %>" class="contact-form" enctype="multipart/form-data">
+<div class="admin-section" style="max-width:700px;">
+  <form method="POST" action="<%= puppy ? '/admin/puppies/edit/' + puppy._id : '/admin/puppies/new' %>" enctype="multipart/form-data">
 
     <div class="form-group">
       <label>Name *</label>
@@ -17,7 +15,7 @@
 
     <div class="form-group">
       <label>Gender *</label>
-      <select name="gender" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;">
+      <select name="gender" required>
         <option value="Male" <%= puppy && puppy.gender === 'Male' ? 'selected' : '' %>>Male</option>
         <option value="Female" <%= puppy && puppy.gender === 'Female' ? 'selected' : '' %>>Female</option>
       </select>
@@ -40,7 +38,7 @@
 
     <div class="form-group">
       <label>Status *</label>
-      <select name="status" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;">
+      <select name="status" required>
         <option value="Available" <%= puppy && puppy.status === 'Available' ? 'selected' : '' %>>Available</option>
         <option value="Reserved" <%= puppy && puppy.status === 'Reserved' ? 'selected' : '' %>>Reserved</option>
         <option value="Sold" <%= puppy && puppy.status === 'Sold' ? 'selected' : '' %>>Sold</option>
@@ -63,21 +61,21 @@
     </div>
 
     <div class="form-group">
-      <label><input type="checkbox" name="vaccinated" <%= puppy && puppy.vaccinated ? 'checked' : '' %>> Vaccinated</label>
+      <label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input type="checkbox" name="vaccinated" style="width:auto;" <%= puppy && puppy.vaccinated ? 'checked' : '' %>> Vaccinated</label>
     </div>
     <div class="form-group">
-      <label><input type="checkbox" name="dewormed" <%= puppy && puppy.dewormed ? 'checked' : '' %>> Dewormed</label>
+      <label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input type="checkbox" name="dewormed" style="width:auto;" <%= puppy && puppy.dewormed ? 'checked' : '' %>> Dewormed</label>
     </div>
     <div class="form-group">
-      <label><input type="checkbox" name="microchipped" <%= puppy && puppy.microchipped ? 'checked' : '' %>> Microchipped</label>
+      <label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input type="checkbox" name="microchipped" style="width:auto;" <%= puppy && puppy.microchipped ? 'checked' : '' %>> Microchipped</label>
     </div>
 
     <div class="form-group">
       <label>Photos (you can select up to 5 at once)</label>
       <input type="file" name="photos" accept="image/*" multiple>
-      <small style="color:#888;display:block;margin-top:4px;">Tip: Hold Ctrl (or Cmd) to select multiple photos. Uploading new photos replaces the old ones.</small>
+      <small style="color:#7a8494;display:block;margin-top:4px;">Tip: Hold Ctrl (or Cmd) to select multiple photos. Uploading new photos replaces the old ones.</small>
       <% if (puppy && puppy.photos && puppy.photos.length > 0) { %>
-        <p style="margin-top:8px;">Current photos:</p>
+        <p style="margin-top:8px;color:#c5cdd8;">Current photos:</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
           <% puppy.photos.forEach(function(p) { %>
             <img src="<%= p %>" style="max-width:90px;border-radius:8px;">
@@ -86,8 +84,8 @@
       <% } %>
     </div>
 
-    <button type="submit" class="form-submit"><%= puppy ? 'Update Puppy' : 'Add Puppy' %></button>
+    <button type="submit" class="form-submit"><i class="fa-solid fa-floppy-disk"></i> <%= puppy ? 'Update Puppy' : 'Add Puppy' %></button>
   </form>
-</section>
+</div>
 
-<%- include('partials/footer') %>
+<%- include('partials/admin-footer') %>

@@ -1,9 +1,7 @@
-<%- include('partials/header', {title: 'FAQ Form | Admin'}) %>
+<%- include('partials/admin-header', {title: 'FAQ Form | Admin', active: 'faq', heading: faq ? 'Edit FAQ' : 'Add New FAQ'}) %>
 
-<section class="page-section">
-  <h1><%= faq ? 'Edit FAQ' : 'Add New FAQ' %></h1>
-
-  <form method="POST" action="<%= faq ? '/admin/faqs/edit/' + faq._id : '/admin/faqs/new' %>" class="contact-form">
+<div class="admin-section" style="max-width:640px;">
+  <form method="POST" action="<%= faq ? '/admin/faqs/edit/' + faq._id : '/admin/faqs/new' %>">
 
     <div class="form-group">
       <label>Question *</label>
@@ -20,8 +18,8 @@
       <input type="number" name="order" value="<%= faq ? faq.order : 0 %>">
     </div>
 
-    <button type="submit" class="form-submit"><%= faq ? 'Update FAQ' : 'Add FAQ' %></button>
+    <button type="submit" class="form-submit"><i class="fa-solid fa-floppy-disk"></i> <%= faq ? 'Update FAQ' : 'Add FAQ' %></button>
   </form>
-</section>
+</div>
 
-<%- include('partials/footer') %>
+<%- include('partials/admin-footer') %>
