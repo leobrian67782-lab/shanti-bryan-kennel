@@ -7,38 +7,64 @@
   <% if (inquiries.length === 0) { %>
     <p class="admin-empty">No inquiries yet.</p>
   <% } else { %>
-    <table class="admin-table">
-      <thead><tr><th>Date</th><th>Name</th><th>Contact</th><th>Location</th><th>Subject</th><th>Message</th><th></th></tr></thead>
-      <tbody>
-        <% inquiries.forEach(function(inq) { %>
-          <tr>
-            <td style="white-space:nowrap;"><%= inq.createdAt.toLocaleDateString() %></td>
-            <td style="font-weight:600;color:#fff;"><%= inq.name %></td>
-            <td>
-              <a href="mailto:<%= inq.email %>" style="color:var(--gold);"><%= inq.email %></a>
-              <% if (inq.phone) { %><br><span style="color:#6b7585;font-size:0.85rem;"><%= inq.phone %></span><% } %>
-            </td>
-            <td style="font-size:0.85rem;">
-              <% if (inq.location) { %>
-                <span style="color:#c5cdd8;"><i class="fa-solid fa-location-dot" style="color:var(--gold);"></i> <%= inq.location %></span>
-              <% } %>
-              <% if (inq.detectedLocation) { %>
-                <br><span style="color:#6b7585;" title="Auto-detected from IP"><i class="fa-solid fa-globe"></i> <%= inq.detectedLocation %></span>
-              <% } %>
-              <% if (!inq.location && !inq.detectedLocation) { %>
-                <span style="color:#6b7585;">—</span>
-              <% } %>
-            </td>
-            <td><%= inq.subject %></td>
-            <td style="max-width:280px;"><%= inq.message %></td>
-            <td class="admin-actions">
-              <a href="/admin/inquiries/delete/<%= inq._id %>" class="admin-btn-sm admin-btn-danger" onclick="return confirm('Delete this inquiry?')"><i class="fa-solid fa-trash"></i></a>
-            </td>
-          </tr>
-        <% }); %>
-      </tbody>
-    </table>
+    <div class="admin-inquiry-list">
+      <% inquiries.forEach(function(inq, i) { %>
+        <div class="admin-inquiry-card">
+          <div class="admin-inquiry-row">
+            <div class="admin-inquiry-who">
+              <span class="admin-inquiry-name"><%= inq.name %></span>
+              <span class="admin-inquiry-date"><%= inq.createdAt.toLocaleDateString() %></span>
+            </div>
+            <button type="button" class="admin-inquiry-toggle" onclick="toggleInquiry(<%= i %>, this)">
+              <i class="fa-solid fa-chevron-down"></i> View Details
+            </button>
+          </div>
+          <div class="admin-inquiry-details" id="inquiry-details-<%= i %>">
+            <div class="admin-inquiry-detail-row">
+              <span>Email</span>
+              <a href="mailto:<%= inq.email %>"><%= inq.email %></a>
+            </div>
+            <% if (inq.phone) { %>
+              <div class="admin-inquiry-detail-row">
+                <span>Phone</span>
+                <a href="tel:<%= inq.phone %>"><%= inq.phone %></a>
+              </div>
+            <% } %>
+            <div class="admin-inquiry-detail-row">
+              <span>Location</span>
+              <span>
+                <% if (inq.location) { %><%= inq.location %><% } %>
+                <% if (inq.detectedLocation) { %> <span style="color:#6b7585;">(auto: <%= inq.detectedLocation %>)</span><% } %>
+                <% if (!inq.location && !inq.detectedLocation) { %>—<% } %>
+              </span>
+            </div>
+            <div class="admin-inquiry-detail-row">
+              <span>Subject</span>
+              <span><%= inq.subject %></span>
+            </div>
+            <div class="admin-inquiry-detail-row admin-inquiry-message">
+              <span>Message</span>
+              <p><%= inq.message %></p>
+            </div>
+            <div class="admin-inquiry-delete">
+              <a href="/admin/inquiries/delete/<%= inq._id %>" class="admin-btn admin-btn-danger" onclick="return confirm('Delete this inquiry?')"><i class="fa-solid fa-trash"></i> Delete</a>
+            </div>
+          </div>
+        </div>
+      <% }); %>
+    </div>
   <% } %>
 </div>
+
+<script>
+  function toggleInquiry(i, btn) {
+    var details = document.getElementById('inquiry-details-' + i);
+    var isOpen = details.classList.toggle('open');
+    btn.classList.toggle('is-open', isOpen);
+    btn.innerHTML = isOpen
+      ? '<i class="fa-solid fa-chevron-up"></i> Hide Details'
+      : '<i class="fa-solid fa-chevron-down"></i> View Details';
+  }
+</script>
 
 <%- include('partials/admin-footer') %>
