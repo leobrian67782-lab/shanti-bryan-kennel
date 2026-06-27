@@ -270,38 +270,67 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   font-size: 0.85rem;
 }
 
-/* Puppy filter bar */
-.puppy-filter-bar {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+/* Puppy filter panel */
+.puppy-filter-panel {
+  background: #faf7f0;
+  border: 1px solid #ece5d8;
+  border-radius: 12px;
+  padding: 20px 24px;
   margin: 30px 0 10px;
   text-align: left;
 }
-.filter-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.filter-label {
+.puppy-filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
   font-weight: 700;
   color: var(--navy);
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-right: 4px;
-  min-width: 56px;
+  font-size: 0.95rem;
 }
-.filter-pill {
-  background: #faf7f0;
-  border: 1px solid #e6ddc8;
-  color: var(--text-light);
-  padding: 7px 16px;
-  border-radius: 20px;
-  font-size: 0.85rem;
+.puppy-filter-header i { color: var(--gold); margin-right: 6px; }
+.filter-clear-link {
+  background: none;
+  border: none;
+  color: var(--maroon);
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   font-family: 'Poppins', sans-serif;
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  padding: 0;
 }
-.filter-pill:hover { border-color: var(--gold); color: var(--gold); }
-.filter-pill.active { background: var(--maroon); border-color: var(--maroon); color: #fff; }
+.filter-clear-link:hover { text-decoration: underline; }
+.puppy-filter-row { display: flex; gap: 32px; flex-wrap: wrap; }
+.filter-segment-group { display: flex; flex-direction: column; gap: 8px; }
+.filter-segment-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-light);
+  font-weight: 700;
+}
+.filter-segment {
+  display: inline-flex;
+  background: #fff;
+  border: 1px solid #e6ddc8;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.seg-btn {
+  background: transparent;
+  border: none;
+  border-right: 1px solid #e6ddc8;
+  color: var(--text-light);
+  padding: 8px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.seg-btn:last-child { border-right: none; }
+.seg-btn:hover { background: #faf3e0; color: var(--maroon); }
+.seg-btn.active { background: var(--maroon); color: #fff; }
 
 /* Puppy / Litter detail page */
 .detail-grid {
@@ -1825,9 +1854,10 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   .contact-info-grid { flex-direction: column; }
   .contact-info-card { min-width: 0; width: 100%; }
 
-  /* Puppy filter bar mobile */
-  .filter-label { min-width: 0; width: 100%; margin-bottom: 2px; }
-  .filter-pill { padding: 6px 13px; font-size: 0.8rem; }
+  /* Puppy filter panel mobile */
+  .puppy-filter-panel { padding: 16px 16px 18px; }
+  .puppy-filter-row { gap: 18px; }
+  .seg-btn { padding: 7px 12px; font-size: 0.78rem; }
 
   /* Puppy / Litter detail page */
   .detail-grid { grid-template-columns: 1fr; gap: 28px; }
