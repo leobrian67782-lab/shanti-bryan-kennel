@@ -30,7 +30,9 @@
 
   <form method="POST" action="/contact" class="contact-form">
     <% if (message) { %>
-      <div class="form-success"><%= message %></div>
+      <div class="<%= success ? 'form-success' : 'form-error' %>">
+        <i class="fa-solid <%= success ? 'fa-circle-check' : 'fa-circle-exclamation' %>"></i> <%= message %>
+      </div>
     <% } %>
 
     <div class="form-group">

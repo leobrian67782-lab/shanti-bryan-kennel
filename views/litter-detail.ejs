@@ -2,7 +2,7 @@
 
 <section class="page-section">
   <div class="container" style="max-width: 950px;">
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; text-align: left; align-items: start;">
+    <div class="detail-grid">
       <div>
         <% if (litter.photos && litter.photos.length > 0) { %>
           <img src="<%= litter.photos[0] %>" alt="<%= litter.litterName %>" style="width: 100%; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);">
@@ -11,17 +11,27 @@
         <% } %>
       </div>
       <div>
-        <h1 style="font-size: 2.2rem; margin-bottom: 20px;"><%= litter.litterName %></h1>
-        <p style="margin-bottom: 8px;"><strong>Birth Date:</strong> <%= litter.birthDate.toDateString() %></p>
-        <% if (litter.numberOfPuppies) { %><p style="margin-bottom: 8px;"><strong>Number of Puppies:</strong> <%= litter.numberOfPuppies %></p><% } %>
-        <a href="/contact" class="btn" style="margin-top: 16px;">Inquire About This Litter</a>
+        <h1 class="detail-name"><%= litter.litterName %></h1>
+        <div class="detail-specs">
+          <div class="detail-spec-row">
+            <span class="detail-spec-label">Birth Date</span>
+            <span class="detail-spec-value"><%= litter.birthDate.toDateString() %></span>
+          </div>
+          <% if (litter.numberOfPuppies) { %>
+            <div class="detail-spec-row">
+              <span class="detail-spec-label">Number of Puppies</span>
+              <span class="detail-spec-value"><%= litter.numberOfPuppies %></span>
+            </div>
+          <% } %>
+        </div>
+        <a href="/contact" class="btn" style="margin-top: 8px;">Inquire About This Litter</a>
       </div>
     </div>
 
     <% if (litter.description) { %>
-      <div style="margin-top: 40px; text-align: left;">
-        <h2 style="font-size: 1.5rem; margin-bottom: 12px;">About This Litter</h2>
-        <p style="color: #5c4f44; line-height: 1.8;"><%= litter.description %></p>
+      <div class="detail-about">
+        <h2>About This Litter</h2>
+        <p><%= litter.description %></p>
       </div>
     <% } %>
 
@@ -59,8 +69,8 @@
       </div>
     </div>
 
-    <div style="margin-top: 40px;">
-      <a href="/litters" class="btn" style="background:#888;">← Back to All Litters</a>
+    <div class="detail-back">
+      <a href="/litters" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i> Back to All Litters</a>
     </div>
   </div>
 </section>

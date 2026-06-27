@@ -2,7 +2,7 @@
 
 <section class="page-section">
   <div class="container" style="max-width: 950px;">
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; text-align: left; align-items: start;">
+    <div class="detail-grid">
 
       <div>
         <% if (puppy.photos && puppy.photos.length > 0) { %>
@@ -22,37 +22,63 @@
       </div>
 
       <div>
-        <h1 style="font-size: 2.2rem; margin-bottom: 8px;"><%= puppy.name %></h1>
-        <span class="status-badge status-<%= puppy.status.toLowerCase() %>" style="margin-bottom:20px;display:inline-block;"><%= puppy.status %></span>
+        <h1 class="detail-name"><%= puppy.name %></h1>
+        <span class="status-badge status-<%= puppy.status.toLowerCase() %>" style="display:inline-block;"><%= puppy.status %></span>
 
-        <p style="font-size: 1.8rem; color: #c9a35d; font-weight: 700; margin: 16px 0;">$<%= puppy.price %></p>
+        <p class="detail-price">$<%= puppy.price %></p>
 
-        <p style="margin-bottom: 8px;"><strong>Gender:</strong> <%= puppy.gender %></p>
-        <p style="margin-bottom: 8px;"><strong>Color:</strong> <%= puppy.color %></p>
-        <% if (puppy.weight) { %><p style="margin-bottom: 8px;"><strong>Weight:</strong> <%= puppy.weight %></p><% } %>
-        <p style="margin-bottom: 8px;"><strong>Date of Birth:</strong> <%= puppy.dateOfBirth.toDateString() %></p>
-        <% if (puppy.sireName) { %><p style="margin-bottom: 8px;"><strong>Sire:</strong> <%= puppy.sireName %></p><% } %>
-        <% if (puppy.damName) { %><p style="margin-bottom: 8px;"><strong>Dam:</strong> <%= puppy.damName %></p><% } %>
-
-        <div style="margin: 16px 0;">
-          <% if (puppy.vaccinated) { %><span style="margin-right:12px;">✅ Vaccinated</span><% } %>
-          <% if (puppy.dewormed) { %><span style="margin-right:12px;">✅ Dewormed</span><% } %>
-          <% if (puppy.microchipped) { %><span>✅ Microchipped</span><% } %>
+        <div class="detail-specs">
+          <div class="detail-spec-row">
+            <span class="detail-spec-label">Gender</span>
+            <span class="detail-spec-value"><%= puppy.gender %></span>
+          </div>
+          <div class="detail-spec-row">
+            <span class="detail-spec-label">Color</span>
+            <span class="detail-spec-value"><%= puppy.color %></span>
+          </div>
+          <% if (puppy.weight) { %>
+            <div class="detail-spec-row">
+              <span class="detail-spec-label">Weight</span>
+              <span class="detail-spec-value"><%= puppy.weight %></span>
+            </div>
+          <% } %>
+          <div class="detail-spec-row">
+            <span class="detail-spec-label">Date of Birth</span>
+            <span class="detail-spec-value"><%= puppy.dateOfBirth.toDateString() %></span>
+          </div>
+          <% if (puppy.sireName) { %>
+            <div class="detail-spec-row">
+              <span class="detail-spec-label">Sire</span>
+              <span class="detail-spec-value"><%= puppy.sireName %></span>
+            </div>
+          <% } %>
+          <% if (puppy.damName) { %>
+            <div class="detail-spec-row">
+              <span class="detail-spec-label">Dam</span>
+              <span class="detail-spec-value"><%= puppy.damName %></span>
+            </div>
+          <% } %>
         </div>
 
-        <a href="/contact" class="btn" style="margin-top: 16px;">Reserve <%= puppy.name %></a>
+        <div class="detail-care-badges">
+          <% if (puppy.vaccinated) { %><span class="detail-care-badge"><i class="fa-solid fa-circle-check"></i> Vaccinated</span><% } %>
+          <% if (puppy.dewormed) { %><span class="detail-care-badge"><i class="fa-solid fa-circle-check"></i> Dewormed</span><% } %>
+          <% if (puppy.microchipped) { %><span class="detail-care-badge"><i class="fa-solid fa-circle-check"></i> Microchipped</span><% } %>
+        </div>
+
+        <a href="/contact" class="btn" style="margin-top: 8px;">Reserve <%= puppy.name %></a>
       </div>
     </div>
 
     <% if (puppy.description) { %>
-      <div style="margin-top: 40px; text-align: left;">
-        <h2 style="font-size: 1.5rem; margin-bottom: 12px;">About <%= puppy.name %></h2>
-        <p style="color: #5c4f44; line-height: 1.8;"><%= puppy.description %></p>
+      <div class="detail-about">
+        <h2>About <%= puppy.name %></h2>
+        <p><%= puppy.description %></p>
       </div>
     <% } %>
 
-    <div style="margin-top: 40px;">
-      <a href="/puppies" class="btn" style="background:#888;">← Back to All Puppies</a>
+    <div class="detail-back">
+      <a href="/puppies" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i> Back to All Puppies</a>
     </div>
   </div>
 </section>
