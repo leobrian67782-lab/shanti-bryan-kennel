@@ -1,0 +1,31 @@
+<%- include('partials/admin-header', {title: 'Our Dogs | Admin', active: 'dog', heading: 'Our Dogs'}) %>
+
+<div class="admin-section">
+  <div class="admin-section-head">
+    <h3><i class="fa-solid fa-dog" style="color:var(--gold);"></i> All Dogs</h3>
+    <a href="/admin/dogs/new" class="admin-btn"><i class="fa-solid fa-plus"></i> Add Dog</a>
+  </div>
+  <% if (dogs.length === 0) { %>
+    <p class="admin-empty">No dogs yet.</p>
+  <% } else { %>
+    <table class="admin-table">
+      <thead><tr><th>Name</th><th>Gender</th><th>Role</th><th>Order</th><th></th></tr></thead>
+      <tbody>
+        <% dogs.forEach(function(d) { %>
+          <tr>
+            <td style="font-weight:600;"><%= d.name %></td>
+            <td><%= d.gender %></td>
+            <td style="color:var(--text-light);"><%= d.role || '—' %></td>
+            <td style="color:var(--text-light);">#<%= d.order %></td>
+            <td class="admin-actions">
+              <a href="/admin/dogs/edit/<%= d._id %>" class="admin-btn-sm"><i class="fa-solid fa-pen"></i></a>
+              <a href="/admin/dogs/delete/<%= d._id %>" class="admin-btn-sm admin-btn-danger" onclick="return confirm('Delete this dog?')"><i class="fa-solid fa-trash"></i></a>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
+<%- include('partials/admin-footer') %>

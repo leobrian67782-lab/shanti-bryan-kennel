@@ -1,0 +1,30 @@
+<%- include('partials/admin-header', {title: 'FAQs | Admin', active: 'faq', heading: 'FAQs'}) %>
+
+<div class="admin-section">
+  <div class="admin-section-head">
+    <h3><i class="fa-solid fa-circle-question" style="color:var(--gold);"></i> All FAQs</h3>
+    <a href="/admin/faqs/new" class="admin-btn"><i class="fa-solid fa-plus"></i> Add FAQ</a>
+  </div>
+  <% if (faqs.length === 0) { %>
+    <p class="admin-empty">No FAQs yet.</p>
+  <% } else { %>
+    <table class="admin-table">
+      <thead><tr><th>Order</th><th>Question</th><th>Answer</th><th></th></tr></thead>
+      <tbody>
+        <% faqs.forEach(function(f) { %>
+          <tr>
+            <td style="color:var(--text-light);">#<%= f.order %></td>
+            <td style="font-weight:600;max-width:240px;"><%= f.question %></td>
+            <td style="max-width:320px;color:var(--text-light);font-size:0.88rem;"><%= f.answer %></td>
+            <td class="admin-actions">
+              <a href="/admin/faqs/edit/<%= f._id %>" class="admin-btn-sm"><i class="fa-solid fa-pen"></i></a>
+              <a href="/admin/faqs/delete/<%= f._id %>" class="admin-btn-sm admin-btn-danger" onclick="return confirm('Delete this FAQ?')"><i class="fa-solid fa-trash"></i></a>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
+<%- include('partials/admin-footer') %>

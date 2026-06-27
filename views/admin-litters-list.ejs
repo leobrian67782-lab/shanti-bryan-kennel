@@ -1,0 +1,31 @@
+<%- include('partials/admin-header', {title: 'Litters | Admin', active: 'litter', heading: 'Litters'}) %>
+
+<div class="admin-section">
+  <div class="admin-section-head">
+    <h3><i class="fa-solid fa-paw" style="color:var(--gold);"></i> All Litters</h3>
+    <a href="/admin/litters/new" class="admin-btn"><i class="fa-solid fa-plus"></i> Add Litter</a>
+  </div>
+  <% if (litters.length === 0) { %>
+    <p class="admin-empty">No litters yet.</p>
+  <% } else { %>
+    <table class="admin-table">
+      <thead><tr><th>Litter</th><th>Sire / Dam</th><th>Puppies</th><th>Birth Date</th><th></th></tr></thead>
+      <tbody>
+        <% litters.forEach(function(l) { %>
+          <tr>
+            <td style="font-weight:600;"><%= l.litterName %></td>
+            <td style="color:var(--text-light);font-size:0.85rem;"><%= l.sireName %> &times; <%= l.damName %></td>
+            <td><%= l.numberOfPuppies || '—' %></td>
+            <td style="color:var(--text-light);font-size:0.85rem;"><%= l.birthDate.toLocaleDateString() %></td>
+            <td class="admin-actions">
+              <a href="/admin/litters/edit/<%= l._id %>" class="admin-btn-sm"><i class="fa-solid fa-pen"></i></a>
+              <a href="/admin/litters/delete/<%= l._id %>" class="admin-btn-sm admin-btn-danger" onclick="return confirm('Delete this litter?')"><i class="fa-solid fa-trash"></i></a>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
+<%- include('partials/admin-footer') %>

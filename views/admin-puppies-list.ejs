@@ -1,0 +1,34 @@
+<%- include('partials/admin-header', {title: 'Puppies | Admin', active: 'puppy', heading: 'Puppies'}) %>
+
+<div class="admin-section">
+  <div class="admin-section-head">
+    <h3><i class="fa-solid fa-heart" style="color:var(--gold);"></i> All Puppies</h3>
+    <a href="/admin/puppies/new" class="admin-btn"><i class="fa-solid fa-plus"></i> Add Puppy</a>
+  </div>
+  <% if (puppies.length === 0) { %>
+    <p class="admin-empty">No puppies yet.</p>
+  <% } else { %>
+    <table class="admin-table">
+      <thead><tr><th>Name</th><th>Status</th><th>Price</th><th>Added</th><th></th></tr></thead>
+      <tbody>
+        <% puppies.forEach(function(p) { %>
+          <tr>
+            <td>
+              <span style="font-weight:600;"><%= p.name %></span><br>
+              <span style="color:var(--text-light);font-size:0.82rem;"><%= p.gender %> • <%= p.color %></span>
+            </td>
+            <td><span class="status-badge status-<%= p.status.toLowerCase() %>"><%= p.status %></span></td>
+            <td style="color:var(--maroon);font-weight:600;">$<%= p.price %></td>
+            <td style="color:var(--text-light);font-size:0.85rem;"><%= p.createdAt.toLocaleDateString() %></td>
+            <td class="admin-actions">
+              <a href="/admin/puppies/edit/<%= p._id %>" class="admin-btn-sm"><i class="fa-solid fa-pen"></i></a>
+              <a href="/admin/puppies/delete/<%= p._id %>" class="admin-btn-sm admin-btn-danger" onclick="return confirm('Delete this puppy?')"><i class="fa-solid fa-trash"></i></a>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
+<%- include('partials/admin-footer') %>

@@ -1,0 +1,37 @@
+<%- include('partials/admin-header', {title: 'Testimonials | Admin', active: 'testimonial', heading: 'Testimonials'}) %>
+
+<div class="admin-section">
+  <div class="admin-section-head">
+    <h3><i class="fa-solid fa-star" style="color:#2e9e4f;"></i> All Testimonials</h3>
+    <a href="/admin/testimonials/new" class="admin-btn"><i class="fa-solid fa-plus"></i> Add Review</a>
+  </div>
+  <% if (testimonials.length === 0) { %>
+    <p class="admin-empty">No testimonials yet.</p>
+  <% } else { %>
+    <table class="admin-table">
+      <thead><tr><th>Customer</th><th>Rating</th><th>Message</th><th></th></tr></thead>
+      <tbody>
+        <% testimonials.forEach(function(t) { %>
+          <tr>
+            <td>
+              <span style="font-weight:600;"><%= t.customerName %></span><br>
+              <% if (t.location || t.tag) { %>
+                <span style="color:var(--text-light);font-size:0.82rem;"><%= t.location %><% if (t.location && t.tag) { %> • <% } %><%= t.tag %></span>
+              <% } %>
+            </td>
+            <td style="color:var(--gold);white-space:nowrap;">
+              <% for (let i = 0; i < t.rating; i++) { %><i class="fa-solid fa-star"></i><% } %>
+            </td>
+            <td style="max-width:320px;color:var(--text-light);font-size:0.88rem;"><%= t.message %></td>
+            <td class="admin-actions">
+              <a href="/admin/testimonials/edit/<%= t._id %>" class="admin-btn-sm"><i class="fa-solid fa-pen"></i></a>
+              <a href="/admin/testimonials/delete/<%= t._id %>" class="admin-btn-sm admin-btn-danger" onclick="return confirm('Delete this testimonial?')"><i class="fa-solid fa-trash"></i></a>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
+<%- include('partials/admin-footer') %>

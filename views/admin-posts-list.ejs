@@ -1,0 +1,31 @@
+<%- include('partials/admin-header', {title: 'Blog Posts | Admin', active: 'post', heading: 'Blog Posts'}) %>
+
+<div class="admin-section">
+  <div class="admin-section-head">
+    <h3><i class="fa-solid fa-newspaper" style="color:#2b6cb0;"></i> All Blog Posts</h3>
+    <a href="/admin/posts/new" class="admin-btn"><i class="fa-solid fa-plus"></i> New Post</a>
+  </div>
+  <% if (posts.length === 0) { %>
+    <p class="admin-empty">No posts yet.</p>
+  <% } else { %>
+    <table class="admin-table">
+      <thead><tr><th>Title</th><th>Status</th><th>Date</th><th></th></tr></thead>
+      <tbody>
+        <% posts.forEach(function(p) { %>
+          <tr>
+            <td><%= p.title %></td>
+            <td><span class="status-badge status-available">Published</span></td>
+            <td style="color:var(--text-light);font-size:0.85rem;"><%= p.createdAt.toLocaleDateString() %></td>
+            <td class="admin-actions">
+              <a href="/blog/<%= p.slug %>" target="_blank" class="admin-btn-sm"><i class="fa-solid fa-eye"></i></a>
+              <a href="/admin/posts/edit/<%= p._id %>" class="admin-btn-sm"><i class="fa-solid fa-pen"></i></a>
+              <a href="/admin/posts/delete/<%= p._id %>" class="admin-btn-sm admin-btn-danger" onclick="return confirm('Delete this post?')"><i class="fa-solid fa-trash"></i></a>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
+<%- include('partials/admin-footer') %>
