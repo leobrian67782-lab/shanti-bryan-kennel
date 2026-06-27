@@ -64,7 +64,21 @@
     </button>
   </footer>
 
+  <!-- Shared lightbox (works on any page that includes this footer) -->
+  <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+    <span class="lightbox-close">&times;</span>
+    <img id="lightbox-img" src="" alt="Full size">
+  </div>
+
   <script>
+    function openLightbox(src) {
+      document.getElementById('lightbox-img').src = src;
+      document.getElementById('lightbox').style.display = 'flex';
+    }
+    function closeLightbox() {
+      document.getElementById('lightbox').style.display = 'none';
+    }
+
     window.addEventListener('load', function() {
       var loader = document.getElementById('loader');
       if (loader) {
