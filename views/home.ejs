@@ -183,10 +183,11 @@
 
   <div class="dogs-grid">
     <% dogs.forEach(function(dog) { %>
+      <% var dogPhotos = (dog.photos && dog.photos.length > 0) ? dog.photos : (dog.photo ? [dog.photo] : []); %>
       <div class="dog-card">
         <div class="dog-photo-wrap">
-          <% if (dog.photo) { %>
-            <img src="<%= dog.photo %>" alt="<%= dog.name %>">
+          <% if (dogPhotos.length > 0) { %>
+            <img src="<%= dogPhotos[0] %>" alt="<%= dog.name %>" onclick="openLightbox('<%= dogPhotos[0] %>')" style="cursor:zoom-in;">
           <% } else { %>
             <div class="dog-photo-placeholder"><i class="fa-solid fa-dog"></i></div>
           <% } %>

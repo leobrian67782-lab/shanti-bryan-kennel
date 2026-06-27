@@ -7,14 +7,15 @@
   <p style="margin-top:20px;">The heart of our breeding program. Every puppy we raise carries the temperament, health, and beauty of these beloved dogs.</p>
 
   <% if (dogs.length === 0) { %>
-    <p style="margin-top:40px;">Our dogs will be introduced here soon — check back shortly!</p>
+    <p style="margin-top:40px;">Our dogs will be introduced here soon. Check back shortly!</p>
   <% } else { %>
     <div class="dogs-grid">
       <% dogs.forEach(function(dog) { %>
+        <% var dogPhotos = (dog.photos && dog.photos.length > 0) ? dog.photos : (dog.photo ? [dog.photo] : []); %>
         <div class="dog-card">
           <div class="dog-photo-wrap">
-            <% if (dog.photo) { %>
-              <img src="<%= dog.photo %>" alt="<%= dog.name %>">
+            <% if (dogPhotos.length > 0) { %>
+              <img src="<%= dogPhotos[0] %>" alt="<%= dog.name %>" onclick="openLightbox('<%= dogPhotos[0] %>')" style="cursor:zoom-in;">
             <% } else { %>
               <div class="dog-photo-placeholder"><i class="fa-solid fa-dog"></i></div>
             <% } %>
