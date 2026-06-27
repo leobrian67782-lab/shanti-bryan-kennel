@@ -1200,6 +1200,14 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
     width: 240px;
   }
   .admin-sidebar.open { left: 0; }
+  .admin-sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 199;
+  }
+  .admin-sidebar-overlay.show { display: block; }
   .admin-menu-toggle { display: block; }
   .admin-content { padding: 14px; }
   
