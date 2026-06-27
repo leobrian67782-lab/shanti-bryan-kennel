@@ -156,6 +156,13 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   color: var(--navy);
   box-shadow: 0 8px 20px rgba(201,162,39,0.3);
 }
+.btn-secondary {
+  background: #f0ece3;
+  color: var(--navy);
+  border: 1px solid #e0d8c8;
+  box-shadow: none;
+}
+.btn-secondary:hover { background: #e6e0d4; transform: translateY(-2px); }
 
 /* Page sections */
 .page-section {
@@ -242,6 +249,48 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   border-radius: 20px;
   font-size: 0.85rem;
 }
+
+/* Puppy / Litter detail page */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  text-align: left;
+  align-items: start;
+}
+.detail-name { font-size: 2.2rem; margin-bottom: 8px; }
+.detail-price { font-size: 1.8rem; color: var(--gold); font-weight: 700; margin: 16px 0; font-family: 'Playfair Display', serif; }
+.detail-specs {
+  margin: 20px 0;
+  border-top: 1px solid #eee;
+}
+.detail-spec-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+}
+.detail-spec-label { color: var(--text-light); font-size: 0.92rem; }
+.detail-spec-value { font-weight: 600; color: var(--navy); text-align: right; }
+.detail-care-badges { display: flex; gap: 10px; flex-wrap: wrap; margin: 20px 0; }
+.detail-care-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #e9f6ee;
+  color: #207a44;
+  border: 1px solid #c9ead6;
+  padding: 7px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.detail-care-badge i { font-size: 0.95rem; }
+.detail-about { margin-top: 44px; text-align: left; }
+.detail-about h2 { font-size: 1.5rem; margin-bottom: 12px; }
+.detail-about p { color: var(--text-light); line-height: 1.8; }
+.detail-back { margin-top: 36px; }
 
 /* Status Badges */
 .status-badge {
@@ -474,6 +523,9 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
 }
 .form-submit:hover { transform: translateY(-2px); background: var(--maroon-dark); box-shadow: 0 8px 20px rgba(122,31,31,0.3); }
 .form-success { background: #d4edda; color: #155724; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #c3e6cb; }
+.form-success i { margin-right: 6px; }
+.form-error { background: #f8d7da; color: #721c24; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #f5c6cb; }
+.form-error i { margin-right: 6px; }
 
 /* Footer */
 .site-footer { background: var(--navy); color: #b8c0cc; }
@@ -1677,6 +1729,13 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   }
   .contact-info-grid { flex-direction: column; }
   .contact-info-card { min-width: 0; width: 100%; }
+
+  /* Puppy / Litter detail page */
+  .detail-grid { grid-template-columns: 1fr; gap: 28px; }
+  .detail-name { font-size: 1.8rem; }
+  .detail-price { font-size: 1.5rem; }
+  .detail-spec-row { padding: 10px 0; font-size: 0.92rem; }
+  .detail-care-badge { font-size: 0.8rem; padding: 6px 12px; }
 
   /* Footer */
   .footer-top {
