@@ -958,6 +958,20 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   font-family: 'Playfair Display', serif;
 }
 .admin-content { padding: 28px; background: #0d1117; flex: 1; }
+.admin-page-footer {
+  padding: 18px 28px 24px;
+  border-top: 1px solid #1f2733;
+  background: #0d1117;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: #6b7585;
+}
+.admin-page-footer a { color: var(--gold); text-decoration: none; }
+.admin-page-footer a:hover { text-decoration: underline; }
 
 /* Overview cards */
 .admin-overview-grid {
