@@ -9,19 +9,29 @@
   <% if (puppies.length === 0) { %>
     <p style="margin-top:40px;">No puppies listed right now. Check back soon!</p>
   <% } else { %>
-    <div class="puppy-filter-bar">
-      <div class="filter-group">
-        <span class="filter-label">Gender</span>
-        <button type="button" class="filter-pill active" data-filter-type="gender" data-filter-value="all">All</button>
-        <button type="button" class="filter-pill" data-filter-type="gender" data-filter-value="male">Male</button>
-        <button type="button" class="filter-pill" data-filter-type="gender" data-filter-value="female">Female</button>
+    <div class="puppy-filter-panel">
+      <div class="puppy-filter-header">
+        <span><i class="fa-solid fa-sliders"></i> Filter Puppies</span>
+        <button type="button" id="clearFiltersBtn" class="filter-clear-link" style="display:none;">Clear Filters</button>
       </div>
-      <div class="filter-group">
-        <span class="filter-label">Status</span>
-        <button type="button" class="filter-pill active" data-filter-type="status" data-filter-value="all">All</button>
-        <button type="button" class="filter-pill" data-filter-type="status" data-filter-value="available">Available</button>
-        <button type="button" class="filter-pill" data-filter-type="status" data-filter-value="reserved">Reserved</button>
-        <button type="button" class="filter-pill" data-filter-type="status" data-filter-value="sold">Sold</button>
+      <div class="puppy-filter-row">
+        <div class="filter-segment-group" data-filter-type="gender">
+          <span class="filter-segment-label">Gender</span>
+          <div class="filter-segment">
+            <button type="button" class="seg-btn active" data-value="all">All</button>
+            <button type="button" class="seg-btn" data-value="male">Male</button>
+            <button type="button" class="seg-btn" data-value="female">Female</button>
+          </div>
+        </div>
+        <div class="filter-segment-group" data-filter-type="status">
+          <span class="filter-segment-label">Status</span>
+          <div class="filter-segment">
+            <button type="button" class="seg-btn active" data-value="all">All</button>
+            <button type="button" class="seg-btn" data-value="available">Available</button>
+            <button type="button" class="seg-btn" data-value="reserved">Reserved</button>
+            <button type="button" class="seg-btn" data-value="sold">Sold</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -61,21 +71,31 @@
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     var state = { gender: 'all', status: 'all' };
-    var pills = document.querySelectorAll('.filter-pill');
+    var groups = document.querySelectorAll('.filter-segment-group');
     var cards = document.querySelectorAll('.puppy-card-link');
     var emptyMsg = document.getElementById('filterEmptyMsg');
+    var clearBtn = document.getElementById('clearFiltersBtn');
 
-    pills.forEach(function(pill) {
-      pill.addEventListener('click', function() {
-        var type = pill.dataset.filterType;
-        var value = pill.dataset.filterValue;
-        state[type] = value;
-        document.querySelectorAll('.filter-pill[data-filter-type="' + type + '"]').forEach(function(p) {
-          p.classList.remove('active');
+    groups.forEach(function(group) {
+      var type = group.dataset.filterType;
+      group.querySelectorAll('.seg-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          state[type] = btn.dataset.value;
+          group.querySelectorAll('.seg-btn').forEach(function(b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+          applyFilters();
         });
-        pill.classList.add('active');
-        applyFilters();
       });
+    });
+
+    clearBtn.addEventListener('click', function() {
+      state = { gender: 'all', status: 'all' };
+      groups.forEach(function(group) {
+        group.querySelectorAll('.seg-btn').forEach(function(b) {
+          b.classList.toggle('active', b.dataset.value === 'all');
+        });
+      });
+      applyFilters();
     });
 
     function applyFilters() {
@@ -88,6 +108,7 @@
         if (show) visibleCount++;
       });
       emptyMsg.style.display = visibleCount === 0 ? 'block' : 'none';
+      clearBtn.style.display = (state.gender === 'all' && state.status === 'all') ? 'none' : 'inline-block';
     }
   });
 </script>
