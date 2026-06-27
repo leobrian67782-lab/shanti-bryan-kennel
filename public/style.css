@@ -421,11 +421,19 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   background: #fff;
   border-radius: 14px;
   overflow: hidden;
+  border: 1px solid #ece5d8;
   box-shadow: 0 4px 14px rgba(0,0,0,0.06);
   text-align: left;
   max-width: 420px;
   margin: 0 auto;
+  position: relative;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.testimonial-card::before {
+  content: '';
+  display: block;
+  height: 4px;
+  background: var(--gold);
 }
 .testimonial-card:hover {
   transform: translateY(-4px);
@@ -451,7 +459,7 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   line-height: 1.6;
   margin-bottom: 14px;
   padding-bottom: 14px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #ece5d8;
 }
 .testimonial-author { display: flex; align-items: center; gap: 12px; }
 .testimonial-avatar-placeholder {
