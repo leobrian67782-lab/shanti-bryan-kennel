@@ -6,6 +6,7 @@ const settingsSchema = new mongoose.Schema({
   statYears: { type: Number, default: 14 },
   statPuppies: { type: Number, default: 479 },
   statHealth: { type: Number, default: 95 },
+  adminPasswordHash: { type: String, default: '' },
   updatedAt: { type: Date, default: Date.now }
 });
 
