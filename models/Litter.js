@@ -11,15 +11,11 @@ const litterSchema = new mongoose.Schema({
   sireName: { type: String, required: true },
   sirePhoto: { type: String },
   sireWeight: { type: String },
-  sireRegistration: { type: String },
-  sireAwards: { type: String },
 
   // Dam (mother) details
   damName: { type: String, required: true },
   damPhoto: { type: String },
   damWeight: { type: String },
-  damRegistration: { type: String },
-  damAwards: { type: String },
 
   createdAt: { type: Date, default: Date.now }
 });
