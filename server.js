@@ -98,7 +98,7 @@ function requireLogin(req, res, next) {
 
 // Helper for litter photo fields
 const litterUpload = upload.fields([
-  { name: 'photo', maxCount: 1 },
+  { name: 'photos', maxCount: 20 },
   { name: 'sirePhoto', maxCount: 1 },
   { name: 'damPhoto', maxCount: 1 }
 ]);
@@ -473,16 +473,12 @@ app.post('/admin/litters/new', requireLogin, litterUpload, async (req, res) => {
       birthDate: data.birthDate,
       numberOfPuppies: data.numberOfPuppies,
       description: data.description,
-      photos: files.photo ? [files.photo[0].path] : [],
+      photos: files.photos ? files.photos.map(f => f.path) : [],
       sireName: data.sireName,
       sireWeight: data.sireWeight,
-      sireRegistration: data.sireRegistration,
-      sireAwards: data.sireAwards,
       sirePhoto: files.sirePhoto ? files.sirePhoto[0].path : '',
       damName: data.damName,
       damWeight: data.damWeight,
-      damRegistration: data.damRegistration,
-      damAwards: data.damAwards,
       damPhoto: files.damPhoto ? files.damPhoto[0].path : ''
     });
     await litter.save();
@@ -505,6 +501,7 @@ app.post('/admin/litters/edit/:id', requireLogin, litterUpload, async (req, res)
   try {
     const data = req.body;
     const files = req.files || {};
+    const litter = await Litter.findById(req.params.id);
     const updateData = {
       litterName: data.litterName,
       birthDate: data.birthDate,
@@ -512,14 +509,18 @@ app.post('/admin/litters/edit/:id', requireLogin, litterUpload, async (req, res)
       description: data.description,
       sireName: data.sireName,
       sireWeight: data.sireWeight,
-      sireRegistration: data.sireRegistration,
-      sireAwards: data.sireAwards,
       damName: data.damName,
-      damWeight: data.damWeight,
-      damRegistration: data.damRegistration,
-      damAwards: data.damAwards
+      damWeight: data.damWeight
     };
-    if (files.photo) updateData.photos = [files.photo[0].path];
+
+    // Keep existing litter photos except any checked for removal, then append new uploads
+    const deletePhotos = Array.isArray(data.deletePhotos) ? data.deletePhotos : (data.deletePhotos ? [data.deletePhotos] : []);
+    let remainingPhotos = (litter.photos || []).filter(p => !deletePhotos.includes(p));
+    if (files.photos && files.photos.length > 0) {
+      remainingPhotos = remainingPhotos.concat(files.photos.map(f => f.path));
+    }
+    updateData.photos = remainingPhotos;
+
     if (files.sirePhoto) updateData.sirePhoto = files.sirePhoto[0].path;
     if (files.damPhoto) updateData.damPhoto = files.damPhoto[0].path;
 
