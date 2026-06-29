@@ -5,7 +5,16 @@
     <div class="detail-grid">
       <div>
         <% if (litter.photos && litter.photos.length > 0) { %>
-          <img src="<%= litter.photos[0] %>" alt="<%= litter.litterName %>" style="width: 100%; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);">
+          <div class="gallery">
+            <img id="mainPhoto" src="<%= litter.photos[0] %>" alt="<%= litter.litterName %>" class="gallery-main" onclick="openLightbox(this.src)">
+            <% if (litter.photos.length > 1) { %>
+              <div class="gallery-thumbs">
+                <% litter.photos.forEach(function(p, i) { %>
+                  <img src="<%= p %>" alt="thumb" class="gallery-thumb <%= i === 0 ? 'active' : '' %>" onclick="setMain('<%= p %>', this)">
+                <% }); %>
+              </div>
+            <% } %>
+          </div>
         <% } else { %>
           <div style="width:100%;height:300px;background:#eee;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#999;">No photo</div>
         <% } %>
@@ -48,8 +57,6 @@
             <span class="parent-label">Sire (Father)</span>
             <h3><%= litter.sireName %></h3>
             <% if (litter.sireWeight) { %><p><strong>Weight:</strong> <%= litter.sireWeight %></p><% } %>
-            <% if (litter.sireRegistration) { %><p><strong>Registration:</strong> <%= litter.sireRegistration %></p><% } %>
-            <% if (litter.sireAwards) { %><p><strong>Awards:</strong> <%= litter.sireAwards %></p><% } %>
           </div>
         </div>
 
@@ -61,8 +68,6 @@
             <span class="parent-label">Dam (Mother)</span>
             <h3><%= litter.damName %></h3>
             <% if (litter.damWeight) { %><p><strong>Weight:</strong> <%= litter.damWeight %></p><% } %>
-            <% if (litter.damRegistration) { %><p><strong>Registration:</strong> <%= litter.damRegistration %></p><% } %>
-            <% if (litter.damAwards) { %><p><strong>Awards:</strong> <%= litter.damAwards %></p><% } %>
           </div>
         </div>
 
@@ -74,5 +79,13 @@
     </div>
   </div>
 </section>
+
+<script>
+  function setMain(src, el) {
+    document.getElementById('mainPhoto').src = src;
+    document.querySelectorAll('.gallery-thumb').forEach(function(t) { t.classList.remove('active'); });
+    el.classList.add('active');
+  }
+</script>
 
 <%- include('partials/footer') %>

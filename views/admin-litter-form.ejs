@@ -24,10 +24,22 @@
     </div>
 
     <div class="form-group">
-      <label>Litter Photo</label>
-      <input type="file" name="photo" accept="image/*">
+      <label>Litter Photos (you can select up to 20 at once)</label>
+      <input type="file" name="photos" accept="image/*" multiple>
+      <small style="color:#7a8494;display:block;margin-top:4px;">Tip: Hold Ctrl (or Cmd) to select multiple photos. New photos are added to the gallery below, they won't remove your existing ones.</small>
       <% if (litter && litter.photos && litter.photos.length > 0) { %>
-        <img src="<%= litter.photos[0] %>" style="max-width:120px;border-radius:8px;margin-top:6px;">
+        <p style="margin-top:14px;color:#c5cdd8;">Current photos <span style="color:#7a8494;font-weight:400;">(check a photo to remove it when you save)</span>:</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;">
+          <% litter.photos.forEach(function(p, i) { %>
+            <label class="photo-remove-card" style="display:block;width:100px;flex-shrink:0;position:relative;border-radius:8px;overflow:hidden;cursor:pointer;">
+              <img src="<%= p %>" alt="Photo <%= i + 1 %>" style="width:100px;height:100px;object-fit:cover;display:block;">
+              <span class="photo-remove-overlay" style="display:flex;align-items:center;justify-content:center;gap:4px;font-size:0.68rem;font-weight:600;color:#e8848f;background:#1c2430;padding:5px 0;">
+                <input type="checkbox" name="deletePhotos" value="<%= p %>" style="width:auto;margin:0;">
+                <i class="fa-solid fa-trash"></i> Remove
+              </span>
+            </label>
+          <% }); %>
+        </div>
       <% } %>
     </div>
 
@@ -41,14 +53,6 @@
     <div class="form-group">
       <label>Sire Weight</label>
       <input type="text" name="sireWeight" value="<%= litter ? litter.sireWeight : '' %>" placeholder="e.g. 9 lbs">
-    </div>
-    <div class="form-group">
-      <label>Sire Registration</label>
-      <input type="text" name="sireRegistration" value="<%= litter ? litter.sireRegistration : '' %>" placeholder="e.g. AKC #12345">
-    </div>
-    <div class="form-group">
-      <label>Sire Awards / Titles</label>
-      <input type="text" name="sireAwards" value="<%= litter ? litter.sireAwards : '' %>" placeholder="e.g. Champion">
     </div>
     <div class="form-group">
       <label>Sire Photo</label>
@@ -68,14 +72,6 @@
     <div class="form-group">
       <label>Dam Weight</label>
       <input type="text" name="damWeight" value="<%= litter ? litter.damWeight : '' %>" placeholder="e.g. 8 lbs">
-    </div>
-    <div class="form-group">
-      <label>Dam Registration</label>
-      <input type="text" name="damRegistration" value="<%= litter ? litter.damRegistration : '' %>" placeholder="e.g. AKC #67890">
-    </div>
-    <div class="form-group">
-      <label>Dam Awards / Titles</label>
-      <input type="text" name="damAwards" value="<%= litter ? litter.damAwards : '' %>" placeholder="e.g. Champion">
     </div>
     <div class="form-group">
       <label>Dam Photo</label>
