@@ -118,6 +118,23 @@ async function getSettings() {
   return settings;
 }
 
+// Checks a plain-text password against, in order of preference:
+// 1) the hash stored in the database (set via Admin Settings > Change Password)
+// 2) the ADMIN_PASSWORD_HASH environment variable
+// 3) the plain ADMIN_PASSWORD environment variable (legacy fallback)
+async function verifyAdminPassword(plainPassword, settings) {
+  if (settings && settings.adminPasswordHash) {
+    return bcrypt.compare(plainPassword, settings.adminPasswordHash);
+  }
+  if (process.env.ADMIN_PASSWORD_HASH) {
+    return bcrypt.compare(plainPassword, process.env.ADMIN_PASSWORD_HASH);
+  }
+  if (process.env.ADMIN_PASSWORD) {
+    return plainPassword === process.env.ADMIN_PASSWORD;
+  }
+  return false;
+}
+
 // Make settings available to ALL views automatically
 app.use(async (req, res, next) => {
   try {
@@ -317,15 +334,7 @@ app.post('/admin/login', loginLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
     const validUsername = username === process.env.ADMIN_USERNAME;
-
-    let validPassword = false;
-    if (process.env.ADMIN_PASSWORD_HASH) {
-      // Preferred: password stored as a bcrypt hash
-      validPassword = await bcrypt.compare(password, process.env.ADMIN_PASSWORD_HASH);
-    } else if (process.env.ADMIN_PASSWORD) {
-      // Fallback for backward compatibility until ADMIN_PASSWORD_HASH is set up
-      validPassword = password === process.env.ADMIN_PASSWORD;
-    }
+    const validPassword = await verifyAdminPassword(password, res.locals.settings);
 
     if (validUsername && validPassword) {
       req.session.isAdmin = true;
@@ -643,7 +652,12 @@ app.get('/admin/faqs/delete/:id', requireLogin, async (req, res) => {
 // ===== ADMIN SETTINGS =====
 app.get('/admin/settings', requireLogin, async (req, res) => {
   const settings = await getSettings();
-  res.render('admin-settings', { settings, saved: req.query.saved === '1' });
+  res.render('admin-settings', {
+    settings,
+    saved: req.query.saved === '1',
+    pwsaved: req.query.pwsaved === '1',
+    pwerror: req.query.pwerror || ''
+  });
 });
 
 app.post('/admin/settings', requireLogin, async (req, res) => {
@@ -659,6 +673,31 @@ app.post('/admin/settings', requireLogin, async (req, res) => {
     res.redirect('/admin/settings?saved=1');
   } catch (err) {
     adminError(res, 'Admin action error', err);
+  }
+});
+
+app.post('/admin/settings/password', requireLogin, async (req, res) => {
+  try {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+    const settings = await getSettings();
+
+    const currentIsValid = await verifyAdminPassword(currentPassword, settings);
+    if (!currentIsValid) {
+      return res.redirect('/admin/settings?pwerror=' + encodeURIComponent('Your current password is incorrect.'));
+    }
+    if (!newPassword || newPassword.length < 8) {
+      return res.redirect('/admin/settings?pwerror=' + encodeURIComponent('New password must be at least 8 characters.'));
+    }
+    if (newPassword !== confirmPassword) {
+      return res.redirect('/admin/settings?pwerror=' + encodeURIComponent('New password and confirmation do not match.'));
+    }
+
+    settings.adminPasswordHash = await bcrypt.hash(newPassword, 10);
+    settings.updatedAt = Date.now();
+    await settings.save();
+    res.redirect('/admin/settings?pwsaved=1');
+  } catch (err) {
+    adminError(res, 'CHANGE PASSWORD ERROR:', err);
   }
 });
 
