@@ -4,6 +4,26 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title %></title>
+
+  <!-- SEO meta description -->
+  <% var metaDesc = typeof description !== 'undefined' && description ? description : 'Shanti & Bryan Pinscher Kennel — home-raised Miniature Pinscher puppies placed in loving families worldwide. Health guaranteed, vaccinated, and socialized.'; %>
+  <meta name="description" content="<%= metaDesc %>">
+
+  <!-- Open Graph — controls how links look when shared on WhatsApp, Facebook, iMessage etc -->
+  <% var ogImage = typeof ogImg !== 'undefined' && ogImg ? ogImg : '/images/images/emblem.png'; %>
+  <meta property="og:type"        content="website">
+  <meta property="og:site_name"   content="Shanti & Bryan Pinscher Kennel">
+  <meta property="og:title"       content="<%= title %>">
+  <meta property="og:description" content="<%= metaDesc %>">
+  <meta property="og:image"       content="<%= ogImage %>">
+  <meta property="og:url"         content="https://shanti-bryan-kennel.onrender.com<%= typeof reqPath !== 'undefined' ? reqPath : '' %>">
+
+  <!-- Twitter / X card -->
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="<%= title %>">
+  <meta name="twitter:description" content="<%= metaDesc %>">
+  <meta name="twitter:image"       content="<%= ogImage %>">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
