@@ -8,6 +8,7 @@ const https = require('https');
 const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
+const nodemailer = require('nodemailer');
 const { v2: cloudinary } = require('cloudinary');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
@@ -21,6 +22,38 @@ const Post = require('./models/Post');
 const Dog = require('./models/Dog');
 
 const app = express();
+
+// ===== EMAIL NOTIFICATIONS =====
+// Uses Gmail SMTP. In Render, set EMAIL_PASS to a Gmail App Password
+// (Google Account → Security → 2-Step Verification → App passwords).
+// EMAIL_USER defaults to your kennel address; override with EMAIL_USER env var if needed.
+const NOTIFY_EMAIL = 'shantibryan644@gmail.com';
+const emailTransporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER || NOTIFY_EMAIL,
+    pass: process.env.EMAIL_PASS || ''
+  }
+});
+
+async function sendNotification(subject, html) {
+  if (!process.env.EMAIL_PASS) {
+    console.log('[email] EMAIL_PASS not set, notification skipped:', subject);
+    return;
+  }
+  try {
+    await emailTransporter.sendMail({
+      from: `"Shanti & Bryan Pinscher Kennel" <${process.env.EMAIL_USER || NOTIFY_EMAIL}>`,
+      to: NOTIFY_EMAIL,
+      subject,
+      html
+    });
+    console.log('[email] Sent:', subject);
+  } catch (err) {
+    console.error('[email] Failed to send:', err.message);
+  }
+}
+
 
 // Logs the real error for debugging, but never exposes raw error details
 // (stack traces, database messages, etc.) to whoever is looking at the page.
@@ -139,8 +172,10 @@ async function verifyAdminPassword(plainPassword, settings) {
 app.use(async (req, res, next) => {
   try {
     res.locals.settings = await getSettings();
+    res.locals.reqPath = req.path;
   } catch (err) {
     res.locals.settings = {};
+    res.locals.reqPath = req.path;
   }
   next();
 });
@@ -151,7 +186,7 @@ app.get('/', async (req, res) => {
     const featuredPuppies = await Puppy.find({ status: 'Available' }).sort({ createdAt: -1 }).limit(3);
     const testimonials = await Testimonial.find({ approved: true }).sort({ createdAt: -1 }).limit(3);
     const dogs = await Dog.find().sort({ order: 1, createdAt: 1 });
-    res.render('home', { featuredPuppies, testimonials, dogs });
+    res.render('home', { featuredPuppies, testimonials, dogs, description: 'Home-raised Miniature Pinscher puppies placed in loving families worldwide. Health guaranteed, fully vaccinated, and socialized with daily care.' });
   } catch (err) {
     console.error(err);
     res.render('home', { featuredPuppies: [], testimonials: [], dogs: [] });
@@ -172,7 +207,7 @@ app.get('/puppies/:id', async (req, res) => {
   try {
     const puppy = await Puppy.findById(req.params.id);
     if (!puppy) return res.redirect('/puppies');
-    res.render('puppy-detail', { puppy });
+    res.render('puppy-detail', { puppy, description: `Meet ${puppy.name} — a ${puppy.color} ${puppy.gender} Miniature Pinscher available from Shanti & Bryan Pinscher Kennel. ${puppy.description ? puppy.description.substring(0, 100) : ''}`, ogImg: puppy.photos && puppy.photos.length > 0 ? puppy.photos[0] : '' });
   } catch (err) {
     console.error(err);
     res.redirect('/puppies');
@@ -221,6 +256,26 @@ app.post('/submit-review', upload.single('photo'), async (req, res) => {
       approved: false
     });
     await testimonial.save();
+
+    // Notify you by email
+    const stars = '⭐'.repeat(parseInt(rating) || 5);
+    sendNotification(
+      `⭐ New Review from ${customerName} — Needs Approval`,
+      `<div style="font-family:Arial,sans-serif;max-width:580px;">
+        <h2 style="color:#7a1e1e;">New Review Submitted</h2>
+        <table style="width:100%;border-collapse:collapse;">
+          <tr><td style="padding:8px 0;font-weight:bold;color:#555;width:100px;">Name</td><td style="padding:8px 0;">${customerName}</td></tr>
+          ${location ? `<tr><td style="padding:8px 0;font-weight:bold;color:#555;">Location</td><td style="padding:8px 0;">${location}</td></tr>` : ''}
+          ${tag ? `<tr><td style="padding:8px 0;font-weight:bold;color:#555;">Tag</td><td style="padding:8px 0;">${tag}</td></tr>` : ''}
+          <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Rating</td><td style="padding:8px 0;">${stars}</td></tr>
+        </table>
+        <div style="margin-top:16px;padding:16px;background:#f9f9f9;border-left:4px solid #c9a227;border-radius:4px;">
+          <p style="margin:0;white-space:pre-wrap;">${message}</p>
+        </div>
+        <p style="margin-top:20px;"><a href="https://${process.env.RENDER_EXTERNAL_URL ? process.env.RENDER_EXTERNAL_URL.replace('https://','') : 'yoursite.onrender.com'}/admin/testimonials" style="background:#c9a227;color:#0d1117;padding:10px 20px;text-decoration:none;border-radius:6px;font-weight:bold;">Approve or Reject in Admin</a></p>
+      </div>`
+    );
+
     res.render('submit-review', { sent: true, error: '' });
   } catch (err) {
     console.error('SUBMIT REVIEW ERROR:', err);
@@ -336,6 +391,27 @@ app.post('/contact', async (req, res) => {
     }
 
     await new Contact({ name, email, phone, location, detectedLocation, subject, message }).save();
+
+    // Notify you by email
+    sendNotification(
+      `📬 New Message from ${name} — ${subject}`,
+      `<div style="font-family:Arial,sans-serif;max-width:580px;">
+        <h2 style="color:#7a1e1e;">New Contact Form Message</h2>
+        <table style="width:100%;border-collapse:collapse;">
+          <tr><td style="padding:8px 0;font-weight:bold;color:#555;width:100px;">Name</td><td style="padding:8px 0;">${name}</td></tr>
+          <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Email</td><td style="padding:8px 0;"><a href="mailto:${email}">${email}</a></td></tr>
+          ${phone ? `<tr><td style="padding:8px 0;font-weight:bold;color:#555;">Phone</td><td style="padding:8px 0;">${phone}</td></tr>` : ''}
+          ${location ? `<tr><td style="padding:8px 0;font-weight:bold;color:#555;">Location</td><td style="padding:8px 0;">${location}</td></tr>` : ''}
+          ${detectedLocation ? `<tr><td style="padding:8px 0;font-weight:bold;color:#555;">Detected</td><td style="padding:8px 0;">${detectedLocation}</td></tr>` : ''}
+          <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Subject</td><td style="padding:8px 0;">${subject}</td></tr>
+        </table>
+        <div style="margin-top:16px;padding:16px;background:#f9f9f9;border-left:4px solid #c9a227;border-radius:4px;">
+          <p style="margin:0;white-space:pre-wrap;">${message}</p>
+        </div>
+        <p style="margin-top:20px;"><a href="https://${process.env.RENDER_EXTERNAL_URL ? process.env.RENDER_EXTERNAL_URL.replace('https://','') : 'yoursite.onrender.com'}/admin/inquiries" style="background:#7a1e1e;color:#fff;padding:10px 20px;text-decoration:none;border-radius:6px;">View in Admin</a></p>
+      </div>`
+    );
+
     res.render('contact', { message: 'Thank you! Your message has been received. We\'ll get back to you soon.', success: true });
   } catch (err) {
     console.error(err);
