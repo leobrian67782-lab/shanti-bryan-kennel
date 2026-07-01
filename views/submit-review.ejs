@@ -1,0 +1,69 @@
+<%- include('partials/header', {title: 'Share Your Experience | Shanti & Bryan Pinscher Kennel'}) %>
+
+<section class="page-section">
+  <div class="container" style="max-width:640px;">
+
+    <div style="text-align:center;margin-bottom:40px;">
+      <p class="section-label">Happy Families</p>
+      <h1 class="section-title">Share Your Experience</h1>
+      <div class="section-divider"></div>
+      <p style="color:var(--text-light);margin-top:16px;">Did one of our puppies join your family? We'd love to hear how they're doing. Your review helps other families find the right companion.</p>
+    </div>
+
+    <% if (sent) { %>
+      <div class="form-success" style="text-align:center;padding:32px;font-size:1.1rem;">
+        <i class="fa-solid fa-circle-check" style="font-size:2rem;display:block;margin-bottom:12px;"></i>
+        <strong>Thank you for sharing!</strong><br>
+        <span style="font-size:0.95rem;color:#155724;">Your review has been submitted and will appear on our site once approved.</span>
+      </div>
+    <% } else { %>
+
+      <% if (error) { %>
+        <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> <%= error %></div>
+      <% } %>
+
+      <form method="POST" action="/submit-review" class="contact-form" enctype="multipart/form-data">
+
+        <div class="form-group">
+          <label for="customerName">Your Name *</label>
+          <input type="text" id="customerName" name="customerName" placeholder="e.g. Sarah M." required>
+        </div>
+
+        <div class="form-group">
+          <label for="location">Your Location</label>
+          <input type="text" id="location" name="location" placeholder="e.g. Texas">
+        </div>
+
+        <div class="form-group">
+          <label for="tag">Your Puppy's Name <span style="color:var(--text-light);font-weight:400;">(optional)</span></label>
+          <input type="text" id="tag" name="tag" placeholder="e.g. Owner of Bella">
+        </div>
+
+        <div class="form-group">
+          <label>Rating *</label>
+          <div class="star-rating-picker">
+            <% for (let i = 5; i >= 1; i--) { %>
+              <input type="radio" id="star<%= i %>" name="rating" value="<%= i %>" <%= i === 5 ? 'checked' : '' %>>
+              <label for="star<%= i %>"><i class="fa-solid fa-star"></i></label>
+            <% } %>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="message">Your Review *</label>
+          <textarea id="message" name="message" rows="5" placeholder="Tell us about your experience with Shanti & Bryan Pinscher Kennel..." required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Add a Photo <span style="color:var(--text-light);font-weight:400;">(optional — a photo with your puppy makes it extra special!)</span></label>
+          <input type="file" name="photo" accept="image/*">
+        </div>
+
+        <button type="submit" class="form-submit"><i class="fa-solid fa-paper-plane"></i> Submit Review</button>
+      </form>
+
+    <% } %>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

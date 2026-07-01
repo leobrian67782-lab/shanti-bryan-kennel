@@ -41,7 +41,12 @@
     <div>
       <span class="admin-overview-num"><%= testimonials.length %></span>
       <span class="admin-overview-label">Testimonials</span>
-      <span class="admin-overview-sub">Customer reviews & success stories</span>
+      <span class="admin-overview-sub">
+        Customer reviews & success stories
+        <% if (typeof pendingReviews !== 'undefined' && pendingReviews > 0) { %>
+          <br><a href="/admin/testimonials" style="color:var(--gold);font-weight:700;"><i class="fa-solid fa-clock"></i> <%= pendingReviews %> pending approval</a>
+        <% } %>
+      </span>
     </div>
   </div>
 </div>

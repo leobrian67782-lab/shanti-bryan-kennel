@@ -1,12 +1,42 @@
 <%- include('partials/admin-header', {title: 'Testimonials | Admin', active: 'testimonial', heading: 'Testimonials'}) %>
 
+<% if (typeof pending !== 'undefined' && pending.length > 0) { %>
+<div class="admin-section" style="border:1px solid #c9a22740;margin-bottom:24px;">
+  <div class="admin-section-head">
+    <h3><i class="fa-solid fa-clock" style="color:var(--gold);"></i> Pending Approval <span style="background:var(--gold);color:#0d1117;font-size:0.75rem;font-weight:700;padding:2px 10px;border-radius:20px;margin-left:8px;"><%= pending.length %></span></h3>
+  </div>
+  <% pending.forEach(function(t) { %>
+    <div style="border-bottom:1px solid #1f2733;padding:18px 0;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;">
+            <% if (t.photo) { %><img src="<%= t.photo %>" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0;"><% } %>
+            <span style="font-weight:600;color:#fff;"><%= t.customerName %></span>
+            <% if (t.location) { %><span style="color:#6b7585;font-size:0.82rem;"><i class="fa-solid fa-location-dot"></i> <%= t.location %></span><% } %>
+            <span style="color:var(--gold);font-size:0.85rem;">
+              <% for(let i=0;i<t.rating;i++){%><i class="fa-solid fa-star"></i><%}%>
+            </span>
+          </div>
+          <p style="color:#c5cdd8;font-size:0.9rem;line-height:1.6;margin:0;"><%= t.message %></p>
+          <small style="color:#6b7585;margin-top:6px;display:block;"><%= t.createdAt.toLocaleDateString() %></small>
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0;">
+          <a href="/admin/testimonials/approve/<%= t._id %>" class="admin-btn" style="background:#2e9e4f;"><i class="fa-solid fa-check"></i> Approve</a>
+          <a href="/admin/testimonials/reject/<%= t._id %>" class="admin-btn admin-btn-danger" onclick="return confirm('Reject and delete this review?')"><i class="fa-solid fa-xmark"></i> Reject</a>
+        </div>
+      </div>
+    </div>
+  <% }); %>
+</div>
+<% } %>
+
 <div class="admin-section">
   <div class="admin-section-head">
-    <h3><i class="fa-solid fa-star" style="color:#2e9e4f;"></i> All Testimonials</h3>
+    <h3><i class="fa-solid fa-star" style="color:#2e9e4f;"></i> Approved Reviews</h3>
     <a href="/admin/testimonials/new" class="admin-btn"><i class="fa-solid fa-plus"></i> Add Review</a>
   </div>
   <% if (testimonials.length === 0) { %>
-    <p class="admin-empty">No testimonials yet.</p>
+    <p class="admin-empty">No approved reviews yet.</p>
   <% } else { %>
     <table class="admin-table">
       <thead><tr><th>Customer</th><th>Rating</th><th>Message</th><th></th></tr></thead>
