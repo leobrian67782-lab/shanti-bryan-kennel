@@ -25,5 +25,79 @@
       }
     });
   </script>
+
+  <!-- Universal image compressor (same as public footer) -->
+  <script>
+    (function() {
+      var MAX_PX  = 1200;
+      var QUALITY = 0.72;
+
+      function compressFile(file, done) {
+        if (!file.type.startsWith('image/')) return done(file);
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var img = new Image();
+          img.onload = function() {
+            var w = img.width, h = img.height;
+            if (w <= MAX_PX && h <= MAX_PX) return done(file);
+            var ratio = Math.min(MAX_PX / w, MAX_PX / h);
+            var canvas = document.createElement('canvas');
+            canvas.width  = Math.round(w * ratio);
+            canvas.height = Math.round(h * ratio);
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(function(blob) {
+              done(new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() }));
+            }, 'image/jpeg', QUALITY);
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function compressAndSubmit(form) {
+        var inputs = form.querySelectorAll('input[type="file"][accept*="image"]');
+        var pending = 0;
+        inputs.forEach(function(input) { if (input.files && input.files.length) pending++; });
+        if (pending === 0) { form.submit(); return; }
+        var done = 0;
+        inputs.forEach(function(input) {
+          if (!input.files || !input.files.length) return;
+          var files = Array.from(input.files), compressed = [], filesDone = 0;
+          files.forEach(function(file, i) {
+            compressFile(file, function(result) {
+              compressed[i] = result;
+              if (++filesDone === files.length) {
+                var dt = new DataTransfer();
+                compressed.forEach(function(f) { dt.items.add(f); });
+                input.files = dt.files;
+                if (++done === pending) form.submit();
+              }
+            });
+          });
+        });
+      }
+
+      document.addEventListener('submit', function(e) {
+        var form = e.target;
+        var hasImageInput = form.querySelector('input[type="file"][accept*="image"]');
+        if (!hasImageInput) return;
+        var hasFiles = false;
+        form.querySelectorAll('input[type="file"][accept*="image"]').forEach(function(inp) {
+          if (inp.files && inp.files.length) hasFiles = true;
+        });
+        if (!hasFiles) return;
+        e.preventDefault();
+        var overlay = document.createElement('div');
+        overlay.innerHTML = '<div style="text-align:center;">' +
+          '<div style="width:52px;height:52px;border:4px solid rgba(201,162,39,0.3);border-top-color:#c9a227;border-radius:50%;animation:spin 0.9s linear infinite;margin:0 auto 18px;"></div>' +
+          '<p style="color:#fff;font-family:Poppins,sans-serif;font-weight:600;margin:0;">Uploading...</p>' +
+          '<p style="color:#c5cdd8;font-family:Poppins,sans-serif;font-size:0.85rem;margin-top:6px;">Compressing & sending, please wait</p>' +
+          '</div>';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(10,14,20,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;';
+        document.body.appendChild(overlay);
+        compressAndSubmit(form);
+      });
+    })();
+  </script>
 </body>
 </html>
