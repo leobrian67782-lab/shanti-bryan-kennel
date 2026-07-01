@@ -149,7 +149,7 @@ app.use(async (req, res, next) => {
 app.get('/', async (req, res) => {
   try {
     const featuredPuppies = await Puppy.find({ status: 'Available' }).sort({ createdAt: -1 }).limit(3);
-    const testimonials = await Testimonial.find().sort({ createdAt: -1 }).limit(3);
+    const testimonials = await Testimonial.find({ approved: true }).sort({ createdAt: -1 }).limit(3);
     const dogs = await Dog.find().sort({ order: 1, createdAt: 1 });
     res.render('home', { featuredPuppies, testimonials, dogs });
   } catch (err) {
@@ -200,9 +200,37 @@ app.get('/litters/:id', async (req, res) => {
   }
 });
 
+// ===== PUBLIC REVIEW SUBMISSION =====
+app.get('/submit-review', (req, res) => {
+  res.render('submit-review', { sent: false, error: '' });
+});
+
+app.post('/submit-review', upload.single('photo'), async (req, res) => {
+  try {
+    const { customerName, location, tag, rating, message } = req.body;
+    if (!customerName || !message) {
+      return res.render('submit-review', { sent: false, error: 'Please fill in your name and message.' });
+    }
+    const testimonial = new Testimonial({
+      customerName,
+      location: location || '',
+      tag: tag || '',
+      rating: parseInt(rating) || 5,
+      message,
+      photo: req.file ? req.file.path : '',
+      approved: false
+    });
+    await testimonial.save();
+    res.render('submit-review', { sent: true, error: '' });
+  } catch (err) {
+    console.error('SUBMIT REVIEW ERROR:', err);
+    res.render('submit-review', { sent: false, error: 'Something went wrong. Please try again.' });
+  }
+});
+
 app.get('/testimonials', async (req, res) => {
   try {
-    const testimonials = await Testimonial.find().sort({ createdAt: -1 });
+    const testimonials = await Testimonial.find({ approved: true }).sort({ createdAt: -1 });
     res.render('testimonials', { testimonials });
   } catch (err) {
     console.error(err);
@@ -358,12 +386,13 @@ app.get('/admin/logout', (req, res) => {
 app.get('/admin/dashboard', requireLogin, async (req, res) => {
   const puppies = await Puppy.find().sort({ createdAt: -1 });
   const litters = await Litter.find().sort({ createdAt: -1 });
-  const testimonials = await Testimonial.find().sort({ createdAt: -1 });
+  const testimonials = await Testimonial.find({ approved: true }).sort({ createdAt: -1 });
+  const pendingReviews = await Testimonial.countDocuments({ approved: false });
   const faqs = await Faq.find().sort({ order: 1 });
   const posts = await Post.find().sort({ createdAt: -1 });
   const inquiries = await Contact.find().sort({ createdAt: -1 });
   const dogs = await Dog.find().sort({ order: 1 });
-  res.render('admin-dashboard', { puppies, litters, testimonials, faqs, posts, inquiries, dogs });
+  res.render('admin-dashboard', { puppies, litters, testimonials, pendingReviews, faqs, posts, inquiries, dogs });
 });
 
 // ===== ADMIN INQUIRIES =====
@@ -547,8 +576,9 @@ app.get('/admin/litters/delete/:id', requireLogin, async (req, res) => {
 
 // ===== ADMIN TESTIMONIALS =====
 app.get('/admin/testimonials', requireLogin, async (req, res) => {
-  const testimonials = await Testimonial.find().sort({ createdAt: -1 });
-  res.render('admin-testimonials-list', { testimonials });
+  const pending = await Testimonial.find({ approved: false }).sort({ createdAt: -1 });
+  const approved = await Testimonial.find({ approved: true }).sort({ createdAt: -1 });
+  res.render('admin-testimonials-list', { testimonials: approved, pending });
 });
 
 app.get('/admin/testimonials/new', requireLogin, (req, res) => {
@@ -605,6 +635,16 @@ app.post('/admin/testimonials/edit/:id', requireLogin, upload.single('photo'), a
   } catch (err) {
     adminError(res, 'UPDATE TESTIMONIAL ERROR:', err);
   }
+});
+
+app.get('/admin/testimonials/approve/:id', requireLogin, async (req, res) => {
+  await Testimonial.findByIdAndUpdate(req.params.id, { approved: true });
+  res.redirect('/admin/testimonials');
+});
+
+app.get('/admin/testimonials/reject/:id', requireLogin, async (req, res) => {
+  await Testimonial.findByIdAndDelete(req.params.id);
+  res.redirect('/admin/testimonials');
 });
 
 app.get('/admin/testimonials/delete/:id', requireLogin, async (req, res) => {
