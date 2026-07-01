@@ -7,6 +7,7 @@ const testimonialSchema = new mongoose.Schema({
   rating: { type: Number, min: 1, max: 5, default: 5 },
   message: { type: String, required: true },
   photo: { type: String },
+  approved: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });
 
