@@ -36,11 +36,17 @@
 
     <div class="form-group">
       <label>Customer Photo (optional)</label>
-      <input type="file" name="photo" accept="image/*">
       <% if (testimonial && testimonial.photo) { %>
-        <p style="margin-top:8px;color:#c5cdd8;">Current photo:</p>
-        <img src="<%= testimonial.photo %>" style="max-width:120px;border-radius:8px;margin-top:6px;">
+        <div style="margin-bottom:12px;">
+          <img src="<%= testimonial.photo %>" style="width:100px;height:100px;object-fit:cover;border-radius:8px;display:block;margin-bottom:8px;">
+          <label style="display:flex;align-items:center;gap:8px;color:#e8848f;font-weight:600;font-size:0.85rem;cursor:pointer;">
+            <input type="checkbox" name="deletePhoto" value="yes" style="width:auto;margin:0;accent-color:#c0392b;">
+            <i class="fa-solid fa-trash"></i> Remove this photo
+          </label>
+          <small style="color:#7a8494;display:block;margin-top:6px;">Or upload a new photo below to replace it automatically.</small>
+        </div>
       <% } %>
+      <input type="file" name="photo" accept="image/*">
     </div>
 
     <button type="submit" class="form-submit"><i class="fa-solid fa-floppy-disk"></i> <%= testimonial ? 'Update Testimonial' : 'Add Testimonial' %></button>
