@@ -611,6 +611,22 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   box-shadow: 0 0 0 3px rgba(201,162,39,0.12);
 }
 .form-group textarea { resize: vertical; min-height: 120px; }
+.star-rating-picker {
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 4px;
+  justify-content: flex-end;
+}
+.star-rating-picker input[type="radio"] { display: none; }
+.star-rating-picker label {
+  font-size: 1.8rem;
+  color: #d8d2c8;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.star-rating-picker input:checked ~ label,
+.star-rating-picker label:hover,
+.star-rating-picker label:hover ~ label { color: var(--gold); }
 .form-submit {
   background: var(--maroon);
   color: #fff;
