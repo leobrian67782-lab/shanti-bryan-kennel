@@ -24,33 +24,35 @@ const Dog = require('./models/Dog');
 const app = express();
 
 // ===== EMAIL NOTIFICATIONS =====
-// Uses Gmail SMTP. In Render, set EMAIL_PASS to a Gmail App Password
-// (Google Account → Security → 2-Step Verification → App passwords).
-// EMAIL_USER defaults to your kennel address; override with EMAIL_USER env var if needed.
+// Uses Gmail SMTP directly via nodemailer — completely free, no third-party service.
+// In Render, set EMAIL_PASS to a Gmail App Password (instructions below).
 const NOTIFY_EMAIL = 'shantibryan644@gmail.com';
+
 const emailTransporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
   auth: {
-    user: process.env.EMAIL_USER || NOTIFY_EMAIL,
+    user: NOTIFY_EMAIL,
     pass: process.env.EMAIL_PASS || ''
   }
 });
 
 async function sendNotification(subject, html) {
   if (!process.env.EMAIL_PASS) {
-    console.log('[email] EMAIL_PASS not set, notification skipped:', subject);
+    console.log('[email] EMAIL_PASS not set — notification skipped:', subject);
     return;
   }
   try {
     await emailTransporter.sendMail({
-      from: `"Shanti & Bryan Pinscher Kennel" <${process.env.EMAIL_USER || NOTIFY_EMAIL}>`,
+      from: `"Shanti & Bryan Pinscher Kennel" <${NOTIFY_EMAIL}>`,
       to: NOTIFY_EMAIL,
       subject,
       html
     });
     console.log('[email] Sent:', subject);
   } catch (err) {
-    console.error('[email] Failed to send:', err.message);
+    console.error('[email] Failed:', err.message);
   }
 }
 
