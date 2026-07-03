@@ -8,7 +8,6 @@ const https = require('https');
 const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
-const nodemailer = require('nodemailer');
 const { v2: cloudinary } = require('cloudinary');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
@@ -23,43 +22,39 @@ const Dog = require('./models/Dog');
 
 const app = express();
 
-// ===== EMAIL NOTIFICATIONS =====
-// Uses Gmail SMTP directly via nodemailer — completely free, no third-party service.
-// In Render, set EMAIL_PASS to a Gmail App Password (instructions below).
+// ===== EMAIL NOTIFICATIONS via Resend =====
+// Free tier: 100 emails/day, no SMTP (works on Render free plan).
+// Sign up at resend.com, verify your email, get your API key,
+// then add RESEND_API_KEY to Render environment variables.
 const NOTIFY_EMAIL = 'shantibryan644@gmail.com';
 
-const emailTransporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  requireTLS: true,
-  auth: {
-    user: NOTIFY_EMAIL,
-    pass: process.env.EMAIL_PASS || ''
-  },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000
-});
-
-// Log on startup so we can confirm the env var is being read
-console.log('[email] EMAIL_PASS set:', !!process.env.EMAIL_PASS, '| length:', (process.env.EMAIL_PASS || '').length);
+console.log('[email] RESEND_API_KEY set:', !!process.env.RESEND_API_KEY);
 
 async function sendNotification(subject, html) {
-  if (!process.env.EMAIL_PASS) {
-    console.log('[email] EMAIL_PASS not set — notification skipped:', subject);
+  if (!process.env.RESEND_API_KEY) {
+    console.log('[email] RESEND_API_KEY not set — notification skipped:', subject);
     return;
   }
   try {
     console.log('[email] Attempting to send:', subject);
-    const info = await emailTransporter.sendMail({
-      from: `"Shanti & Bryan Pinscher Kennel" <${NOTIFY_EMAIL}>`,
-      to: NOTIFY_EMAIL,
-      subject,
-      html
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'Shanti & Bryan Pinscher Kennel <onboarding@resend.dev>',
+        to: [NOTIFY_EMAIL],
+        subject,
+        html
+      })
     });
-    console.log('[email] SUCCESS — MessageId:', info.messageId);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || JSON.stringify(data));
+    console.log('[email] SUCCESS — id:', data.id);
   } catch (err) {
-    console.error('[email] FAILED —', err.code, err.message);
+    console.error('[email] FAILED —', err.message);
   }
 }
 
