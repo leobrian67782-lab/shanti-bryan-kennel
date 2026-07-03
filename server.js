@@ -954,6 +954,129 @@ app.get('/admin/dogs/delete/:id', requireLogin, async (req, res) => {
   res.redirect('/admin/dashboard');
 });
 
+// ===== AI CHAT =====
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { message, history } = req.body;
+    if (!message) return res.json({ reply: 'No message received.' });
+
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) {
+      return res.json({ reply: "Hi! I'm Bella, your kennel assistant. Our AI is being set up right now. In the meantime, please reach out at info@shantibryankennel.com and we'll get back to you shortly!" });
+    }
+
+    // Fetch live puppy data to give the AI real-time inventory awareness
+    let puppyContext = '';
+    try {
+      const puppies = await Puppy.find({ status: { $ne: 'Sold' } }).select('name gender color status price').lean();
+      if (puppies.length > 0) {
+        puppyContext = '\n\nCURRENT AVAILABLE PUPPIES (live from database):\n' +
+          puppies.map(p => `- ${p.name}: ${p.gender}, ${p.color}, ${p.status}, $${p.price}`).join('\n');
+      } else {
+        puppyContext = '\n\nCURRENT PUPPIES: No puppies currently listed — new litters coming soon.';
+      }
+    } catch (e) {
+      console.log('Puppy fetch for AI skipped:', e.message);
+    }
+
+    const systemText = `You are Bella, the friendly and knowledgeable AI assistant for Shanti & Bryan Pinscher Kennel. You are warm, helpful, and passionate about Miniature Pinschers. You work exclusively for this kennel.
+
+ABOUT THE KENNEL:
+- Name: Shanti & Bryan Pinscher Kennel
+- Website: shantibryankennel.com
+- Specialization: Home-raised Miniature Pinscher (Min Pin) puppies
+- Experience: 15+ years of breeding experience
+- Location: Based in the United States (we deliver nationwide and worldwide)
+- Mission: Placing healthy, well-socialized Min Pin puppies into loving homes
+
+BREEDING PROGRAM:
+- All puppies are home-raised with daily love, care, and socialization
+- Puppies are raised inside the family home — not in kennels or cages
+- Every puppy receives full veterinary care before going home
+- We prioritize temperament, health, and beauty in our breeding pairs
+- Our breeding dogs (Sire and Dam) are health-tested and AKC-registered
+
+HEALTH & VETERINARY:
+- All puppies come with a 1-Year Written Health Guarantee
+- Fully vaccinated with age-appropriate vaccines before going home
+- Dewormed on a regular schedule from birth
+- Microchipping available on request
+- Complete vet records provided with every puppy
+- We recommend a vet visit within 48-72 hours of arrival
+
+PRICING & DEPOSITS:
+- Puppy prices vary by gender, color, and availability — refer visitors to the Available Puppies page
+- A non-refundable deposit is required to reserve a puppy
+- The deposit is applied toward the total purchase price
+- For exact pricing, always direct to the contact form or Available Puppies page
+
+DELIVERY & PICKUP:
+- We offer NATIONWIDE DELIVERY through a trusted, professional pet transport agency
+- Puppies are transported safely and comfortably
+- LOCAL PICKUP is also available at our home — families can see firsthand how puppies are raised
+- Delivery timeline depends on location and will be confirmed at time of purchase
+
+ABOUT MINIATURE PINSCHERS:
+- Bold, energetic, and loyal — often described as "big dogs in small bodies"
+- Excellent family companions with proper training and socialization
+- Highly intelligent and respond well to positive reinforcement
+- Need daily exercise and mental stimulation
+- Lifespan: 12-16 years
+- Low-shedding, easy to groom
+- Do well in apartments and houses alike
+
+CONTACT:
+- Email: info@shantibryankennel.com
+- Contact form: shantibryankennel.com/contact
+- Submit a review: shantibryankennel.com/submit-review
+
+BEHAVIOR RULES:
+- Always respond warmly and helpfully
+- Never quote exact puppy prices — direct to the Available Puppies page or contact form
+- Never make up information you are not sure about — if unsure, direct to the contact form
+- Keep responses concise and friendly — under 200 words unless detail is genuinely needed
+- Use line breaks for readability
+- Always end with a helpful next step
+- Respond in the same language the customer uses${puppyContext}`;
+
+    const messages = [
+      { role: 'system', content: systemText },
+      ...(Array.isArray(history) ? history : []).slice(-10).map(m => ({
+        role: m.r === 'assistant' ? 'assistant' : 'user',
+        content: String(m.t || '')
+      })),
+      { role: 'user', content: message }
+    ];
+
+    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages,
+        max_tokens: 600,
+        temperature: 0.5
+      })
+    });
+
+    const data = await groqRes.json();
+    if (!groqRes.ok || !data.choices) {
+      console.error('Groq error:', JSON.stringify(data).slice(0, 200));
+      return res.json({ reply: "I'm having a moment — please try again or reach us at info@shantibryankennel.com!" });
+    }
+
+    const reply = data.choices[0]?.message?.content || "Could you rephrase that? I want to make sure I help you properly.";
+    res.json({ reply });
+
+  } catch (err) {
+    console.error('Chat error:', err.message);
+    res.json({ reply: "Something went wrong. Please try again or contact info@shantibryankennel.com" });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
