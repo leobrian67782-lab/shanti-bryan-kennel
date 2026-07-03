@@ -18,7 +18,9 @@ const Testimonial = require('./models/Testimonial');
 const Faq = require('./models/Faq');
 const Settings = require('./models/Settings');
 const Post = require('./models/Post');
-const Dog = require('./models/Dog');
+const Dog     = require('./models/Dog');
+const Invoice = require('./models/Invoice');
+const PDFDocument = require('pdfkit');
 
 const app = express();
 
@@ -1190,6 +1192,311 @@ Always be concise and to the point — Bryan is busy running the kennel.${liveCo
     res.json({ reply: 'Something went wrong.' });
   }
 });
+
+// ===== INVOICES =====
+app.get('/admin/invoices', requireLogin, async (req, res) => {
+  const invoices = await Invoice.find().sort({ createdAt: -1 });
+  res.render('admin-invoices-list', { invoices });
+});
+
+app.get('/admin/invoices/new', requireLogin, async (req, res) => {
+  const puppies = await Puppy.find().sort({ createdAt: -1 });
+  res.render('admin-invoice-form', { puppies });
+});
+
+// Generate the PDF as a buffer (shared by create and resend routes)
+async function generateInvoicePDF(inv) {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ margin: 50, size: 'A4' });
+    const chunks = [];
+    doc.on('data', chunk => chunks.push(chunk));
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+
+    const maroon = '#7a1e1e';
+    const gold   = '#c9a227';
+    const navy   = '#0d1117';
+    const gray   = '#6b7585';
+    const light  = '#f9f7f4';
+    const W = 595 - 100; // usable width
+
+    // ── Header bar ──
+    doc.rect(0, 0, 595, 90).fill(maroon);
+
+    // Logo (emblem image if available)
+    const logoPath = require('path').join(__dirname, 'public', 'images', 'images', 'emblem.png');
+    try {
+      doc.image(logoPath, 50, 15, { width: 60, height: 60 });
+    } catch(e) {
+      // logo not found — skip
+    }
+
+    // Kennel name
+    doc.fillColor('#fff').font('Helvetica-Bold').fontSize(16)
+       .text('SHANTI & BRYAN PINSCHER KENNEL', 120, 24, { width: 310 });
+    doc.font('Helvetica').fontSize(8).fillColor('rgba(255,255,255,0.8)')
+       .text('info@shantibryankennel.com  |  shantibryankennel.com', 120, 46);
+    doc.fontSize(8).text('Nationwide Delivery  |  1-Year Health Guarantee', 120, 58);
+
+    // Invoice badge (top right)
+    doc.fillColor(gold).font('Helvetica-Bold').fontSize(20)
+       .text('INVOICE', 430, 28);
+    doc.fillColor('#fff').font('Helvetica').fontSize(8)
+       .text(inv.invoiceNumber, 430, 52);
+
+    // ── Invoice meta strip ──
+    doc.rect(0, 90, 595, 36).fill('#f0ece3');
+    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(8)
+       .text('DATE ISSUED', 50, 100)
+       .text('DUE DATE', 200, 100)
+       .text('STATUS', 360, 100)
+       .text('DELIVERY METHOD', 460, 100);
+    doc.fillColor(navy).font('Helvetica').fontSize(9)
+       .text(new Date(inv.createdAt).toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'}), 50, 112)
+       .text('Before delivery/pickup', 200, 112)
+       .text(inv.status.toUpperCase(), 360, 112)
+       .text(inv.deliveryMethod, 460, 112);
+
+    let y = 150;
+
+    // ── Bill To / Puppy columns ──
+    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(9).text('BILL TO', 50, y);
+    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(9).text('PUPPY DETAILS', 320, y);
+    y += 14;
+    doc.moveTo(50, y).lineTo(270, y).strokeColor(gold).lineWidth(1.5).stroke();
+    doc.moveTo(320, y).lineTo(545, y).strokeColor(gold).lineWidth(1.5).stroke();
+    y += 10;
+
+    // Client info
+    doc.fillColor(navy).font('Helvetica-Bold').fontSize(10).text(inv.clientName, 50, y);
+    y += 14;
+    doc.fillColor(gray).font('Helvetica').fontSize(9);
+    if (inv.clientEmail) { doc.text(inv.clientEmail, 50, y); y += 12; }
+    if (inv.clientPhone) { doc.text(inv.clientPhone, 50, y); y += 12; }
+    if (inv.clientAddress) { doc.text(inv.clientAddress, 50, y); }
+
+    // Puppy info (right column)
+    let py = y - (14 * [inv.clientEmail,inv.clientPhone,inv.clientAddress].filter(Boolean).length + 14);
+    doc.fillColor(navy).font('Helvetica-Bold').fontSize(10).text(inv.puppyName, 320, py);
+    py += 14;
+    doc.fillColor(gray).font('Helvetica').fontSize(9);
+    if (inv.puppyGender) { doc.text(`Gender: ${inv.puppyGender}`, 320, py); py += 12; }
+    if (inv.puppyColor)  { doc.text(`Color: ${inv.puppyColor}`, 320, py); py += 12; }
+    if (inv.puppyDOB)    { doc.text(`Date of Birth: ${new Date(inv.puppyDOB).toLocaleDateString()}`, 320, py); py += 12; }
+    doc.text('Breed: Miniature Pinscher', 320, py);
+
+    y = Math.max(y + 24, py + 24);
+
+    // ── Payment table ──
+    doc.rect(50, y, W, 28).fill(maroon);
+    doc.fillColor('#fff').font('Helvetica-Bold').fontSize(9)
+       .text('DESCRIPTION', 60, y + 9)
+       .text('AMOUNT', 480, y + 9, { width: 60, align: 'right' });
+    y += 28;
+
+    const rows = [
+      [`Miniature Pinscher Puppy — ${inv.puppyName}`, `$${inv.puppyPrice.toLocaleString()}`],
+      ['Deposit Received', `- $${inv.depositPaid.toLocaleString()}`],
+    ];
+    rows.forEach((row, i) => {
+      doc.rect(50, y, W, 26).fill(i % 2 === 0 ? '#fff' : light);
+      doc.fillColor(navy).font('Helvetica').fontSize(9)
+         .text(row[0], 60, y + 8)
+         .text(row[1], 480, y + 8, { width: 60, align: 'right' });
+      y += 26;
+    });
+
+    // Balance due row
+    doc.rect(50, y, W, 32).fill('#f0ece3');
+    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(11)
+       .text('BALANCE DUE', 60, y + 9)
+       .text(`$${inv.balanceDue.toLocaleString()}`, 480, y + 9, { width: 60, align: 'right' });
+    y += 42;
+
+    // ── Policies ──
+    doc.rect(50, y, W, 14).fill(maroon);
+    doc.fillColor('#fff').font('Helvetica-Bold').fontSize(8).text('TERMS & CONDITIONS', 60, y + 3);
+    y += 20;
+
+    const policies = [
+      '1. Full balance must be paid IN FULL before the puppy is delivered or picked up. No exceptions.',
+      '2. The deposit is non-refundable. It is applied toward the total purchase price of the puppy.',
+      '3. The buyer is responsible for all delivery/transport costs unless otherwise agreed in writing.',
+      '4. The puppy comes with a 1-Year Written Health Guarantee against genetic defects.',
+      '5. The buyer agrees to provide proper veterinary care, nutrition, and a safe loving home.',
+      '6. Shanti & Bryan Pinscher Kennel reserves the right to cancel the sale if welfare concerns arise.',
+      '7. Once the puppy is in the buyer\'s care, the buyer assumes full responsibility for the animal.',
+      '8. By proceeding with this purchase, the buyer accepts all terms stated in this invoice.',
+    ];
+    doc.fillColor(navy).font('Helvetica').fontSize(8);
+    policies.forEach(p => {
+      doc.text(p, 50, y, { width: W });
+      y += 14;
+    });
+
+    y += 10;
+
+    // ── Notes ──
+    if (inv.notes) {
+      doc.rect(50, y, W, 14).fill('#1a2433');
+      doc.fillColor('#fff').font('Helvetica-Bold').fontSize(8).text('ADDITIONAL NOTES', 60, y + 3);
+      y += 18;
+      doc.fillColor(navy).font('Helvetica').fontSize(8).text(inv.notes, 50, y, { width: W });
+      y += 24;
+    }
+
+    // ── Signature ──
+    y += 10;
+    doc.moveTo(50, y).lineTo(250, y).strokeColor(gold).lineWidth(1).stroke();
+    doc.moveTo(320, y).lineTo(545, y).strokeColor(gold).lineWidth(1).stroke();
+
+    if (inv.signatureData && inv.signatureData.startsWith('data:image/png;base64,')) {
+      try {
+        const sigBuf = Buffer.from(inv.signatureData.split(',')[1], 'base64');
+        doc.image(sigBuf, 50, y - 50, { width: 200, height: 50 });
+      } catch(e) { /* skip on error */ }
+    }
+
+    y += 8;
+    doc.fillColor(gray).font('Helvetica').fontSize(8)
+       .text('Authorized Signature — Shanti & Bryan Pinscher Kennel', 50, y)
+       .text('Client Signature / Acknowledgment', 320, y);
+
+    y += 30;
+
+    // ── Footer ──
+    doc.rect(0, 800, 595, 42).fill(maroon);
+    doc.fillColor('#fff').font('Helvetica').fontSize(7)
+       .text('Thank you for choosing Shanti & Bryan Pinscher Kennel. We are honored to place one of our beloved puppies with your family.', 50, 812, { width: 495, align: 'center' })
+       .text('info@shantibryankennel.com  |  shantibryankennel.com', 50, 824, { width: 495, align: 'center' });
+
+    doc.end();
+  });
+}
+
+// Create invoice + generate PDF + send email
+app.post('/admin/invoices/new', requireLogin, async (req, res) => {
+  try {
+    const data = req.body;
+    const inv = await Invoice.create({
+      puppy:         data.puppyId || null,
+      puppyName:     data.puppyName,
+      puppyGender:   data.puppyGender,
+      puppyColor:    data.puppyColor,
+      puppyDOB:      data.puppyDOB || null,
+      puppyPrice:    parseFloat(data.puppyPrice),
+      depositPaid:   parseFloat(data.depositPaid) || 0,
+      balanceDue:    parseFloat(data.balanceDue),
+      clientName:    data.clientName,
+      clientEmail:   data.clientEmail,
+      clientPhone:   data.clientPhone,
+      clientAddress: data.clientAddress,
+      deliveryMethod: data.deliveryMethod,
+      notes:         data.notes,
+      signatureData: data.signatureData,
+      status:        'Draft'
+    });
+
+    // Generate and send PDF
+    const pdfBuf = await generateInvoicePDF(inv);
+    await sendInvoiceEmail(inv, pdfBuf);
+
+    await Invoice.findByIdAndUpdate(inv._id, { status: 'Sent', sentAt: new Date() });
+    res.redirect('/admin/invoices');
+  } catch (err) {
+    adminError(res, 'CREATE INVOICE ERROR:', err);
+  }
+});
+
+// Download PDF
+app.get('/admin/invoices/:id/pdf', requireLogin, async (req, res) => {
+  try {
+    const inv = await Invoice.findById(req.params.id);
+    if (!inv) return res.status(404).send('Invoice not found');
+    const pdfBuf = await generateInvoicePDF(inv);
+    res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="${inv.invoiceNumber}.pdf"` });
+    res.send(pdfBuf);
+  } catch (err) { adminError(res, 'PDF ERROR:', err); }
+});
+
+// Resend email
+app.get('/admin/invoices/:id/send', requireLogin, async (req, res) => {
+  try {
+    const inv = await Invoice.findById(req.params.id);
+    if (!inv) return res.status(404).send('Invoice not found');
+    const pdfBuf = await generateInvoicePDF(inv);
+    await sendInvoiceEmail(inv, pdfBuf);
+    await Invoice.findByIdAndUpdate(inv._id, { status: 'Sent', sentAt: new Date() });
+    res.redirect('/admin/invoices');
+  } catch (err) { adminError(res, 'RESEND ERROR:', err); }
+});
+
+// Mark as paid
+app.get('/admin/invoices/:id/mark-paid', requireLogin, async (req, res) => {
+  await Invoice.findByIdAndUpdate(req.params.id, { status: 'Paid' });
+  res.redirect('/admin/invoices');
+});
+
+// Delete
+app.get('/admin/invoices/:id/delete', requireLogin, async (req, res) => {
+  await Invoice.findByIdAndDelete(req.params.id);
+  res.redirect('/admin/invoices');
+});
+
+// Send invoice email helper
+async function sendInvoiceEmail(inv, pdfBuf) {
+  if (!process.env.RESEND_API_KEY) {
+    console.log('[invoice email] RESEND_API_KEY not set — skipped');
+    return;
+  }
+  try {
+    const pdfBase64 = pdfBuf.toString('base64');
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: 'Shanti & Bryan Pinscher Kennel <notifications@shantibryankennel.com>',
+        to: [inv.clientEmail],
+        subject: `Invoice ${inv.invoiceNumber} — ${inv.puppyName} | Shanti & Bryan Pinscher Kennel`,
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;">
+            <div style="background:#7a1e1e;padding:28px 32px;border-radius:8px 8px 0 0;">
+              <h1 style="color:#fff;margin:0;font-size:20px;">Shanti & Bryan Pinscher Kennel</h1>
+              <p style="color:rgba(255,255,255,0.8);margin:6px 0 0;font-size:13px;">Your Puppy Invoice</p>
+            </div>
+            <div style="background:#fff;padding:28px 32px;border:1px solid #e6ddc8;">
+              <p style="color:#1e293b;font-size:15px;">Dear <strong>${inv.clientName}</strong>,</p>
+              <p style="color:#4a5568;font-size:14px;line-height:1.6;">Thank you for choosing Shanti & Bryan Pinscher Kennel! We're so excited to place <strong>${inv.puppyName}</strong> with your family.</p>
+              <p style="color:#4a5568;font-size:14px;line-height:1.6;">Please find your invoice attached to this email (Invoice <strong>${inv.invoiceNumber}</strong>).</p>
+              <div style="background:#f9f7f4;border:1px solid #ece5d8;border-radius:8px;padding:18px;margin:20px 0;">
+                <table style="width:100%;border-collapse:collapse;">
+                  <tr><td style="padding:5px 0;color:#6b7585;font-size:13px;">Puppy</td><td style="padding:5px 0;font-weight:700;color:#1e293b;font-size:13px;text-align:right;">${inv.puppyName}</td></tr>
+                  <tr><td style="padding:5px 0;color:#6b7585;font-size:13px;">Total Price</td><td style="padding:5px 0;font-weight:700;color:#1e293b;font-size:13px;text-align:right;">$${inv.puppyPrice.toLocaleString()}</td></tr>
+                  <tr><td style="padding:5px 0;color:#6b7585;font-size:13px;">Deposit Paid</td><td style="padding:5px 0;font-weight:700;color:#2e9e4f;font-size:13px;text-align:right;">- $${inv.depositPaid.toLocaleString()}</td></tr>
+                  <tr style="border-top:2px solid #7a1e1e;"><td style="padding:10px 0 5px;color:#7a1e1e;font-weight:700;font-size:14px;">Balance Due</td><td style="padding:10px 0 5px;font-weight:700;color:#7a1e1e;font-size:14px;text-align:right;">$${inv.balanceDue.toLocaleString()}</td></tr>
+                </table>
+              </div>
+              <div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;padding:14px;margin:16px 0;">
+                <p style="margin:0;color:#92400e;font-size:13px;font-weight:700;">⚠️ Important: Balance must be paid in full before ${inv.deliveryMethod.toLowerCase()}.</p>
+              </div>
+              <p style="color:#4a5568;font-size:13px;">If you have any questions, please don't hesitate to reach out:</p>
+              <p style="color:#4a5568;font-size:13px;">📧 <a href="mailto:info@shantibryankennel.com" style="color:#7a1e1e;">info@shantibryankennel.com</a></p>
+              <p style="color:#4a5568;font-size:14px;margin-top:20px;">With love,<br><strong>Shanti & Bryan Pinscher Kennel</strong></p>
+            </div>
+            <div style="background:#f0ece3;padding:14px 32px;text-align:center;border-radius:0 0 8px 8px;">
+              <p style="margin:0;color:#9ca3af;font-size:11px;">shantibryankennel.com | info@shantibryankennel.com</p>
+            </div>
+          </div>`,
+        attachments: [{ filename: `${inv.invoiceNumber}.pdf`, content: pdfBase64 }]
+      })
+    });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.message || JSON.stringify(d));
+    console.log('[invoice email] Sent to', inv.clientEmail, 'id:', d.id);
+  } catch (err) {
+    console.error('[invoice email] Failed:', err.message);
+  }
+}
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
