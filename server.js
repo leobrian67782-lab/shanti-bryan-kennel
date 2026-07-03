@@ -1223,12 +1223,18 @@ async function generateInvoicePDF(inv) {
     // ── Header bar ──
     doc.rect(0, 0, 595, 90).fill(maroon);
 
-    // Logo (emblem image if available)
-    const logoPath = require('path').join(__dirname, 'public', 'images', 'images', 'emblem.png');
-    try {
-      doc.image(logoPath, 50, 15, { width: 60, height: 60 });
-    } catch(e) {
-      // logo not found — skip
+    // Logo (try multiple paths gracefully)
+    const possibleLogoPaths = [
+      require('path').join(__dirname, 'public', 'images', 'images', 'emblem.png'),
+      require('path').join(__dirname, 'public', 'images', 'emblem.png'),
+    ];
+    for (const lp of possibleLogoPaths) {
+      try {
+        if (require('fs').existsSync(lp)) {
+          doc.image(lp, 50, 15, { width: 60, height: 60 });
+          break;
+        }
+      } catch(e) { /* skip */ }
     }
 
     // Kennel name
@@ -1397,11 +1403,16 @@ app.post('/admin/invoices/new', requireLogin, async (req, res) => {
       status:        'Draft'
     });
 
-    // Generate and send PDF
-    const pdfBuf = await generateInvoicePDF(inv);
-    await sendInvoiceEmail(inv, pdfBuf);
+    // Generate PDF and send email — errors here don't block invoice saving
+    try {
+      const pdfBuf = await generateInvoicePDF(inv);
+      await sendInvoiceEmail(inv, pdfBuf);
+      await Invoice.findByIdAndUpdate(inv._id, { status: 'Sent', sentAt: new Date() });
+    } catch (emailErr) {
+      console.error('Invoice PDF/email error:', emailErr.message);
+      // Invoice is saved — admin can resend from the list
+    }
 
-    await Invoice.findByIdAndUpdate(inv._id, { status: 'Sent', sentAt: new Date() });
     res.redirect('/admin/invoices');
   } catch (err) {
     adminError(res, 'CREATE INVOICE ERROR:', err);
