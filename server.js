@@ -1384,15 +1384,27 @@ async function generateInvoicePDF(inv) {
 app.post('/admin/invoices/new', requireLogin, async (req, res) => {
   try {
     const data = req.body;
+
+    // Generate invoice number safely here instead of in a pre-save hook
+    const year = new Date().getFullYear();
+    const count = await Invoice.countDocuments();
+    const invoiceNumber = `SBK-${year}-${String(count + 1).padStart(4, '0')}`;
+
+    // Calculate balance
+    const puppyPrice  = parseFloat(data.puppyPrice) || 0;
+    const depositPaid = parseFloat(data.depositPaid) || 0;
+    const balanceDue  = parseFloat(data.balanceDue) || (puppyPrice - depositPaid);
+
     const inv = await Invoice.create({
+      invoiceNumber,
       puppy:         data.puppyId || null,
       puppyName:     data.puppyName,
       puppyGender:   data.puppyGender,
       puppyColor:    data.puppyColor,
       puppyDOB:      data.puppyDOB || null,
-      puppyPrice:    parseFloat(data.puppyPrice),
-      depositPaid:   parseFloat(data.depositPaid) || 0,
-      balanceDue:    parseFloat(data.balanceDue),
+      puppyPrice,
+      depositPaid,
+      balanceDue,
       clientName:    data.clientName,
       clientEmail:   data.clientEmail,
       clientPhone:   data.clientPhone,
