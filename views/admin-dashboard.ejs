@@ -169,4 +169,101 @@
   <% } %>
 </div>
 
+<!-- Admin AI Assistant -->
+<div class="admin-section" style="margin-top:24px;">
+  <div class="admin-section-head">
+    <h3><i class="fa-solid fa-robot" style="color:var(--gold);"></i> AI Assistant</h3>
+    <span style="color:#6b7585;font-size:0.8rem;">Knows everything about your site in real time</span>
+  </div>
+  <div id="adminChatMsgs" style="min-height:120px;max-height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 0 12px;"></div>
+  <div style="display:flex;gap:8px;margin-top:12px;align-items:flex-end;">
+    <textarea id="adminChatInp" placeholder="Ask anything — puppy stats, draft a description, reply to a customer…" style="flex:1;background:#1c2430;border:1.5px solid #2a3441;color:#fff;border-radius:8px;padding:10px 12px;font-family:'Poppins',sans-serif;font-size:0.85rem;resize:none;outline:none;line-height:1.5;max-height:80px;" rows="2"></textarea>
+    <button id="adminChatSend" style="background:var(--gold);color:#0d1117;border:none;border-radius:8px;width:42px;height:42px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-solid fa-paper-plane"></i></button>
+  </div>
+  <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;" id="adminChatQR"></div>
+</div>
+
+<script>
+(function() {
+  const msgs = document.getElementById('adminChatMsgs');
+  const inp  = document.getElementById('adminChatInp');
+  const send = document.getElementById('adminChatSend');
+  const qr   = document.getElementById('adminChatQR');
+  const hist = [];
+  let busy = false;
+
+  function fmt(t) {
+    return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g,'<em>$1</em>')
+      .replace(/\n/g,'<br>');
+  }
+
+  function addMsg(role, text) {
+    const d = document.createElement('div');
+    d.style.cssText = role === 'user'
+      ? 'align-self:flex-end;background:var(--gold);color:#0d1117;padding:8px 13px;border-radius:12px 12px 3px 12px;font-size:0.84rem;max-width:85%;line-height:1.5;font-family:Poppins,sans-serif;'
+      : 'align-self:flex-start;background:#151b26;border:1px solid #1f2733;color:#c5cdd8;padding:10px 14px;border-radius:12px 12px 12px 3px;font-size:0.84rem;max-width:90%;line-height:1.6;font-family:Poppins,sans-serif;';
+    d.innerHTML = fmt(text);
+    msgs.appendChild(d);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function showTyping() {
+    const d = document.createElement('div');
+    d.id = 'adminTyping';
+    d.style.cssText = 'align-self:flex-start;background:#151b26;border:1px solid #1f2733;color:#6b7585;padding:10px 14px;border-radius:12px;font-size:0.8rem;font-family:Poppins,sans-serif;';
+    d.innerHTML = '<i class="fa-solid fa-robot" style="color:var(--gold);margin-right:6px;"></i> Thinking...';
+    msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
+  }
+  function hideTyping() { const t = document.getElementById('adminTyping'); if(t) t.remove(); }
+
+  function setQR(items) {
+    qr.innerHTML = '';
+    items.forEach(item => {
+      const b = document.createElement('button');
+      b.textContent = item;
+      b.style.cssText = 'background:transparent;border:1px solid #2a3441;color:#c5cdd8;padding:5px 12px;border-radius:20px;font-size:0.75rem;cursor:pointer;font-family:Poppins,sans-serif;';
+      b.onmouseover = () => { b.style.borderColor='var(--gold)'; b.style.color='var(--gold)'; };
+      b.onmouseout  = () => { b.style.borderColor='#2a3441'; b.style.color='#c5cdd8'; };
+      b.onclick = () => go(item);
+      qr.appendChild(b);
+    });
+  }
+
+  async function go(text) {
+    text = (text || inp.value).trim();
+    if (!text || busy) return;
+    busy = true; inp.value = ''; qr.innerHTML = '';
+    addMsg('user', text); hist.push({ r:'user', t:text });
+    showTyping();
+    try {
+      const res = await fetch('/api/admin-chat', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ message: text, history: hist.slice(-20) })
+      });
+      const data = await res.json();
+      hideTyping();
+      const reply = data.reply || 'No response.';
+      addMsg('assistant', reply); hist.push({ r:'assistant', t:reply });
+      setQR(['How many inquiries today?', 'Summarize pending reviews', 'Draft a puppy description', 'Show site stats']);
+    } catch(e) {
+      hideTyping();
+      addMsg('assistant', 'Something went wrong. Please try again.');
+    }
+    busy = false;
+  }
+
+  // Welcome message
+  setTimeout(() => {
+    addMsg('assistant', 'Hi Bryan! 👋 I have full access to your site data right now. Ask me anything — puppy stats, pending reviews, customer inquiries, or I can draft descriptions and replies for you.');
+    setQR(['Show site stats', 'Any pending reviews?', 'Recent inquiries', 'Draft a puppy description']);
+  }, 400);
+
+  send.addEventListener('click', () => go());
+  inp.addEventListener('keydown', e => { if(e.key==='Enter' && !e.shiftKey) { e.preventDefault(); go(); } });
+  inp.addEventListener('input', () => { inp.style.height='auto'; inp.style.height=Math.min(inp.scrollHeight,80)+'px'; });
+})();
+</script>
+
 <%- include('partials/admin-footer') %>
