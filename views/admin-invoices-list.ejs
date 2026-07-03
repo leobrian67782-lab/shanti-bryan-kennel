@@ -1,0 +1,43 @@
+<%- include('partials/admin-header', {title: 'Invoices | Admin', active: 'invoice', heading: 'Invoices'}) %>
+
+<div class="admin-section">
+  <div class="admin-section-head">
+    <h3><i class="fa-solid fa-file-invoice-dollar" style="color:var(--gold);"></i> All Invoices</h3>
+    <a href="/admin/invoices/new" class="admin-btn"><i class="fa-solid fa-plus"></i> New Invoice</a>
+  </div>
+  <% if (invoices.length === 0) { %>
+    <p class="admin-empty">No invoices yet. Create one when a client reserves a puppy.</p>
+  <% } else { %>
+    <table class="admin-table">
+      <thead><tr><th>Invoice #</th><th>Client</th><th>Puppy</th><th>Total</th><th>Balance</th><th>Status</th><th>Date</th><th></th></tr></thead>
+      <tbody>
+        <% invoices.forEach(function(inv) { %>
+          <tr>
+            <td style="font-weight:700;color:var(--gold);"><%= inv.invoiceNumber %></td>
+            <td>
+              <span style="font-weight:600;"><%= inv.clientName %></span><br>
+              <span style="color:var(--text-light);font-size:0.8rem;"><%= inv.clientEmail %></span>
+            </td>
+            <td><%= inv.puppyName %></td>
+            <td style="font-weight:600;">$<%= inv.puppyPrice %></td>
+            <td style="color:<%= inv.balanceDue > 0 ? '#e8848f' : '#2e9e4f' %>;font-weight:600;">$<%= inv.balanceDue %></td>
+            <td>
+              <span style="background:<%= inv.status === 'Paid' ? '#2e9e4f' : inv.status === 'Sent' ? '#2b6cb0' : '#6b7585' %>;color:#fff;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;"><%= inv.status %></span>
+            </td>
+            <td style="color:var(--text-light);font-size:0.82rem;"><%= inv.createdAt.toLocaleDateString() %></td>
+            <td class="admin-actions">
+              <a href="/admin/invoices/<%= inv._id %>/pdf" class="admin-btn-sm" title="Download PDF" target="_blank"><i class="fa-solid fa-file-pdf"></i></a>
+              <a href="/admin/invoices/<%= inv._id %>/send" class="admin-btn-sm" title="Resend Email" onclick="return confirm('Resend invoice to <%= inv.clientEmail %>?')"><i class="fa-solid fa-paper-plane"></i></a>
+              <% if (inv.status !== 'Paid') { %>
+                <a href="/admin/invoices/<%= inv._id %>/mark-paid" class="admin-btn-sm" title="Mark as Paid" onclick="return confirm('Mark this invoice as paid?')"><i class="fa-solid fa-check"></i></a>
+              <% } %>
+              <a href="/admin/invoices/<%= inv._id %>/delete" class="admin-btn-sm admin-btn-danger" title="Delete" onclick="return confirm('Delete this invoice?')"><i class="fa-solid fa-trash"></i></a>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
+<%- include('partials/admin-footer') %>

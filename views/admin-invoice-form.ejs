@@ -1,0 +1,165 @@
+<%- include('partials/admin-header', {title: 'Create Invoice | Admin', active: 'invoice', heading: 'Create Invoice'}) %>
+
+<div class="admin-section" style="max-width:700px;">
+  <form method="POST" action="/admin/invoices/new" id="invoiceForm">
+
+    <!-- Puppy Selection -->
+    <h3 style="color:#c5cdd8;margin-bottom:16px;font-size:1rem;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #1f2733;padding-bottom:10px;">Puppy Details</h3>
+
+    <div class="form-group">
+      <label>Select Puppy (optional — or fill in manually)</label>
+      <select name="puppyId" id="puppySelect" onchange="fillPuppy(this)">
+        <option value="">— Choose a puppy —</option>
+        <% puppies.forEach(function(p) { %>
+          <option value="<%= p._id %>" data-name="<%= p.name %>" data-gender="<%= p.gender %>" data-color="<%= p.color %>" data-price="<%= p.price %>" data-dob="<%= p.dateOfBirth ? p.dateOfBirth.toISOString().split('T')[0] : '' %>">
+            <%= p.name %> — <%= p.gender %>, <%= p.color %> ($<%= p.price %>) [<%= p.status %>]
+          </option>
+        <% }); %>
+      </select>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div class="form-group">
+        <label>Puppy Name *</label>
+        <input type="text" name="puppyName" id="puppyName" required>
+      </div>
+      <div class="form-group">
+        <label>Price ($) *</label>
+        <input type="number" name="puppyPrice" id="puppyPrice" required onchange="calcBalance()">
+      </div>
+      <div class="form-group">
+        <label>Gender</label>
+        <input type="text" name="puppyGender" id="puppyGender">
+      </div>
+      <div class="form-group">
+        <label>Color</label>
+        <input type="text" name="puppyColor" id="puppyColor">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Date of Birth</label>
+      <input type="date" name="puppyDOB" id="puppyDOB">
+    </div>
+
+    <!-- Client Details -->
+    <h3 style="color:#c5cdd8;margin:24px 0 16px;font-size:1rem;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #1f2733;padding-bottom:10px;">Client Details</h3>
+
+    <div class="form-group">
+      <label>Client Full Name *</label>
+      <input type="text" name="clientName" required>
+    </div>
+    <div class="form-group">
+      <label>Client Email *</label>
+      <input type="email" name="clientEmail" required>
+    </div>
+    <div class="form-group">
+      <label>Client Phone</label>
+      <input type="text" name="clientPhone">
+    </div>
+    <div class="form-group">
+      <label>Client Address / Location</label>
+      <input type="text" name="clientAddress" placeholder="e.g. Texas, USA">
+    </div>
+
+    <!-- Payment -->
+    <h3 style="color:#c5cdd8;margin:24px 0 16px;font-size:1rem;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #1f2733;padding-bottom:10px;">Payment</h3>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;">
+      <div class="form-group">
+        <label>Deposit Paid ($)</label>
+        <input type="number" name="depositPaid" id="depositPaid" value="0" onchange="calcBalance()">
+      </div>
+      <div class="form-group">
+        <label>Balance Due ($)</label>
+        <input type="number" name="balanceDue" id="balanceDue" readonly style="background:#0d1117;color:var(--gold);font-weight:700;">
+      </div>
+      <div class="form-group">
+        <label>Delivery Method</label>
+        <select name="deliveryMethod">
+          <option value="Delivery">Delivery</option>
+          <option value="Local Pickup">Local Pickup</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="form-group">
+      <label>Additional Notes</label>
+      <textarea name="notes" placeholder="Any special notes for this invoice…"></textarea>
+    </div>
+
+    <!-- Signature -->
+    <h3 style="color:#c5cdd8;margin:24px 0 16px;font-size:1rem;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #1f2733;padding-bottom:10px;">Your Signature</h3>
+    <p style="color:#7a8494;font-size:0.82rem;margin-bottom:10px;">Draw your signature below using your finger or mouse. This will appear on the PDF.</p>
+    <div style="position:relative;background:#fff;border-radius:8px;overflow:hidden;">
+      <canvas id="sigPad" width="640" height="160" style="width:100%;height:160px;cursor:crosshair;touch-action:none;display:block;"></canvas>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button type="button" onclick="clearSig()" style="background:#1c2430;border:1px solid #2a3441;color:#c5cdd8;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:0.8rem;"><i class="fa-solid fa-eraser"></i> Clear</button>
+      <span style="color:#7a8494;font-size:0.75rem;align-self:center;">Clear to redraw if needed</span>
+    </div>
+    <input type="hidden" name="signatureData" id="signatureData">
+
+    <button type="submit" class="form-submit" style="margin-top:28px;" onclick="captureSig()">
+      <i class="fa-solid fa-file-invoice"></i> Generate Invoice & Send to Client
+    </button>
+  </form>
+</div>
+
+<script>
+// Fill puppy fields when a puppy is selected
+function fillPuppy(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt.value) return;
+  document.getElementById('puppyName').value  = opt.dataset.name  || '';
+  document.getElementById('puppyGender').value = opt.dataset.gender || '';
+  document.getElementById('puppyColor').value  = opt.dataset.color  || '';
+  document.getElementById('puppyPrice').value  = opt.dataset.price  || '';
+  document.getElementById('puppyDOB').value    = opt.dataset.dob    || '';
+  calcBalance();
+}
+
+function calcBalance() {
+  const price   = parseFloat(document.getElementById('puppyPrice').value)   || 0;
+  const deposit = parseFloat(document.getElementById('depositPaid').value) || 0;
+  document.getElementById('balanceDue').value = (price - deposit).toFixed(2);
+}
+
+// Signature pad
+const canvas = document.getElementById('sigPad');
+const ctx = canvas.getContext('2d');
+ctx.strokeStyle = '#1a1a1a';
+ctx.lineWidth = 2.5;
+ctx.lineCap = 'round';
+ctx.lineJoin = 'round';
+let drawing = false, lastX = 0, lastY = 0;
+
+function getPos(e) {
+  const r = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / r.width;
+  const scaleY = canvas.height / r.height;
+  if (e.touches) {
+    return { x: (e.touches[0].clientX - r.left) * scaleX, y: (e.touches[0].clientY - r.top) * scaleY };
+  }
+  return { x: (e.clientX - r.left) * scaleX, y: (e.clientY - r.top) * scaleY };
+}
+
+canvas.addEventListener('mousedown',  e => { drawing = true; const p = getPos(e); lastX = p.x; lastY = p.y; });
+canvas.addEventListener('mousemove',  e => { if (!drawing) return; const p = getPos(e); ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke(); lastX = p.x; lastY = p.y; });
+canvas.addEventListener('mouseup',    () => drawing = false);
+canvas.addEventListener('mouseleave', () => drawing = false);
+canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; const p = getPos(e); lastX = p.x; lastY = p.y; }, {passive:false});
+canvas.addEventListener('touchmove',  e => { e.preventDefault(); if (!drawing) return; const p = getPos(e); ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke(); lastX = p.x; lastY = p.y; }, {passive:false});
+canvas.addEventListener('touchend',   () => drawing = false);
+
+function clearSig() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
+function captureSig() {
+  document.getElementById('signatureData').value = canvas.toDataURL('image/png');
+}
+
+calcBalance();
+</script>
+
+<%- include('partials/admin-footer') %>
