@@ -1207,7 +1207,7 @@ app.get('/admin/invoices/new', requireLogin, async (req, res) => {
 // Generate the PDF as a buffer (shared by create and resend routes)
 async function generateInvoicePDF(inv) {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 50, size: 'A4' });
+    const doc = new PDFDocument({ margin: 50, size: 'A4', autoFirstPage: true });
     const chunks = [];
     doc.on('data', chunk => chunks.push(chunk));
     doc.on('end', () => resolve(Buffer.concat(chunks)));
@@ -1218,163 +1218,158 @@ async function generateInvoicePDF(inv) {
     const navy   = '#0d1117';
     const gray   = '#6b7585';
     const light  = '#f9f7f4';
-    const W = 595 - 100; // usable width
+    const W = 495; // usable width (595 - 50 left - 50 right)
 
     // ── Header bar ──
     doc.rect(0, 0, 595, 90).fill(maroon);
 
-    // Logo (try multiple paths gracefully)
+    // Logo
     const possibleLogoPaths = [
       require('path').join(__dirname, 'public', 'images', 'images', 'emblem.png'),
       require('path').join(__dirname, 'public', 'images', 'emblem.png'),
     ];
     for (const lp of possibleLogoPaths) {
       try {
-        if (require('fs').existsSync(lp)) {
-          doc.image(lp, 50, 15, { width: 60, height: 60 });
-          break;
-        }
-      } catch(e) { /* skip */ }
+        if (require('fs').existsSync(lp)) { doc.image(lp, 50, 15, { width: 58, height: 58 }); break; }
+      } catch(e) {}
     }
 
-    // Kennel name
-    doc.fillColor('#fff').font('Helvetica-Bold').fontSize(16)
-       .text('SHANTI & BRYAN PINSCHER KENNEL', 120, 24, { width: 310 });
-    doc.font('Helvetica').fontSize(8).fillColor('rgba(255,255,255,0.8)')
-       .text('info@shantibryankennel.com  |  shantibryankennel.com', 120, 46);
-    doc.fontSize(8).text('Nationwide Delivery  |  1-Year Health Guarantee', 120, 58);
+    doc.fillColor('#fff').font('Helvetica-Bold').fontSize(14)
+       .text('SHANTI & BRYAN PINSCHER KENNEL', 118, 22, { width: 300 });
+    doc.font('Helvetica').fontSize(8).fillColor('rgba(255,255,255,0.75)')
+       .text('info@shantibryankennel.com  |  shantibryankennel.com', 118, 42)
+       .text('Nationwide Delivery  |  1-Year Health Guarantee', 118, 54);
 
-    // Invoice badge (top right)
-    doc.fillColor(gold).font('Helvetica-Bold').fontSize(20)
-       .text('INVOICE', 430, 28);
-    doc.fillColor('#fff').font('Helvetica').fontSize(8)
-       .text(inv.invoiceNumber, 430, 52);
+    doc.fillColor(gold).font('Helvetica-Bold').fontSize(22).text('INVOICE', 430, 22);
+    doc.fillColor('rgba(255,255,255,0.85)').font('Helvetica').fontSize(9).text(inv.invoiceNumber, 430, 50);
 
-    // ── Invoice meta strip ──
-    doc.rect(0, 90, 595, 36).fill('#f0ece3');
-    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(8)
-       .text('DATE ISSUED', 50, 100)
-       .text('DUE DATE', 200, 100)
-       .text('STATUS', 360, 100)
-       .text('DELIVERY METHOD', 460, 100);
-    doc.fillColor(navy).font('Helvetica').fontSize(9)
-       .text(new Date(inv.createdAt).toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'}), 50, 112)
-       .text('Before delivery/pickup', 200, 112)
-       .text(inv.status.toUpperCase(), 360, 112)
-       .text(inv.deliveryMethod, 460, 112);
+    // ── Meta strip ──
+    doc.rect(0, 90, 595, 34).fill('#f0ece3');
+    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(7.5)
+       .text('DATE ISSUED', 50, 99).text('PAYMENT DUE', 190, 99)
+       .text('STATUS', 340, 99).text('DELIVERY', 450, 99);
+    doc.fillColor(navy).font('Helvetica').fontSize(8.5)
+       .text(new Date(inv.createdAt).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}), 50, 110)
+       .text('Before delivery/pickup', 190, 110)
+       .text(inv.status.toUpperCase(), 340, 110)
+       .text(inv.deliveryMethod, 450, 110);
 
-    let y = 150;
+    let y = 144;
 
-    // ── Bill To / Puppy columns ──
-    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(9).text('BILL TO', 50, y);
-    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(9).text('PUPPY DETAILS', 320, y);
-    y += 14;
-    doc.moveTo(50, y).lineTo(270, y).strokeColor(gold).lineWidth(1.5).stroke();
+    // ── Bill To + Puppy Details side by side ──
+    // Left column header
+    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(8).text('BILL TO', 50, y);
+    // Right column header
+    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(8).text('PUPPY DETAILS', 320, y);
+    y += 13;
+
+    // Gold dividers
+    doc.moveTo(50, y).lineTo(268, y).strokeColor(gold).lineWidth(1.5).stroke();
     doc.moveTo(320, y).lineTo(545, y).strokeColor(gold).lineWidth(1.5).stroke();
-    y += 10;
+    y += 12;
 
-    // Client info
+    // Left column — client info
+    const leftStartY = y;
     doc.fillColor(navy).font('Helvetica-Bold').fontSize(10).text(inv.clientName, 50, y);
-    y += 14;
-    doc.fillColor(gray).font('Helvetica').fontSize(9);
-    if (inv.clientEmail) { doc.text(inv.clientEmail, 50, y); y += 12; }
-    if (inv.clientPhone) { doc.text(inv.clientPhone, 50, y); y += 12; }
-    if (inv.clientAddress) { doc.text(inv.clientAddress, 50, y); }
+    y += 15;
+    doc.fillColor(gray).font('Helvetica').fontSize(8.5);
+    if (inv.clientEmail)   { doc.text(inv.clientEmail,   50, y); y += 12; }
+    if (inv.clientPhone)   { doc.text(inv.clientPhone,   50, y); y += 12; }
+    if (inv.clientAddress) { doc.text(inv.clientAddress, 50, y); y += 12; }
+    const leftEndY = y;
 
-    // Puppy info (right column)
-    let py = y - (14 * [inv.clientEmail,inv.clientPhone,inv.clientAddress].filter(Boolean).length + 14);
-    doc.fillColor(navy).font('Helvetica-Bold').fontSize(10).text(inv.puppyName, 320, py);
-    py += 14;
-    doc.fillColor(gray).font('Helvetica').fontSize(9);
-    if (inv.puppyGender) { doc.text(`Gender: ${inv.puppyGender}`, 320, py); py += 12; }
-    if (inv.puppyColor)  { doc.text(`Color: ${inv.puppyColor}`, 320, py); py += 12; }
-    if (inv.puppyDOB)    { doc.text(`Date of Birth: ${new Date(inv.puppyDOB).toLocaleDateString()}`, 320, py); py += 12; }
-    doc.text('Breed: Miniature Pinscher', 320, py);
+    // Right column — puppy info (starts at same Y as left column)
+    let ry = leftStartY;
+    doc.fillColor(navy).font('Helvetica-Bold').fontSize(10).text(inv.puppyName, 320, ry);
+    ry += 15;
+    doc.fillColor(gray).font('Helvetica').fontSize(8.5);
+    doc.text('Breed: Miniature Pinscher', 320, ry); ry += 12;
+    if (inv.puppyGender) { doc.text(`Gender: ${inv.puppyGender}`, 320, ry); ry += 12; }
+    if (inv.puppyColor)  { doc.text(`Color: ${inv.puppyColor}`,   320, ry); ry += 12; }
+    if (inv.puppyDOB)    { doc.text(`DOB: ${new Date(inv.puppyDOB).toLocaleDateString()}`, 320, ry); ry += 12; }
 
-    y = Math.max(y + 24, py + 24);
+    y = Math.max(leftEndY, ry) + 20;
 
     // ── Payment table ──
-    doc.rect(50, y, W, 28).fill(maroon);
-    doc.fillColor('#fff').font('Helvetica-Bold').fontSize(9)
-       .text('DESCRIPTION', 60, y + 9)
-       .text('AMOUNT', 480, y + 9, { width: 60, align: 'right' });
-    y += 28;
+    doc.rect(50, y, W, 26).fill(maroon);
+    doc.fillColor('#fff').font('Helvetica-Bold').fontSize(8.5)
+       .text('DESCRIPTION', 60, y + 8)
+       .text('AMOUNT', 490, y + 8, { width: 55, align: 'right' });
+    y += 26;
 
     const rows = [
       [`Miniature Pinscher Puppy — ${inv.puppyName}`, `$${inv.puppyPrice.toLocaleString()}`],
       ['Deposit Received', `- $${inv.depositPaid.toLocaleString()}`],
     ];
     rows.forEach((row, i) => {
-      doc.rect(50, y, W, 26).fill(i % 2 === 0 ? '#fff' : light);
-      doc.fillColor(navy).font('Helvetica').fontSize(9)
-         .text(row[0], 60, y + 8)
-         .text(row[1], 480, y + 8, { width: 60, align: 'right' });
-      y += 26;
+      doc.rect(50, y, W, 24).fill(i % 2 === 0 ? '#fff' : light);
+      doc.fillColor(navy).font('Helvetica').fontSize(8.5)
+         .text(row[0], 60, y + 7)
+         .text(row[1], 490, y + 7, { width: 55, align: 'right' });
+      y += 24;
     });
 
-    // Balance due row
-    doc.rect(50, y, W, 32).fill('#f0ece3');
+    // Balance due
+    doc.rect(50, y, W, 30).fill('#f0ece3');
     doc.fillColor(maroon).font('Helvetica-Bold').fontSize(11)
-       .text('BALANCE DUE', 60, y + 9)
-       .text(`$${inv.balanceDue.toLocaleString()}`, 480, y + 9, { width: 60, align: 'right' });
-    y += 42;
+       .text('BALANCE DUE', 60, y + 8)
+       .text(`$${inv.balanceDue.toLocaleString()}`, 490, y + 8, { width: 55, align: 'right' });
+    y += 38;
 
-    // ── Policies ──
-    doc.rect(50, y, W, 14).fill(maroon);
-    doc.fillColor('#fff').font('Helvetica-Bold').fontSize(8).text('TERMS & CONDITIONS', 60, y + 3);
-    y += 20;
+    // ── Terms ──
+    doc.rect(50, y, W, 13).fill(maroon);
+    doc.fillColor('#fff').font('Helvetica-Bold').fontSize(7.5).text('TERMS & CONDITIONS', 60, y + 3);
+    y += 18;
 
     const policies = [
       '1. Full balance must be paid IN FULL before the puppy is delivered or picked up. No exceptions.',
-      '2. The deposit is non-refundable. It is applied toward the total purchase price of the puppy.',
+      '2. The deposit is non-refundable and is applied toward the total purchase price of the puppy.',
       '3. The buyer is responsible for all delivery/transport costs unless otherwise agreed in writing.',
-      '4. The puppy comes with a 1-Year Written Health Guarantee against genetic defects.',
-      '5. The buyer agrees to provide proper veterinary care, nutrition, and a safe loving home.',
+      '4. This puppy comes with a 1-Year Written Health Guarantee against heritable genetic defects.',
+      '5. The buyer agrees to provide proper veterinary care, nutrition, shelter, and a safe loving home.',
       '6. Shanti & Bryan Pinscher Kennel reserves the right to cancel the sale if welfare concerns arise.',
-      '7. Once the puppy is in the buyer\'s care, the buyer assumes full responsibility for the animal.',
-      '8. By proceeding with this purchase, the buyer accepts all terms stated in this invoice.',
+      '7. Once the puppy is in the buyer\'s care, the buyer assumes full legal responsibility for the animal.',
+      '8. By proceeding with this purchase, the buyer confirms acceptance of all terms in this invoice.',
     ];
-    doc.fillColor(navy).font('Helvetica').fontSize(8);
-    policies.forEach(p => {
-      doc.text(p, 50, y, { width: W });
-      y += 14;
-    });
-
-    y += 10;
+    doc.fillColor(navy).font('Helvetica').fontSize(7.8);
+    policies.forEach(p => { doc.text(p, 50, y, { width: W, lineGap: 1 }); y += 13; });
+    y += 6;
 
     // ── Notes ──
-    if (inv.notes) {
-      doc.rect(50, y, W, 14).fill('#1a2433');
-      doc.fillColor('#fff').font('Helvetica-Bold').fontSize(8).text('ADDITIONAL NOTES', 60, y + 3);
-      y += 18;
+    if (inv.notes && inv.notes.trim()) {
+      doc.rect(50, y, W, 13).fill('#1a2433');
+      doc.fillColor('#fff').font('Helvetica-Bold').fontSize(7.5).text('ADDITIONAL NOTES', 60, y + 3);
+      y += 17;
       doc.fillColor(navy).font('Helvetica').fontSize(8).text(inv.notes, 50, y, { width: W });
-      y += 24;
+      y += 20;
     }
 
-    // ── Signature ──
-    y += 10;
-    doc.moveTo(50, y).lineTo(250, y).strokeColor(gold).lineWidth(1).stroke();
-    doc.moveTo(320, y).lineTo(545, y).strokeColor(gold).lineWidth(1).stroke();
-
+    // ── Signature section ──
+    y += 8;
     if (inv.signatureData && inv.signatureData.startsWith('data:image/png;base64,')) {
       try {
         const sigBuf = Buffer.from(inv.signatureData.split(',')[1], 'base64');
-        doc.image(sigBuf, 50, y - 50, { width: 200, height: 50 });
-      } catch(e) { /* skip on error */ }
+        doc.image(sigBuf, 50, y, { width: 180, height: 45 });
+      } catch(e) {}
+      y += 48;
     }
 
-    y += 8;
-    doc.fillColor(gray).font('Helvetica').fontSize(8)
-       .text('Authorized Signature — Shanti & Bryan Pinscher Kennel', 50, y)
-       .text('Client Signature / Acknowledgment', 320, y);
-
+    doc.moveTo(50, y).lineTo(230, y).strokeColor(gold).lineWidth(1).stroke();
+    doc.moveTo(310, y).lineTo(545, y).strokeColor(gold).lineWidth(1).stroke();
+    y += 7;
+    doc.fillColor(gray).font('Helvetica').fontSize(7.5)
+       .text('Authorized Signature — Shanti & Bryan Kennel', 50, y, { width: 200 })
+       .text('Client Acknowledgment / Signature', 310, y, { width: 200 });
     y += 30;
 
-    // ── Footer ──
-    doc.rect(0, 800, 595, 42).fill(maroon);
-    doc.fillColor('#fff').font('Helvetica').fontSize(7)
-       .text('Thank you for choosing Shanti & Bryan Pinscher Kennel. We are honored to place one of our beloved puppies with your family.', 50, 812, { width: 495, align: 'center' })
-       .text('info@shantibryankennel.com  |  shantibryankennel.com', 50, 824, { width: 495, align: 'center' });
+    // ── Footer (drawn inline, no absolute positioning) ──
+    doc.rect(50, y, W, 1).fill('#ece5d8');
+    y += 8;
+    doc.fillColor(gray).font('Helvetica').fontSize(7)
+       .text('Thank you for choosing Shanti & Bryan Pinscher Kennel. We are honored to place one of our beloved puppies with your family.', 50, y, { width: W, align: 'center' });
+    y += 12;
+    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(7)
+       .text('info@shantibryankennel.com  |  shantibryankennel.com', 50, y, { width: W, align: 'center' });
 
     doc.end();
   });
