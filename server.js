@@ -30,12 +30,15 @@ const NOTIFY_EMAIL = 'shantibryan644@gmail.com';
 
 const emailTransporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
+  port: 587,
+  secure: false,
+  requireTLS: true,
   auth: {
     user: NOTIFY_EMAIL,
     pass: process.env.EMAIL_PASS || ''
-  }
+  },
+  connectionTimeout: 10000,
+  greetingTimeout: 10000
 });
 
 // Log on startup so we can confirm the env var is being read
