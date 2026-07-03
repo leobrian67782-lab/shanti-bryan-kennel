@@ -44,7 +44,7 @@ async function sendNotification(subject, html) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: 'Shanti & Bryan Pinscher Kennel <onboarding@resend.dev>',
+        from: 'Shanti & Bryan Pinscher Kennel <notifications@shantibryankennel.com>',
         to: [NOTIFY_EMAIL],
         subject,
         html
@@ -276,7 +276,7 @@ app.post('/submit-review', upload.single('photo'), async (req, res) => {
         <div style="margin-top:16px;padding:16px;background:#f9f9f9;border-left:4px solid #c9a227;border-radius:4px;">
           <p style="margin:0;white-space:pre-wrap;">${message}</p>
         </div>
-        <p style="margin-top:20px;"><a href="https://${process.env.RENDER_EXTERNAL_URL ? process.env.RENDER_EXTERNAL_URL.replace('https://','') : 'yoursite.onrender.com'}/admin/testimonials" style="background:#c9a227;color:#0d1117;padding:10px 20px;text-decoration:none;border-radius:6px;font-weight:bold;">Approve or Reject in Admin</a></p>
+        <p style="margin-top:20px;"><a href="https://shantibryankennel.com/admin/testimonials" style="background:#c9a227;color:#0d1117;padding:10px 20px;text-decoration:none;border-radius:6px;font-weight:bold;">Approve or Reject in Admin</a></p>
       </div>`
     );
 
@@ -412,7 +412,7 @@ app.post('/contact', async (req, res) => {
         <div style="margin-top:16px;padding:16px;background:#f9f9f9;border-left:4px solid #c9a227;border-radius:4px;">
           <p style="margin:0;white-space:pre-wrap;">${message}</p>
         </div>
-        <p style="margin-top:20px;"><a href="https://${process.env.RENDER_EXTERNAL_URL ? process.env.RENDER_EXTERNAL_URL.replace('https://','') : 'yoursite.onrender.com'}/admin/inquiries" style="background:#7a1e1e;color:#fff;padding:10px 20px;text-decoration:none;border-radius:6px;">View in Admin</a></p>
+        <p style="margin-top:20px;"><a href="https://shantibryankennel.com/admin/inquiries" style="background:#7a1e1e;color:#fff;padding:10px 20px;text-decoration:none;border-radius:6px;">View in Admin</a></p>
       </div>`
     );
 
