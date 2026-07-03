@@ -1146,6 +1146,72 @@ BEHAVIOR RULES:
 });
 
 // Admin AI chat — knows everything including pending reviews, inquiries, and stats
+// ===== ADMIN AI — ACTION EXECUTOR =====
+app.post('/api/admin-action', requireLogin, async (req, res) => {
+  const { action, params } = req.body;
+  try {
+    switch (action) {
+      case 'approve_review': {
+        const t = await Testimonial.findByIdAndUpdate(params.id, { approved: true }, { new: true });
+        return res.json({ ok: true, message: `✅ Review by **${t.customerName}** approved and now live.` });
+      }
+      case 'reject_review': {
+        await Testimonial.findByIdAndDelete(params.id);
+        return res.json({ ok: true, message: '🗑️ Review deleted.' });
+      }
+      case 'approve_all_reviews': {
+        const r = await Testimonial.updateMany({ approved: false }, { approved: true });
+        return res.json({ ok: true, message: `✅ Approved **${r.modifiedCount}** pending reviews. Now live on site.` });
+      }
+      case 'update_puppy_status': {
+        const p = await Puppy.findByIdAndUpdate(params.id, { status: params.status }, { new: true });
+        return res.json({ ok: true, message: `✅ **${p.name}** is now marked as **${params.status}**.` });
+      }
+      case 'update_puppy_price': {
+        const p = await Puppy.findByIdAndUpdate(params.id, { price: params.price }, { new: true });
+        return res.json({ ok: true, message: `✅ **${p.name}** price updated to **$${params.price}**.` });
+      }
+      case 'delete_puppy': {
+        const p = await Puppy.findByIdAndDelete(params.id);
+        return res.json({ ok: true, message: `🗑️ Puppy **${p ? p.name : params.id}** deleted.` });
+      }
+      case 'delete_inquiry': {
+        await Contact.findByIdAndDelete(params.id);
+        return res.json({ ok: true, message: '🗑️ Inquiry deleted.' });
+      }
+      case 'delete_all_inquiries': {
+        const r = await Contact.deleteMany({});
+        return res.json({ ok: true, message: `🗑️ Deleted **${r.deletedCount}** inquiries.` });
+      }
+      case 'mark_invoice_paid': {
+        const inv = await Invoice.findByIdAndUpdate(params.id, { status: 'Paid' }, { new: true });
+        return res.json({ ok: true, message: `✅ Invoice **${inv.invoiceNumber}** marked as Paid.` });
+      }
+      case 'delete_invoice': {
+        const inv = await Invoice.findByIdAndDelete(params.id);
+        return res.json({ ok: true, message: `🗑️ Invoice **${inv ? inv.invoiceNumber : params.id}** deleted.` });
+      }
+      case 'send_email_to_client': {
+        await sendNotification(params.subject, params.html);
+        return res.json({ ok: true, message: `📧 Email sent with subject: "${params.subject}".` });
+      }
+      case 'update_stats': {
+        const settings = await getSettings();
+        if (params.statYears   !== undefined) settings.statYears   = params.statYears;
+        if (params.statPuppies !== undefined) settings.statPuppies = params.statPuppies;
+        if (params.statHealth  !== undefined) settings.statHealth  = params.statHealth;
+        await settings.save();
+        return res.json({ ok: true, message: '✅ Homepage stats updated.' });
+      }
+      default:
+        return res.json({ ok: false, message: `Unknown action: ${action}` });
+    }
+  } catch (err) {
+    console.error('Admin action error:', err.message);
+    return res.json({ ok: false, message: `Action failed: ${err.message}` });
+  }
+});
+
 app.post('/api/admin-chat', requireLogin, async (req, res) => {
   try {
     const { message, history } = req.body;
@@ -1156,17 +1222,33 @@ app.post('/api/admin-chat', requireLogin, async (req, res) => {
 
     const liveContext = await buildSiteContext(true);
 
-    const systemText = `You are an intelligent admin assistant for Shanti & Bryan Pinscher Kennel. You are speaking directly with Bryan, the kennel owner and admin. Be direct, detailed, and helpful. You have full access to all site data below.
+    const systemText = `You are an all-powerful AI admin for Shanti & Bryan Pinscher Kennel. You speak directly with Bryan the owner. You know everything about the site AND can take real actions.
 
-You can help Bryan with:
-- Summarizing site activity (puppies, inquiries, reviews, litters)
-- Answering questions about specific puppies, customers, or reviews
-- Drafting replies to customer inquiries
-- Writing puppy descriptions, blog posts, or announcements
-- Suggesting pricing strategies or improvements
-- Answering any question about the kennel or business
+HOW TO TRIGGER ACTIONS:
+When you want to do something, include this in your reply:
+<ACTION>{"action":"action_name","params":{...}}</ACTION>
 
-Always be concise and to the point — Bryan is busy running the kennel.${liveContext}`;
+AVAILABLE ACTIONS:
+- approve_review: params: {id} — approve a pending review
+- reject_review: params: {id} — delete a review  
+- approve_all_reviews: params: {} — approve ALL pending reviews
+- update_puppy_status: params: {id, status} — status must be Available, Reserved, or Sold
+- update_puppy_price: params: {id, price} — update price (number)
+- delete_puppy: params: {id} — permanently delete a puppy
+- delete_inquiry: params: {id} — delete one inquiry
+- delete_all_inquiries: params: {} — clear all inquiries
+- mark_invoice_paid: params: {id} — mark invoice as paid
+- delete_invoice: params: {id} — delete an invoice
+- send_email_to_client: params: {subject, html} — send notification email
+- update_stats: params: {statYears, statPuppies, statHealth} — update homepage stats
+
+RULES:
+- Always use IDs from the live data — never guess an ID
+- For destructive actions (delete, delete_all), describe what you will do and ask Bryan to confirm BEFORE including the ACTION block
+- When Bryan confirms, include the ACTION block in your response
+- You can include multiple ACTION blocks in one response if needed
+- Keep responses concise — Bryan is busy
+- You can also draft content, answer questions, and give advice without any action${liveContext}`;
 
     const messages = [
       { role: 'system', content: systemText },
@@ -1180,7 +1262,7 @@ Always be concise and to the point — Bryan is busy running the kennel.${liveCo
     const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, max_tokens: 1000, temperature: 0.4 })
+      body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, max_tokens: 1200, temperature: 0.3 })
     });
 
     const data = await groqRes.json();
@@ -1190,6 +1272,52 @@ Always be concise and to the point — Bryan is busy running the kennel.${liveCo
   } catch (err) {
     console.error('Admin chat error:', err.message);
     res.json({ reply: 'Something went wrong.' });
+  }
+});
+
+// ===== ADMIN VISION — Image analysis for puppy photos =====
+app.post('/api/admin-vision', requireLogin, async (req, res) => {
+  try {
+    const { imageData, mimeType, prompt } = req.body;
+    if (!imageData) return res.json({ reply: 'No image received.' });
+
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) return res.json({ reply: 'GROQ_API_KEY not set.' });
+
+    const userPrompt = prompt || 'You are an expert Min Pin breeder assistant. Please analyze this puppy photo and provide: 1) A professional puppy description for a kennel website listing (3-4 sentences), 2) Three social media caption ideas, 3) Any notable physical traits you can see (color, markings, build). Be warm, professional, and enthusiastic about the puppy.';
+
+    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'image_url',
+                image_url: { url: `data:${mimeType || 'image/jpeg'};base64,${imageData}` }
+              },
+              { type: 'text', text: userPrompt }
+            ]
+          }
+        ],
+        max_tokens: 800,
+        temperature: 0.5
+      })
+    });
+
+    const data = await groqRes.json();
+    if (!groqRes.ok || !data.choices) {
+      console.error('Vision error:', JSON.stringify(data).slice(0, 300));
+      return res.json({ reply: 'Vision AI error — the image may be too large or in an unsupported format. Try a smaller JPEG.' });
+    }
+
+    res.json({ reply: data.choices[0]?.message?.content || 'No response.' });
+  } catch (err) {
+    console.error('Vision error:', err.message);
+    res.json({ reply: 'Something went wrong with image analysis.' });
   }
 });
 
