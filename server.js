@@ -1129,7 +1129,7 @@ BEHAVIOR RULES:
     const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, max_tokens: 600, temperature: 0.5 })
+      body: JSON.stringify({ model: 'qwen/qwen3.6-27b', messages, max_tokens: 600, temperature: 0.5 })
     });
 
     const data = await groqRes.json();
@@ -1262,7 +1262,7 @@ RULES:
     const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, max_tokens: 1200, temperature: 0.3 })
+      body: JSON.stringify({ model: 'qwen/qwen3.6-27b', messages, max_tokens: 1200, temperature: 0.3 })
     });
 
     const data = await groqRes.json();
@@ -1290,7 +1290,7 @@ app.post('/api/admin-vision', requireLogin, async (req, res) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
       body: JSON.stringify({
-        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+        model: 'llama-3.2-11b-vision-preview',
         messages: [
           {
             role: 'user',
