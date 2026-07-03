@@ -38,21 +38,25 @@ const emailTransporter = nodemailer.createTransport({
   }
 });
 
+// Log on startup so we can confirm the env var is being read
+console.log('[email] EMAIL_PASS set:', !!process.env.EMAIL_PASS, '| length:', (process.env.EMAIL_PASS || '').length);
+
 async function sendNotification(subject, html) {
   if (!process.env.EMAIL_PASS) {
     console.log('[email] EMAIL_PASS not set — notification skipped:', subject);
     return;
   }
   try {
-    await emailTransporter.sendMail({
+    console.log('[email] Attempting to send:', subject);
+    const info = await emailTransporter.sendMail({
       from: `"Shanti & Bryan Pinscher Kennel" <${NOTIFY_EMAIL}>`,
       to: NOTIFY_EMAIL,
       subject,
       html
     });
-    console.log('[email] Sent:', subject);
+    console.log('[email] SUCCESS — MessageId:', info.messageId);
   } catch (err) {
-    console.error('[email] Failed:', err.message);
+    console.error('[email] FAILED —', err.code, err.message);
   }
 }
 
