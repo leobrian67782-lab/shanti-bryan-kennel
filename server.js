@@ -954,7 +954,100 @@ app.get('/admin/dogs/delete/:id', requireLogin, async (req, res) => {
   res.redirect('/admin/dashboard');
 });
 
-// ===== AI CHAT =====
+// ===== AI CHAT (public + admin) =====
+// Shared function that builds the full live context from the database
+async function buildSiteContext(isAdmin = false) {
+  const sections = [];
+
+  // --- ALL PUPPIES ---
+  try {
+    const puppies = await Puppy.find().sort({ createdAt: -1 }).lean();
+    if (puppies.length > 0) {
+      const available = puppies.filter(p => p.status === 'Available');
+      const reserved  = puppies.filter(p => p.status === 'Reserved');
+      const sold      = puppies.filter(p => p.status === 'Sold');
+      let block = '\n\n=== PUPPIES (LIVE DATABASE) ===';
+      if (available.length) block += '\nAVAILABLE:\n' + available.map(p => `  • ${p.name} — ${p.gender}, ${p.color}, $${p.price}${p.weight ? ', ' + p.weight : ''}${p.dateOfBirth ? ', DOB: ' + new Date(p.dateOfBirth).toLocaleDateString() : ''}`).join('\n');
+      if (reserved.length)  block += '\nRESERVED:\n'  + reserved.map(p => `  • ${p.name} — ${p.gender}, ${p.color}, $${p.price}`).join('\n');
+      if (sold.length)      block += '\nSOLD:\n'      + sold.map(p => `  • ${p.name} — ${p.gender}, ${p.color}`).join('\n');
+      if (!available.length && !reserved.length) block += '\n  No puppies currently listed. New litters coming soon.';
+      sections.push(block);
+    } else {
+      sections.push('\n\n=== PUPPIES ===\n  No puppies currently listed. New litters coming soon.');
+    }
+  } catch(e) { sections.push('\n\n=== PUPPIES ===\n  (data unavailable)'); }
+
+  // --- LITTERS ---
+  try {
+    const litters = await Litter.find().sort({ birthDate: -1 }).lean();
+    if (litters.length > 0) {
+      let block = '\n\n=== LITTERS (LIVE DATABASE) ===\n';
+      block += litters.map(l => `  • ${l.litterName} — Born: ${new Date(l.birthDate).toLocaleDateString()}, Sire: ${l.sireName}, Dam: ${l.damName}${l.numberOfPuppies ? ', ' + l.numberOfPuppies + ' puppies' : ''}`).join('\n');
+      sections.push(block);
+    }
+  } catch(e) {}
+
+  // --- OUR DOGS ---
+  try {
+    const dogs = await Dog.find().sort({ order: 1 }).lean();
+    if (dogs.length > 0) {
+      let block = '\n\n=== OUR BREEDING DOGS ===\n';
+      block += dogs.map(d => `  • ${d.name} — ${d.gender}${d.role ? ', ' + d.role : ''}${d.description ? ': ' + d.description.substring(0, 100) : ''}`).join('\n');
+      sections.push(block);
+    }
+  } catch(e) {}
+
+  // --- TESTIMONIALS (approved) ---
+  try {
+    const reviews = await Testimonial.find({ approved: true }).sort({ createdAt: -1 }).lean();
+    if (reviews.length > 0) {
+      let block = '\n\n=== CUSTOMER REVIEWS ===\n';
+      block += reviews.map(r => `  • ${r.customerName}${r.location ? ' (' + r.location + ')' : ''} — ${r.rating}/5 stars: "${r.message.substring(0, 120)}${r.message.length > 120 ? '...' : ''}"`).join('\n');
+      sections.push(block);
+    }
+  } catch(e) {}
+
+  // --- PENDING REVIEWS (admin only) ---
+  if (isAdmin) {
+    try {
+      const pending = await Testimonial.find({ approved: false }).lean();
+      if (pending.length > 0) {
+        let block = '\n\n=== PENDING REVIEWS (awaiting approval) ===\n';
+        block += pending.map(r => `  • ${r.customerName} — ${r.rating}/5 stars: "${r.message.substring(0, 100)}..."`).join('\n');
+        sections.push(block);
+      }
+    } catch(e) {}
+
+    // --- RECENT INQUIRIES (admin only) ---
+    try {
+      const inquiries = await Contact.find().sort({ createdAt: -1 }).limit(10).lean();
+      if (inquiries.length > 0) {
+        let block = '\n\n=== RECENT CONTACT INQUIRIES (last 10) ===\n';
+        block += inquiries.map(i => `  • ${i.name} (${i.email})${i.location ? ' — ' + i.location : ''}: "${i.subject}" — ${i.message.substring(0, 80)}...`).join('\n');
+        sections.push(block);
+      }
+    } catch(e) {}
+
+    // --- STATS SUMMARY (admin only) ---
+    try {
+      const [totalPuppies, availablePuppies, reservedPuppies, soldPuppies, totalLitters, totalDogs, totalReviews, pendingReviews, totalInquiries] = await Promise.all([
+        Puppy.countDocuments(),
+        Puppy.countDocuments({ status: 'Available' }),
+        Puppy.countDocuments({ status: 'Reserved' }),
+        Puppy.countDocuments({ status: 'Sold' }),
+        Litter.countDocuments(),
+        Dog.countDocuments(),
+        Testimonial.countDocuments({ approved: true }),
+        Testimonial.countDocuments({ approved: false }),
+        Contact.countDocuments()
+      ]);
+      sections.push(`\n\n=== SITE STATS ===\n  Puppies: ${totalPuppies} total (${availablePuppies} available, ${reservedPuppies} reserved, ${soldPuppies} sold)\n  Litters: ${totalLitters} | Dogs: ${totalDogs}\n  Reviews: ${totalReviews} approved, ${pendingReviews} pending\n  Inquiries: ${totalInquiries} total`);
+    } catch(e) {}
+  }
+
+  return sections.join('');
+}
+
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, history } = req.body;
@@ -965,19 +1058,7 @@ app.post('/api/chat', async (req, res) => {
       return res.json({ reply: "Hi! I'm Bella, your kennel assistant. Our AI is being set up right now. In the meantime, please reach out at info@shantibryankennel.com and we'll get back to you shortly!" });
     }
 
-    // Fetch live puppy data to give the AI real-time inventory awareness
-    let puppyContext = '';
-    try {
-      const puppies = await Puppy.find({ status: { $ne: 'Sold' } }).select('name gender color status price').lean();
-      if (puppies.length > 0) {
-        puppyContext = '\n\nCURRENT AVAILABLE PUPPIES (live from database):\n' +
-          puppies.map(p => `- ${p.name}: ${p.gender}, ${p.color}, ${p.status}, $${p.price}`).join('\n');
-      } else {
-        puppyContext = '\n\nCURRENT PUPPIES: No puppies currently listed — new litters coming soon.';
-      }
-    } catch (e) {
-      console.log('Puppy fetch for AI skipped:', e.message);
-    }
+    const liveContext = await buildSiteContext(false);
 
     const systemText = `You are Bella, the friendly and knowledgeable AI assistant for Shanti & Bryan Pinscher Kennel. You are warm, helpful, and passionate about Miniature Pinschers. You work exclusively for this kennel.
 
@@ -991,10 +1072,9 @@ ABOUT THE KENNEL:
 
 BREEDING PROGRAM:
 - All puppies are home-raised with daily love, care, and socialization
-- Puppies are raised inside the family home — not in kennels or cages
+- Puppies are raised inside the family home, not in kennels or cages
 - Every puppy receives full veterinary care before going home
 - We prioritize temperament, health, and beauty in our breeding pairs
-- Our breeding dogs (Sire and Dam) are health-tested and AKC-registered
 
 HEALTH & VETERINARY:
 - All puppies come with a 1-Year Written Health Guarantee
@@ -1002,28 +1082,24 @@ HEALTH & VETERINARY:
 - Dewormed on a regular schedule from birth
 - Microchipping available on request
 - Complete vet records provided with every puppy
-- We recommend a vet visit within 48-72 hours of arrival
 
 PRICING & DEPOSITS:
-- Puppy prices vary by gender, color, and availability — refer visitors to the Available Puppies page
+- Puppy prices vary by gender, color, and availability — see the live puppy data below
 - A non-refundable deposit is required to reserve a puppy
 - The deposit is applied toward the total purchase price
-- For exact pricing, always direct to the contact form or Available Puppies page
+- For reservations, direct visitors to the contact form
 
 DELIVERY & PICKUP:
-- We offer NATIONWIDE DELIVERY through a trusted, professional pet transport agency
-- Puppies are transported safely and comfortably
-- LOCAL PICKUP is also available at our home — families can see firsthand how puppies are raised
-- Delivery timeline depends on location and will be confirmed at time of purchase
+- Nationwide delivery through a trusted professional pet transport agency
+- Local pickup available at our home
+- Delivery timeline confirmed at time of purchase
 
 ABOUT MINIATURE PINSCHERS:
-- Bold, energetic, and loyal — often described as "big dogs in small bodies"
+- Bold, energetic, loyal — "big dogs in small bodies"
 - Excellent family companions with proper training and socialization
-- Highly intelligent and respond well to positive reinforcement
+- Highly intelligent, respond well to positive reinforcement
 - Need daily exercise and mental stimulation
-- Lifespan: 12-16 years
-- Low-shedding, easy to groom
-- Do well in apartments and houses alike
+- Lifespan 12-16 years, low-shedding, easy to groom
 
 CONTACT:
 - Email: info@shantibryankennel.com
@@ -1032,12 +1108,12 @@ CONTACT:
 
 BEHAVIOR RULES:
 - Always respond warmly and helpfully
-- Never quote exact puppy prices — direct to the Available Puppies page or contact form
-- Never make up information you are not sure about — if unsure, direct to the contact form
-- Keep responses concise and friendly — under 200 words unless detail is genuinely needed
+- You CAN share puppy prices when asked — the data is below
+- Never make up information — if unsure, direct to the contact form
+- Keep responses concise and friendly, under 200 words unless more detail is needed
 - Use line breaks for readability
 - Always end with a helpful next step
-- Respond in the same language the customer uses${puppyContext}`;
+- Respond in the same language the customer uses${liveContext}`;
 
     const messages = [
       { role: 'system', content: systemText },
@@ -1050,16 +1126,8 @@ BEHAVIOR RULES:
 
     const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages,
-        max_tokens: 600,
-        temperature: 0.5
-      })
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, max_tokens: 600, temperature: 0.5 })
     });
 
     const data = await groqRes.json();
@@ -1068,12 +1136,58 @@ BEHAVIOR RULES:
       return res.json({ reply: "I'm having a moment — please try again or reach us at info@shantibryankennel.com!" });
     }
 
-    const reply = data.choices[0]?.message?.content || "Could you rephrase that? I want to make sure I help you properly.";
-    res.json({ reply });
-
+    res.json({ reply: data.choices[0]?.message?.content || "Could you rephrase that?" });
   } catch (err) {
     console.error('Chat error:', err.message);
     res.json({ reply: "Something went wrong. Please try again or contact info@shantibryankennel.com" });
+  }
+});
+
+// Admin AI chat — knows everything including pending reviews, inquiries, and stats
+app.post('/api/admin-chat', requireLogin, async (req, res) => {
+  try {
+    const { message, history } = req.body;
+    if (!message) return res.json({ reply: 'No message received.' });
+
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) return res.json({ reply: 'GROQ_API_KEY not set.' });
+
+    const liveContext = await buildSiteContext(true);
+
+    const systemText = `You are an intelligent admin assistant for Shanti & Bryan Pinscher Kennel. You are speaking directly with Bryan, the kennel owner and admin. Be direct, detailed, and helpful. You have full access to all site data below.
+
+You can help Bryan with:
+- Summarizing site activity (puppies, inquiries, reviews, litters)
+- Answering questions about specific puppies, customers, or reviews
+- Drafting replies to customer inquiries
+- Writing puppy descriptions, blog posts, or announcements
+- Suggesting pricing strategies or improvements
+- Answering any question about the kennel or business
+
+Always be concise and to the point — Bryan is busy running the kennel.${liveContext}`;
+
+    const messages = [
+      { role: 'system', content: systemText },
+      ...(Array.isArray(history) ? history : []).slice(-20).map(m => ({
+        role: m.r === 'assistant' ? 'assistant' : 'user',
+        content: String(m.t || '')
+      })),
+      { role: 'user', content: message }
+    ];
+
+    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, max_tokens: 1000, temperature: 0.4 })
+    });
+
+    const data = await groqRes.json();
+    if (!groqRes.ok || !data.choices) return res.json({ reply: 'AI error — try again.' });
+    res.json({ reply: data.choices[0]?.message?.content || 'No response.' });
+
+  } catch (err) {
+    console.error('Admin chat error:', err.message);
+    res.json({ reply: 'Something went wrong.' });
   }
 });
 
