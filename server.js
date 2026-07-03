@@ -46,7 +46,7 @@ async function sendNotification(subject, html) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: 'Shanti & Bryan Pinscher Kennel <notifications@shantibryankennel.com>',
+        from: 'Shanti and Bryan Pinscher Kennel <notifications@shantibryankennel.com>',
         to: [NOTIFY_EMAIL],
         subject,
         html
@@ -1473,7 +1473,7 @@ async function sendInvoiceEmail(inv, pdfBuf) {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: 'Shanti & Bryan Pinscher Kennel <notifications@shantibryankennel.com>',
+        from: 'Shanti and Bryan Pinscher Kennel <notifications@shantibryankennel.com>',
         to: [inv.clientEmail],
         subject: `Invoice ${inv.invoiceNumber} — ${inv.puppyName} | Shanti & Bryan Pinscher Kennel`,
         html: `
