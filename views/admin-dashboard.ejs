@@ -177,8 +177,17 @@
   </div>
   <div id="adminChatMsgs" style="min-height:120px;max-height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 0 12px;"></div>
   <div style="display:flex;gap:8px;margin-top:12px;align-items:flex-end;">
-    <textarea id="adminChatInp" placeholder="Ask anything — puppy stats, draft a description, reply to a customer…" style="flex:1;background:#1c2430;border:1.5px solid #2a3441;color:#fff;border-radius:8px;padding:10px 12px;font-family:'Poppins',sans-serif;font-size:0.85rem;resize:none;outline:none;line-height:1.5;max-height:80px;" rows="2"></textarea>
+    <label id="adminImgBtn" title="Upload a puppy photo for AI analysis" style="width:42px;height:42px;background:#1c2430;border:1px solid #2a3441;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#c9a227;font-size:1rem;flex-shrink:0;">
+      <i class="fa-solid fa-image"></i>
+      <input type="file" id="adminImgInput" accept="image/*" style="display:none;">
+    </label>
+    <textarea id="adminChatInp" placeholder="Ask anything, or upload a photo above for AI to describe the puppy…" style="flex:1;background:#1c2430;border:1.5px solid #2a3441;color:#fff;border-radius:8px;padding:10px 12px;font-family:'Poppins',sans-serif;font-size:0.85rem;resize:none;outline:none;line-height:1.5;max-height:80px;" rows="2"></textarea>
     <button id="adminChatSend" style="background:var(--gold);color:#0d1117;border:none;border-radius:8px;width:42px;height:42px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-solid fa-paper-plane"></i></button>
+  </div>
+  <div id="adminImgPreview" style="display:none;margin-top:8px;padding:8px 10px;background:#1c2430;border:1px solid #2a3441;border-radius:8px;display:none;align-items:center;gap:10px;">
+    <img id="adminImgThumb" style="width:50px;height:50px;object-fit:cover;border-radius:6px;">
+    <span style="color:#c5cdd8;font-size:0.8rem;flex:1;" id="adminImgName"></span>
+    <button onclick="clearImg()" style="background:none;border:none;color:#e8848f;cursor:pointer;font-size:0.8rem;"><i class="fa-solid fa-xmark"></i></button>
   </div>
   <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;" id="adminChatQR"></div>
 </div>
@@ -231,33 +240,141 @@
     });
   }
 
-  async function go(text) {
-    text = (text || inp.value).trim();
-    if (!text || busy) return;
-    busy = true; inp.value = ''; qr.innerHTML = '';
-    addMsg('user', text); hist.push({ r:'user', t:text });
-    showTyping();
+  // Image upload handling
+  let pendingImage = null;
+
+  function clearImg() {
+    pendingImage = null;
+    document.getElementById('adminImgInput').value = '';
+    document.getElementById('adminImgPreview').style.display = 'none';
+  }
+
+  document.getElementById('adminImgInput').addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+    if (file.size > 4 * 1024 * 1024) {
+      addMsg('assistant', '⚠️ Image too large — please use a photo under 4MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      pendingImage = { data: e.target.result, file };
+      const preview = document.getElementById('adminImgPreview');
+      document.getElementById('adminImgThumb').src = e.target.result;
+      document.getElementById('adminImgName').textContent = file.name + ' — ready to analyze';
+      preview.style.display = 'flex';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  async function analyzeImage(imageDataUrl, file, customPrompt) {
+    const base64 = imageDataUrl.split(',')[1];
+    const mimeType = file.type || 'image/jpeg';
+    const prompt = customPrompt || null;
+
+    const res = await fetch('/api/admin-vision', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageData: base64, mimeType, prompt })
+    });
+    const data = await res.json();
+    return data.reply || 'No response from vision AI.';
+  }
+
+  async function executeAction(actionJson) {
     try {
-      const res = await fetch('/api/admin-chat', {
+      const res = await fetch('/api/admin-action', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ message: text, history: hist.slice(-20) })
+        body: JSON.stringify(actionJson)
       });
       const data = await res.json();
+      return data;
+    } catch(e) {
+      return { ok: false, message: 'Action request failed.' };
+    }
+  }
+
+  async function go(text) {
+    text = (text || inp.value).trim();
+    const hasImage = pendingImage !== null;
+    if (!text && !hasImage) return;
+    if (busy) return;
+    busy = true;
+
+    const displayText = text || '📸 Analyzing this puppy photo…';
+    inp.value = ''; qr.innerHTML = '';
+    addMsg('user', displayText);
+    hist.push({ r:'user', t:displayText });
+
+    // Show image thumbnail in chat if one is attached
+    if (hasImage) {
+      const imgDiv = document.createElement('div');
+      imgDiv.className = 'km u';
+      imgDiv.innerHTML = `<div class="kav u" style="visibility:hidden"></div><div style="max-width:82%;"><img src="${pendingImage.data}" style="max-width:180px;max-height:140px;border-radius:10px;object-fit:cover;display:block;"></div>`;
+      // Don't add to adminChatMsgs since that's a different widget, skip
+    }
+
+    showTyping();
+    try {
+      let reply;
+
+      if (hasImage) {
+        // Vision analysis
+        const customPrompt = text || null;
+        const imgData = pendingImage;
+        clearImg();
+        reply = await analyzeImage(imgData.data, imgData.file, customPrompt);
+      } else {
+        // Normal chat
+        const res = await fetch('/api/admin-chat', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ message: text, history: hist.slice(-20) })
+        });
+        const data = await res.json();
+        reply = data.reply || 'No response.';
+      }
+
       hideTyping();
-      const reply = data.reply || 'No response.';
-      addMsg('assistant', reply); hist.push({ r:'assistant', t:reply });
-      setQR(['How many inquiries today?', 'Summarize pending reviews', 'Draft a puppy description', 'Show site stats']);
+
+      // Parse and execute any ACTION blocks
+      const actionRegex = /<ACTION>([\s\S]*?)<\/ACTION>/g;
+      const actions = [];
+      let match;
+      while ((match = actionRegex.exec(reply)) !== null) {
+        try { actions.push(JSON.parse(match[1])); } catch(e) {}
+      }
+
+      const displayReply = reply.replace(/<ACTION>[\s\S]*?<\/ACTION>/g, '').trim();
+      if (displayReply) { addMsg('assistant', displayReply); hist.push({ r:'assistant', t:displayReply }); }
+
+      for (const actionObj of actions) {
+        showTyping();
+        await new Promise(r => setTimeout(r, 400));
+        hideTyping();
+        const result = await executeAction(actionObj);
+        const resultMsg = result.ok ? `✅ Done: ${result.message}` : `❌ Failed: ${result.message}`;
+        addMsg('assistant', resultMsg);
+        hist.push({ r:'assistant', t:resultMsg });
+      }
+
+      if (hasImage) {
+        setQR(['Use this as a listing description', 'Give me more caption ideas', 'What breed traits do you see?', 'Make it shorter']);
+      } else {
+        setQR(['Show site stats', 'Any pending reviews?', 'Approve all reviews', 'Show all puppies', 'Recent inquiries']);
+      }
+
     } catch(e) {
       hideTyping();
       addMsg('assistant', 'Something went wrong. Please try again.');
+      clearImg();
     }
     busy = false;
   }
 
   // Welcome message
   setTimeout(() => {
-    addMsg('assistant', 'Hi Bryan! 👋 I have full access to your site data right now. Ask me anything — puppy stats, pending reviews, customer inquiries, or I can draft descriptions and replies for you.');
-    setQR(['Show site stats', 'Any pending reviews?', 'Recent inquiries', 'Draft a puppy description']);
+    addMsg('assistant', `Hi Bryan! 👋 I'm your all-in-one admin AI. I can **read and act on everything** in your site.\n\nTry saying:\n• "Approve all pending reviews"\n• "Mark Stella as Reserved"\n• "Delete the inquiry from Jane"\n• "Show me this week's stats"\n• "Draft a description for a new female black & tan puppy"`);
+    setQR(['Show site stats', 'Any pending reviews?', 'Approve all reviews', 'Show all puppies', 'Recent inquiries']);
   }, 400);
 
   send.addEventListener('click', () => go());
