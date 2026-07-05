@@ -19,7 +19,8 @@ const Faq = require('./models/Faq');
 const Settings = require('./models/Settings');
 const Post = require('./models/Post');
 const Dog     = require('./models/Dog');
-const Invoice = require('./models/Invoice');
+const Invoice     = require('./models/Invoice');
+const Certificate = require('./models/Certificate');
 const PDFDocument = require('pdfkit');
 
 const app = express();
@@ -1682,6 +1683,327 @@ async function sendInvoiceEmail(inv, pdfBuf) {
     console.log('[invoice email] Sent to', inv.clientEmail, 'id:', d.id);
   } catch (err) {
     console.error('[invoice email] Failed:', err.message);
+  }
+}
+
+// ===== CERTIFICATES OF OWNERSHIP =====
+app.get('/admin/certificates', requireLogin, async (req, res) => {
+  const certificates = await Certificate.find().sort({ createdAt: -1 });
+  res.render('admin-certificates-list', { certificates });
+});
+
+app.get('/admin/certificates/new', requireLogin, async (req, res) => {
+  let invoice = null;
+  if (req.query.invoice) {
+    invoice = await Invoice.findById(req.query.invoice).catch(() => null);
+  }
+  res.render('admin-certificate-form', { invoice });
+});
+
+app.post('/admin/certificates/new', requireLogin, async (req, res) => {
+  try {
+    const data = req.body;
+    const year = new Date().getFullYear();
+    const count = await Certificate.countDocuments();
+    const certificateNumber = `SBK-COT-${year}-${String(count + 1).padStart(4, '0')}`;
+
+    const cert = await Certificate.create({
+      certificateNumber,
+      invoice:      data.invoiceId || null,
+      puppyName:    data.puppyName,
+      puppyBreed:   data.puppyBreed || 'Miniature Pinscher',
+      puppyGender:  data.puppyGender,
+      puppyColor:   data.puppyColor,
+      puppyDOB:     data.puppyDOB || null,
+      microchip:    data.microchip,
+      buyerName:    data.buyerName,
+      buyerEmail:   data.buyerEmail,
+      buyerPhone:   data.buyerPhone,
+      buyerAddress: data.buyerAddress,
+      transferDate: data.transferDate || new Date(),
+      salePrice:    parseFloat(data.salePrice) || null,
+      signatureData: data.signatureData,
+      status: 'Draft'
+    });
+
+    try {
+      const pdfBuf = await generateCertificatePDF(cert);
+      await sendCertificateEmail(cert, pdfBuf);
+      await Certificate.findByIdAndUpdate(cert._id, { status: 'Sent' });
+    } catch(e) {
+      console.error('Certificate PDF/email error:', e.message);
+    }
+
+    res.redirect('/admin/certificates');
+  } catch(err) {
+    adminError(res, 'CREATE CERTIFICATE ERROR:', err);
+  }
+});
+
+app.get('/admin/certificates/:id/pdf', requireLogin, async (req, res) => {
+  try {
+    const cert = await Certificate.findById(req.params.id);
+    if (!cert) return res.status(404).send('Not found');
+    const pdfBuf = await generateCertificatePDF(cert);
+    res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="${cert.certificateNumber}.pdf"` });
+    res.send(pdfBuf);
+  } catch(err) { adminError(res, 'CERT PDF ERROR:', err); }
+});
+
+app.get('/admin/certificates/:id/send', requireLogin, async (req, res) => {
+  try {
+    const cert = await Certificate.findById(req.params.id);
+    if (!cert) return res.status(404).send('Not found');
+    const pdfBuf = await generateCertificatePDF(cert);
+    await sendCertificateEmail(cert, pdfBuf);
+    await Certificate.findByIdAndUpdate(cert._id, { status: 'Sent' });
+    res.redirect('/admin/certificates');
+  } catch(err) { adminError(res, 'CERT SEND ERROR:', err); }
+});
+
+app.get('/admin/certificates/:id/delete', requireLogin, async (req, res) => {
+  await Certificate.findByIdAndDelete(req.params.id);
+  res.redirect('/admin/certificates');
+});
+
+async function generateCertificatePDF(cert) {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ margin: 0, size: 'A4' });
+    const chunks = [];
+    doc.on('data', c => chunks.push(c));
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+
+    const maroon = '#7a1e1e';
+    const gold   = '#c9a227';
+    const navy   = '#0d1117';
+    const gray   = '#6b7585';
+    const W = 595, H = 842;
+
+    // ── Outer decorative border ──
+    doc.rect(15, 15, W-30, H-30).lineWidth(3).strokeColor(maroon).stroke();
+    doc.rect(22, 22, W-44, H-44).lineWidth(1).strokeColor(gold).stroke();
+    doc.rect(27, 27, W-54, H-54).lineWidth(0.5).strokeColor(maroon).stroke();
+
+    // Corner ornaments (small squares at each corner)
+    [[15,15],[W-30,15],[15,H-30],[W-30,H-30]].forEach(([cx,cy]) => {
+      doc.rect(cx-5, cy-5, 20, 20).fillAndStroke(maroon, maroon);
+    });
+
+    // ── Header ──
+    doc.rect(0, 0, W, 130).fill(maroon);
+
+    // Logo
+    const logoPath = require('path').join(__dirname, 'public', 'images', 'images', 'emblem.png');
+    const logoPath2 = require('path').join(__dirname, 'public', 'images', 'emblem.png');
+    try {
+      if (require('fs').existsSync(logoPath)) doc.image(logoPath, 35, 20, { width: 80, height: 80 });
+      else if (require('fs').existsSync(logoPath2)) doc.image(logoPath2, 35, 20, { width: 80, height: 80 });
+    } catch(e) {}
+
+    doc.fillColor('#fff').font('Helvetica-Bold').fontSize(26)
+       .text('SHANTI & BRYAN PINSCHER KENNEL', 130, 28, { width: 420, align: 'center' });
+    doc.font('Helvetica').fontSize(10).fillColor('rgba(255,255,255,0.8)')
+       .text('Registered Miniature Pinscher Breeder  •  Est. 2011', 130, 62, { width: 420, align: 'center' });
+    doc.font('Helvetica').fontSize(9).fillColor(gold)
+       .text('info@shantibryankennel.com  |  shantibryankennel.com', 130, 78, { width: 420, align: 'center' });
+
+    // ── Certificate title ──
+    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(22)
+       .text('CERTIFICATE OF TRANSFER OF OWNERSHIP', 40, 148, { width: W-80, align: 'center' });
+
+    // Gold underline
+    const titleY = 178;
+    doc.moveTo(100, titleY).lineTo(W-100, titleY).lineWidth(2).strokeColor(gold).stroke();
+    doc.moveTo(120, titleY+4).lineTo(W-120, titleY+4).lineWidth(0.5).strokeColor(gold).stroke();
+
+    doc.fillColor(gray).font('Helvetica').fontSize(10)
+       .text('This document certifies the legal transfer of ownership of the below-described puppy', 60, titleY+14, { width: W-120, align: 'center' })
+       .text('from Shanti & Bryan Pinscher Kennel to the new owner named herein.', 60, titleY+28, { width: W-120, align: 'center' });
+
+    // ── Certificate Number & Date ──
+    doc.rect(40, 222, W-80, 28).fill('#f9f7f4');
+    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(9)
+       .text(`Certificate No: ${cert.certificateNumber}`, 55, 231, { continued: true })
+       .fillColor(gray).font('Helvetica').fontSize(9)
+       .text(`          Transfer Date: ${new Date(cert.transferDate).toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'})}`, { continued: true })
+       .text(`          Ref: Shanti & Bryan Pinscher Kennel`, 55);
+
+    let y = 265;
+
+    // ── Two-column info sections ──
+    const colL = 45, colR = 315, colW = 240;
+
+    // Puppy Details box
+    doc.rect(colL, y, colW, 16).fill(maroon);
+    doc.fillColor('#fff').font('Helvetica-Bold').fontSize(9).text('PUPPY DETAILS', colL+8, y+4);
+
+    doc.rect(colR, y, colW, 16).fill(maroon);
+    doc.fillColor('#fff').font('Helvetica-Bold').fontSize(9).text('NEW OWNER DETAILS', colR+8, y+4);
+    y += 16;
+
+    // Box backgrounds
+    doc.rect(colL, y, colW, 115).fill('#faf7f0').stroke();
+    doc.rect(colR, y, colW, 115).fill('#faf7f0').stroke();
+
+    // Puppy info
+    let py = y + 10;
+    const puppyFields = [
+      ['Name',   cert.puppyName],
+      ['Breed',  cert.puppyBreed],
+      ['Gender', cert.puppyGender],
+      ['Color',  cert.puppyColor],
+      ['DOB',    cert.puppyDOB ? new Date(cert.puppyDOB).toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}) : '—'],
+      ['Microchip', cert.microchip || 'Not applicable'],
+    ];
+    puppyFields.forEach(([label, val]) => {
+      doc.fillColor(gray).font('Helvetica-Bold').fontSize(8).text(label + ':', colL+8, py, { continued: true })
+         .fillColor(navy).font('Helvetica').fontSize(8).text('  ' + (val || '—'));
+      py += 16;
+    });
+
+    // Owner info
+    let oy = y + 10;
+    const ownerFields = [
+      ['Full Name',   cert.buyerName],
+      ['Email',       cert.buyerEmail],
+      ['Phone',       cert.buyerPhone || '—'],
+      ['Address',     cert.buyerAddress || '—'],
+    ];
+    ownerFields.forEach(([label, val]) => {
+      doc.fillColor(gray).font('Helvetica-Bold').fontSize(8).text(label + ':', colR+8, oy, { continued: true })
+         .fillColor(navy).font('Helvetica').fontSize(8).text('  ' + (val || '—'));
+      oy += 16;
+    });
+
+    y += 125;
+
+    // ── Declaration text ──
+    y += 10;
+    doc.moveTo(45, y).lineTo(W-45, y).lineWidth(0.5).strokeColor(gold).stroke();
+    y += 12;
+
+    const transferDate = new Date(cert.transferDate).toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+    const declaration = `We, Shanti & Bryan Pinscher Kennel, hereby certify that on ${transferDate}, full and complete ownership of the above-described Miniature Pinscher puppy named "${cert.puppyName}" has been legally and irrevocably transferred to ${cert.buyerName}. The puppy has been raised in our home with the highest standards of care, socialization, and veterinary attention. The new owner has been provided with all health records, vaccination certificates, and applicable documentation pertaining to this animal.`;
+
+    doc.fillColor(navy).font('Helvetica').fontSize(9.5)
+       .text(declaration, 45, y, { width: W-90, align: 'justify', lineGap: 3 });
+
+    y += 85;
+
+    // ── Health Guarantee box ──
+    doc.rect(45, y, W-90, 46).fill('#fff8f0').strokeColor('#e6ddc8').lineWidth(1).stroke();
+    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(8.5)
+       .text('1-YEAR HEALTH GUARANTEE', 60, y+8);
+    doc.fillColor(gray).font('Helvetica').fontSize(8)
+       .text('This puppy is guaranteed against hereditary and congenital defects for a period of one (1) year from the date of transfer. The new owner agrees to provide proper veterinary care, nutrition, shelter, and a safe, loving environment for the lifetime of this animal.', 60, y+20, { width: W-120, lineGap: 1 });
+    y += 56;
+
+    // ── Conditions ──
+    y += 8;
+    const conditions = [
+      '• The seller warrants that the puppy was healthy at the time of transfer and free from known defects.',
+      '• The buyer accepts full legal and financial responsibility for the puppy from the date of transfer.',
+      '• This certificate does not guarantee against conditions resulting from neglect, accident, or improper care.',
+      '• Any disputes arising from this transfer shall be resolved through good-faith negotiation between both parties.',
+    ];
+    doc.fillColor(gray).font('Helvetica').fontSize(8);
+    conditions.forEach(c => { doc.text(c, 45, y, { width: W-90, lineGap: 1 }); y += 13; });
+
+    y += 12;
+    doc.moveTo(45, y).lineTo(W-45, y).lineWidth(0.5).strokeColor(gold).stroke();
+    y += 16;
+
+    // ── Signatures ──
+    const sigColW = 200;
+    const sig1X = 45, sig2X = 210, sig3X = 375;
+
+    // Bryan's signature image
+    if (cert.signatureData && cert.signatureData.startsWith('data:image/png;base64,')) {
+      try {
+        const sigBuf = Buffer.from(cert.signatureData.split(',')[1], 'base64');
+        doc.image(sigBuf, sig1X, y, { width: 150, height: 40 });
+      } catch(e) {}
+    }
+
+    // Signature lines
+    y += 45;
+    doc.moveTo(sig1X, y).lineTo(sig1X+sigColW, y).lineWidth(1).strokeColor(maroon).stroke();
+    doc.moveTo(sig2X+sigColW-30, y).lineTo(sig2X+sigColW+sigColW, y).lineWidth(1).strokeColor(maroon).stroke();
+
+    y += 6;
+    doc.fillColor(navy).font('Helvetica-Bold').fontSize(8)
+       .text('Shanti & Bryan Pinscher Kennel', sig1X, y)
+       .text('New Owner Signature & Date', sig2X+sigColW-30, y);
+    doc.fillColor(gray).font('Helvetica').fontSize(7.5)
+       .text('Authorized Breeder Signature', sig1X, y+11)
+       .text('I accept the transfer of ownership', sig2X+sigColW-30, y+11);
+
+    // ── Stamp ──
+    const stampPath = require('path').join(__dirname, 'public', 'stamp.png');
+    try {
+      if (require('fs').existsSync(stampPath)) {
+        doc.image(stampPath, sig2X+sigColW-15, y-60, { width: 100, height: 100 });
+      }
+    } catch(e) {}
+
+    // ── Footer bar ──
+    doc.rect(0, H-55, W, 55).fill(maroon);
+    doc.fillColor('#fff').font('Helvetica-Bold').fontSize(10)
+       .text('OFFICIAL DOCUMENT — RETAIN FOR YOUR RECORDS', 0, H-44, { width: W, align: 'center' });
+    doc.fillColor('rgba(255,255,255,0.75)').font('Helvetica').fontSize(8)
+       .text('Shanti & Bryan Pinscher Kennel  •  info@shantibryankennel.com  •  shantibryankennel.com', 0, H-30, { width: W, align: 'center' });
+
+    doc.end();
+  });
+}
+
+async function sendCertificateEmail(cert, pdfBuf) {
+  if (!process.env.RESEND_API_KEY) return;
+  try {
+    const transferDate = new Date(cert.transferDate).toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: '"Shanti & Bryan Pinscher Kennel" <notifications@shantibryankennel.com>',
+        to: [cert.buyerEmail],
+        subject: `Certificate of Ownership — ${cert.puppyName} | Shanti & Bryan Pinscher Kennel`,
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;">
+            <div style="background:#7a1e1e;padding:28px 32px;border-radius:8px 8px 0 0;text-align:center;">
+              <h1 style="color:#fff;margin:0;font-size:20px;">Certificate of Transfer of Ownership</h1>
+              <p style="color:rgba(255,255,255,0.8);margin:6px 0 0;font-size:13px;">Shanti & Bryan Pinscher Kennel</p>
+            </div>
+            <div style="background:#fff;padding:28px 32px;border:1px solid #e6ddc8;">
+              <p style="color:#1e293b;font-size:15px;">Dear <strong>${cert.buyerName}</strong>,</p>
+              <p style="color:#4a5568;font-size:14px;line-height:1.6;">Congratulations! Please find attached your official <strong>Certificate of Transfer of Ownership</strong> for your Miniature Pinscher <strong>${cert.puppyName}</strong>.</p>
+              <div style="background:#f9f7f4;border:1px solid #ece5d8;border-radius:8px;padding:18px;margin:20px 0;">
+                <table style="width:100%;border-collapse:collapse;">
+                  <tr><td style="padding:5px 0;color:#6b7585;font-size:13px;">Certificate No.</td><td style="padding:5px 0;font-weight:700;color:#1e293b;font-size:13px;text-align:right;">${cert.certificateNumber}</td></tr>
+                  <tr><td style="padding:5px 0;color:#6b7585;font-size:13px;">Puppy Name</td><td style="padding:5px 0;font-weight:700;color:#1e293b;font-size:13px;text-align:right;">${cert.puppyName}</td></tr>
+                  <tr><td style="padding:5px 0;color:#6b7585;font-size:13px;">Breed</td><td style="padding:5px 0;color:#1e293b;font-size:13px;text-align:right;">${cert.puppyBreed}</td></tr>
+                  <tr><td style="padding:5px 0;color:#6b7585;font-size:13px;">Transfer Date</td><td style="padding:5px 0;color:#1e293b;font-size:13px;text-align:right;">${transferDate}</td></tr>
+                </table>
+              </div>
+              <div style="background:#fff8f0;border:2px solid #7a1e1e;border-radius:8px;padding:16px;margin:16px 0;">
+                <p style="margin:0 0 8px;color:#7a1e1e;font-weight:700;font-size:13px;">✍️ Action Required</p>
+                <p style="margin:0;color:#4a5568;font-size:13px;">Please sign the certificate, take a photo of the signed page, and email it back to <a href="mailto:info@shantibryankennel.com" style="color:#7a1e1e;">info@shantibryankennel.com</a> to complete the transfer.</p>
+              </div>
+              <p style="color:#4a5568;font-size:14px;margin-top:20px;">Welcome to the Shanti & Bryan family! 🐾<br><br>With love,<br><strong>Shanti & Bryan Pinscher Kennel</strong></p>
+            </div>
+            <div style="background:#f0ece3;padding:14px 32px;text-align:center;border-radius:0 0 8px 8px;">
+              <p style="margin:0;color:#9ca3af;font-size:11px;">shantibryankennel.com | info@shantibryankennel.com</p>
+            </div>
+          </div>`,
+        attachments: [{ filename: `${cert.certificateNumber}.pdf`, content: pdfBuf.toString('base64') }]
+      })
+    });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.message || JSON.stringify(d));
+    console.log('[cert email] Sent to', cert.buyerEmail);
+  } catch(err) {
+    console.error('[cert email] Failed:', err.message);
   }
 }
 
