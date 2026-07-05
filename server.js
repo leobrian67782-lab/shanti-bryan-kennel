@@ -1487,7 +1487,10 @@ async function generateInvoicePDF(inv) {
     y += 7;
     doc.fillColor(gray).font('Helvetica').fontSize(7.5)
        .text('Authorized Signature — Shanti & Bryan Kennel', 50, y, { width: 200 })
-       .text('Client Acknowledgment / Signature', 310, y, { width: 200 });
+       .text('Client Signature & Date (Required)', 310, y, { width: 200 });
+    y += 14;
+    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(7)
+       .text('ACTION REQUIRED: Sign above, photograph this page, and email to info@shantibryankennel.com', 50, y, { width: W, align: 'center' });
     y += 30;
 
     // ── Footer (drawn inline, no absolute positioning) ──
@@ -1625,6 +1628,19 @@ async function sendInvoiceEmail(inv, pdfBuf) {
               <div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;padding:14px;margin:16px 0;">
                 <p style="margin:0;color:#92400e;font-size:13px;font-weight:700;">⚠️ Important: Balance must be paid in full before ${inv.deliveryMethod.toLowerCase()}.</p>
               </div>
+
+              <div style="background:#fff8f0;border:2px solid #7a1e1e;border-radius:8px;padding:18px 20px;margin:20px 0;">
+                <p style="margin:0 0 8px;color:#7a1e1e;font-size:14px;font-weight:700;">✍️ Action Required — Please Sign & Return</p>
+                <p style="margin:0 0 10px;color:#4a5568;font-size:13px;line-height:1.6;">To confirm your agreement to the terms and conditions in this invoice, please:</p>
+                <ol style="margin:0 0 10px;padding-left:18px;color:#4a5568;font-size:13px;line-height:1.8;">
+                  <li>Print the attached PDF invoice</li>
+                  <li>Sign on the <strong>"Client Acknowledgment / Signature"</strong> line</li>
+                  <li>Take a clear photo or scan of the signed page</li>
+                  <li>Email the signed copy back to us at <a href="mailto:info@shantibryankennel.com" style="color:#7a1e1e;font-weight:700;">info@shantibryankennel.com</a></li>
+                </ol>
+                <p style="margin:0;color:#7a5a00;font-size:12px;background:#fff3cd;padding:8px 10px;border-radius:4px;">By signing and returning this invoice, you confirm that you have read, understood, and agreed to all terms and conditions stated herein. Your puppy will not be shipped or made available for pickup until a signed copy is received and the balance has been paid in full.</p>
+              </div>
+
               <p style="color:#4a5568;font-size:13px;">If you have any questions, please don't hesitate to reach out:</p>
               <p style="color:#4a5568;font-size:13px;">📧 <a href="mailto:info@shantibryankennel.com" style="color:#7a1e1e;">info@shantibryankennel.com</a></p>
               <p style="color:#4a5568;font-size:14px;margin-top:20px;">With love,<br><strong>Shanti & Bryan Pinscher Kennel</strong></p>
