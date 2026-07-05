@@ -1472,51 +1472,80 @@ async function generateInvoicePDF(inv) {
       y += 20;
     }
 
-    // ── Signature section ──
-    y += 8;
-    const sigSectionY = y;
-    const sigLineY = sigSectionY + 62;
+    // ── Official Stamp ── (dedicated section, does NOT overlap signatures)
+    y += 10;
 
-    // ── Bryan's signature (left side) ──
+    // Stamp background box
+    const stampCX = 495, stampCY = y + 62, stampR = 58;
+
+    // Outer ring (double border for official look)
+    doc.circle(stampCX, stampCY, stampR).lineWidth(2.5).strokeColor('#7a1e1e').stroke();
+    doc.circle(stampCX, stampCY, stampR - 5).lineWidth(1).strokeColor('#7a1e1e').stroke();
+
+    // Decorative dash ring between the two circles
+    const dashCount = 48;
+    for (let i = 0; i < dashCount; i++) {
+      if (i % 2 === 0) {
+        const a1 = (i / dashCount) * Math.PI * 2;
+        const a2 = ((i + 0.7) / dashCount) * Math.PI * 2;
+        const r = stampR - 2.5;
+        doc.moveTo(stampCX + r * Math.cos(a1), stampCY + r * Math.sin(a1))
+           .lineTo(stampCX + r * Math.cos(a2), stampCY + r * Math.sin(a2))
+           .lineWidth(1.5).strokeColor('#7a1e1e').stroke();
+      }
+    }
+
+    // Top text — "SHANTI & BRYAN"
+    doc.fillColor('#7a1e1e').font('Helvetica-Bold').fontSize(8)
+       .text('SHANTI & BRYAN', stampCX - 46, stampCY - stampR + 14, { width: 92, align: 'center', lineBreak: false });
+
+    // Bottom text — "PINSCHER KENNEL"
+    doc.fillColor('#7a1e1e').font('Helvetica-Bold').fontSize(7.5)
+       .text('PINSCHER KENNEL', stampCX - 46, stampCY + stampR - 22, { width: 92, align: 'center', lineBreak: false });
+
+    // Horizontal dividers inside stamp
+    doc.moveTo(stampCX - 36, stampCY - 34).lineTo(stampCX + 36, stampCY - 34).lineWidth(0.6).strokeColor('#7a1e1e').stroke();
+    doc.moveTo(stampCX - 36, stampCY + 30).lineTo(stampCX + 36, stampCY + 30).lineWidth(0.6).strokeColor('#7a1e1e').stroke();
+
+    // Center: paw print icon
+    doc.circle(stampCX, stampCY - 8, 9).lineWidth(1.2).strokeColor('#7a1e1e').stroke();         // main pad
+    doc.circle(stampCX - 11, stampCY - 17, 5).lineWidth(1).strokeColor('#7a1e1e').stroke();      // toe 1
+    doc.circle(stampCX + 11, stampCY - 17, 5).lineWidth(1).strokeColor('#7a1e1e').stroke();      // toe 2
+    doc.circle(stampCX - 17, stampCY - 6, 4).lineWidth(1).strokeColor('#7a1e1e').stroke();       // toe 3
+    doc.circle(stampCX + 17, stampCY - 6, 4).lineWidth(1).strokeColor('#7a1e1e').stroke();       // toe 4
+
+    // Center: OFFICIAL INVOICE text
+    doc.fillColor('#7a1e1e').font('Helvetica-Bold').fontSize(8.5)
+       .text('OFFICIAL', stampCX - 22, stampCY + 5, { lineBreak: false });
+    doc.fillColor('#7a1e1e').font('Helvetica-Bold').fontSize(7.5)
+       .text('INVOICE', stampCX - 18, stampCY + 16, { lineBreak: false });
+
+    // Date below INVOICE
+    const stampDate = new Date(inv.createdAt).toLocaleDateString('en-US', { month:'short', day:'2-digit', year:'numeric' });
+    doc.fillColor('#7a1e1e').font('Helvetica').fontSize(6)
+       .text(stampDate, stampCX - 18, stampCY + 26, { lineBreak: false });
+
+    y += 130; // clear the stamp height
+
+    // ── Signature lines ── (BELOW the stamp, not overlapping)
     if (inv.signatureData && inv.signatureData.startsWith('data:image/png;base64,')) {
       try {
         const sigBuf = Buffer.from(inv.signatureData.split(',')[1], 'base64');
-        doc.image(sigBuf, 50, sigSectionY + 6, { width: 180, height: 42 });
+        doc.image(sigBuf, 50, y - 45, { width: 180, height: 42 });
       } catch(e) {}
     }
 
-    doc.moveTo(50, sigLineY).lineTo(230, sigLineY).strokeColor(gold).lineWidth(1).stroke();
-    doc.moveTo(310, sigLineY).lineTo(545, sigLineY).strokeColor(gold).lineWidth(1).stroke();
-    y = sigLineY + 7;
+    doc.moveTo(50, y).lineTo(230, y).strokeColor(gold).lineWidth(1).stroke();
+    doc.moveTo(310, y).lineTo(545, y).strokeColor(gold).lineWidth(1).stroke();
+    y += 7;
     doc.fillColor(gray).font('Helvetica').fontSize(7.5)
        .text('Authorized Signature — Shanti & Bryan Kennel', 50, y, { width: 200 })
        .text('Client Signature & Date (Required)', 310, y, { width: 200 });
-
-    // Compact verification badge, kept below the client signature line.
-    const badgeX = 370;
-    const badgeY = y + 16;
-    const badgeW = 142;
-    const badgeH = 34;
-    const stampDate = new Date(inv.createdAt).toLocaleDateString('en-US', { month:'short', day:'2-digit', year:'numeric' });
-
-    doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 4)
-       .fillAndStroke('#fbfaf7', maroon);
-    doc.circle(badgeX + 18, badgeY + 17, 10).strokeColor(gold).lineWidth(1.2).stroke();
-    doc.moveTo(badgeX + 13, badgeY + 17)
-       .lineTo(badgeX + 17, badgeY + 21)
-       .lineTo(badgeX + 24, badgeY + 13)
-       .strokeColor(maroon)
-       .lineWidth(1.4)
-       .stroke();
-    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(7)
-       .text('VERIFIED INVOICE', badgeX + 36, badgeY + 8, { width: 92 });
-    doc.fillColor(gray).font('Helvetica').fontSize(6)
-       .text(`${inv.invoiceNumber} | ${stampDate}`, badgeX + 36, badgeY + 20, { width: 92 });
-
-    y = badgeY + badgeH + 10;
+    y += 14;
     doc.fillColor(maroon).font('Helvetica-Bold').fontSize(7)
        .text('ACTION REQUIRED: Sign above, photograph this page, and email to info@shantibryankennel.com', 50, y, { width: W, align: 'center' });
     y += 30;
+
     // ── Footer (drawn inline, no absolute positioning) ──
     doc.rect(50, y, W, 1).fill('#ece5d8');
     y += 8;
