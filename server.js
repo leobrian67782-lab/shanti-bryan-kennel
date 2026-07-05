@@ -1474,13 +1474,74 @@ async function generateInvoicePDF(inv) {
 
     // ── Signature section ──
     y += 8;
+    const sigSectionY = y;
+
+    // Draw professional official stamp (right side)
+    const stampX = 430, stampY = sigSectionY + 10, stampR = 52;
+
+    // Helper: draw text along a circle arc
+    function drawArcText(doc, text, cx, cy, r, startAngle, color, size) {
+      const chars = text.split('');
+      const totalAngle = (chars.length - 1) * (Math.PI * 2) / (text.length + 6);
+      chars.forEach((ch, i) => {
+        const angle = startAngle + (i / chars.length) * Math.PI * 2 * (chars.length / (chars.length + 6));
+        const x = cx + r * Math.cos(angle);
+        const y = cy + r * Math.sin(angle);
+        doc.save()
+           .translate(x, y)
+           .rotate((angle + Math.PI / 2) * (180 / Math.PI))
+           .fillColor(color)
+           .font('Helvetica-Bold')
+           .fontSize(size)
+           .text(ch, -size / 4, -size / 2, { lineBreak: false })
+           .restore();
+      });
+    }
+
+    // Outer ring
+    doc.circle(stampX, stampY, stampR).lineWidth(2).strokeColor('#7a1e1e').stroke();
+    // Inner ring
+    doc.circle(stampX, stampY, stampR - 6).lineWidth(0.8).strokeColor('#7a1e1e').stroke();
+    // Decorative dots between rings
+    for (let i = 0; i < 36; i++) {
+      const a = (i / 36) * Math.PI * 2;
+      const dx = stampX + (stampR - 3) * Math.cos(a);
+      const dy = stampY + (stampR - 3) * Math.sin(a);
+      doc.circle(dx, dy, 0.8).fill('#7a1e1e');
+    }
+
+    // Top arc text
+    drawArcText(doc, 'SHANTI & BRYAN PINSCHER KENNEL', stampX, stampY, stampR - 13, -Math.PI * 0.85, '#7a1e1e', 6);
+
+    // Bottom arc text
+    drawArcText(doc, 'SHANTIBRYANKENNEL.COM', stampX, stampY, stampR - 13, Math.PI * 0.12, '#7a1e1e', 5.5);
+
+    // Center paw print (decorative)
+    doc.circle(stampX, stampY - 6, 8).lineWidth(1).strokeColor('#7a1e1e').stroke();
+    doc.circle(stampX - 10, stampY - 14, 4).lineWidth(0.8).strokeColor('#7a1e1e').stroke();
+    doc.circle(stampX + 10, stampY - 14, 4).lineWidth(0.8).strokeColor('#7a1e1e').stroke();
+    doc.circle(stampX - 16, stampY - 5, 3.5).lineWidth(0.8).strokeColor('#7a1e1e').stroke();
+    doc.circle(stampX + 16, stampY - 5, 3.5).lineWidth(0.8).strokeColor('#7a1e1e').stroke();
+
+    // Center text
+    doc.fillColor('#7a1e1e').font('Helvetica-Bold').fontSize(6.5)
+       .text('OFFICIAL', stampX - 15, stampY + 6, { lineBreak: false });
+    doc.fillColor('#7a1e1e').font('Helvetica-Bold').fontSize(5.5)
+       .text('INVOICE', stampX - 11, stampY + 15, { lineBreak: false });
+
+    // Date in stamp
+    const stampDate = new Date(inv.createdAt).toLocaleDateString('en-US', { month:'short', day:'2-digit', year:'numeric' });
+    doc.fillColor('#7a1e1e').font('Helvetica').fontSize(5)
+       .text(stampDate, stampX - 16, stampY + 25, { lineBreak: false });
+
+    // ── Bryan's signature (left side) ──
     if (inv.signatureData && inv.signatureData.startsWith('data:image/png;base64,')) {
       try {
         const sigBuf = Buffer.from(inv.signatureData.split(',')[1], 'base64');
         doc.image(sigBuf, 50, y, { width: 180, height: 45 });
       } catch(e) {}
-      y += 48;
     }
+    y = sigSectionY + 75;
 
     doc.moveTo(50, y).lineTo(230, y).strokeColor(gold).lineWidth(1).stroke();
     doc.moveTo(310, y).lineTo(545, y).strokeColor(gold).lineWidth(1).stroke();
