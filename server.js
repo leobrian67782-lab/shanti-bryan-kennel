@@ -1472,66 +1472,100 @@ async function generateInvoicePDF(inv) {
       y += 20;
     }
 
-    // ── Official Stamp ── (dedicated section, does NOT overlap signatures)
-    y += 10;
+    // ── Official Stamp ── matching reference design
+    y += 14;
+    const stampCX = 140, stampCY = y + 68, stampR = 68;
 
-    // Stamp background box
-    const stampCX = 495, stampCY = y + 62, stampR = 58;
-
-    // Outer ring (double border for official look)
-    doc.circle(stampCX, stampCY, stampR).lineWidth(2.5).strokeColor('#7a1e1e').stroke();
-    doc.circle(stampCX, stampCY, stampR - 5).lineWidth(1).strokeColor('#7a1e1e').stroke();
-
-    // Decorative dash ring between the two circles
-    const dashCount = 48;
-    for (let i = 0; i < dashCount; i++) {
-      if (i % 2 === 0) {
-        const a1 = (i / dashCount) * Math.PI * 2;
-        const a2 = ((i + 0.7) / dashCount) * Math.PI * 2;
-        const r = stampR - 2.5;
-        doc.moveTo(stampCX + r * Math.cos(a1), stampCY + r * Math.sin(a1))
-           .lineTo(stampCX + r * Math.cos(a2), stampCY + r * Math.sin(a2))
-           .lineWidth(1.5).strokeColor('#7a1e1e').stroke();
-      }
+    // Arc text helper
+    function arcText(text, radius, startDeg, endDeg, fontSize, flip) {
+      const chars = text.split('');
+      const startRad = (startDeg - 90) * Math.PI / 180;
+      const endRad   = (endDeg   - 90) * Math.PI / 180;
+      const step = (endRad - startRad) / (chars.length - 1 || 1);
+      chars.forEach((ch, i) => {
+        const angle = startRad + i * step;
+        const x = stampCX + radius * Math.cos(angle);
+        const y = stampCY + radius * Math.sin(angle);
+        const rotDeg = (angle + Math.PI / 2) * 180 / Math.PI + (flip ? 180 : 0);
+        doc.save()
+           .translate(x, y)
+           .rotate(rotDeg)
+           .fillColor(maroon)
+           .font('Helvetica-Bold')
+           .fontSize(fontSize)
+           .text(ch, -fontSize * 0.28, -fontSize * 0.5, { lineBreak: false })
+           .restore();
+      });
     }
 
-    // Top text — "SHANTI & BRYAN"
-    doc.fillColor('#7a1e1e').font('Helvetica-Bold').fontSize(8)
-       .text('SHANTI & BRYAN', stampCX - 46, stampCY - stampR + 14, { width: 92, align: 'center', lineBreak: false });
+    // Outer ring
+    doc.circle(stampCX, stampCY, stampR).lineWidth(2.8).strokeColor(maroon).stroke();
+    // Inner ring
+    doc.circle(stampCX, stampCY, stampR - 8).lineWidth(1.2).strokeColor(maroon).stroke();
 
-    // Bottom text — "PINSCHER KENNEL"
-    doc.fillColor('#7a1e1e').font('Helvetica-Bold').fontSize(7.5)
-       .text('PINSCHER KENNEL', stampCX - 46, stampCY + stampR - 22, { width: 92, align: 'center', lineBreak: false });
+    // Arc text — top: "SHANTI & BRYAN"
+    arcText('SHANTI & BRYAN', stampR - 17, -58, 58, 10, false);
 
-    // Horizontal dividers inside stamp
-    doc.moveTo(stampCX - 36, stampCY - 34).lineTo(stampCX + 36, stampCY - 34).lineWidth(0.6).strokeColor('#7a1e1e').stroke();
-    doc.moveTo(stampCX - 36, stampCY + 30).lineTo(stampCX + 36, stampCY + 30).lineWidth(0.6).strokeColor('#7a1e1e').stroke();
+    // Arc text — bottom: "PINSCHER KENNEL"
+    arcText('PINSCHER KENNEL', stampR - 17, 122, 238, 9.5, true);
 
-    // Center: paw print icon
-    doc.circle(stampCX, stampCY - 8, 9).lineWidth(1.2).strokeColor('#7a1e1e').stroke();         // main pad
-    doc.circle(stampCX - 11, stampCY - 17, 5).lineWidth(1).strokeColor('#7a1e1e').stroke();      // toe 1
-    doc.circle(stampCX + 11, stampCY - 17, 5).lineWidth(1).strokeColor('#7a1e1e').stroke();      // toe 2
-    doc.circle(stampCX - 17, stampCY - 6, 4).lineWidth(1).strokeColor('#7a1e1e').stroke();       // toe 3
-    doc.circle(stampCX + 17, stampCY - 6, 4).lineWidth(1).strokeColor('#7a1e1e').stroke();       // toe 4
+    // Stars on left and right between the two text arcs
+    [[-92, 0], [92, 0]].forEach(([deg]) => {
+      const a = (deg - 90) * Math.PI / 180;
+      const sx = stampCX + (stampR - 17) * Math.cos(a);
+      const sy = stampCY + (stampR - 17) * Math.sin(a);
+      doc.save().translate(sx, sy).fillColor(maroon).font('Helvetica-Bold').fontSize(11)
+         .text('★', -5.5, -7, { lineBreak: false }).restore();
+    });
 
-    // Center: OFFICIAL INVOICE text
-    doc.fillColor('#7a1e1e').font('Helvetica-Bold').fontSize(8.5)
-       .text('OFFICIAL', stampCX - 22, stampCY + 5, { lineBreak: false });
-    doc.fillColor('#7a1e1e').font('Helvetica-Bold').fontSize(7.5)
-       .text('INVOICE', stampCX - 18, stampCY + 16, { lineBreak: false });
+    // Min Pin silhouette — drawn with bezier curves (standing alert pose)
+    const dx = stampCX - 14, dy = stampCY - 22; // anchor point
+    doc.save();
+    doc.fillColor(maroon);
+    // Body
+    doc.moveTo(dx+4, dy+28)
+       .bezierCurveTo(dx-2, dy+20, dx-4, dy+10, dx+2, dy+4)
+       .bezierCurveTo(dx+8, dy-4, dx+18, dy-6, dx+26, dy-2)
+       .bezierCurveTo(dx+34, dy+2, dx+36, dy+12, dx+34, dy+20)
+       .bezierCurveTo(dx+32, dy+26, dx+28, dy+28, dx+24, dy+28)
+       .lineTo(dx+4, dy+28)
+       .fill();
+    // Head
+    doc.moveTo(dx+2, dy+4)
+       .bezierCurveTo(dx+2, dy-4, dx+8, dy-10, dx+14, dy-12)
+       .bezierCurveTo(dx+18, dy-14, dx+22, dy-12, dx+24, dy-8)
+       .bezierCurveTo(dx+26, dy-4, dx+26, dy+0, dx+24, dy+4)
+       .bezierCurveTo(dx+20, dy+6, dx+10, dy+6, dx+2, dy+4)
+       .fill();
+    // Ears (pointy erect)
+    doc.moveTo(dx+6, dy-8).lineTo(dx+4, dy-18).lineTo(dx+12, dy-12).fill();
+    doc.moveTo(dx+16, dy-10).lineTo(dx+18, dy-20).lineTo(dx+24, dy-10).fill();
+    // Front legs
+    doc.rect(dx+6, dy+28, 5, 18).fill();
+    doc.rect(dx+16, dy+28, 5, 20).fill();
+    // Back legs
+    doc.rect(dx+24, dy+28, 5, 16).fill();
+    doc.moveTo(dx+28, dy+44).lineTo(dx+36, dy+44).lineTo(dx+36, dy+48).lineTo(dx+28, dy+48).fill();
+    // Tail (upright)
+    doc.moveTo(dx+34, dy+18)
+       .bezierCurveTo(dx+42, dy+10, dx+44, dy+0, dx+40, dy-8)
+       .bezierCurveTo(dx+38, dy-4, dx+38, dy+4, dx+36, dy+18)
+       .fill();
+    doc.restore();
 
-    // Date below INVOICE
-    const stampDate = new Date(inv.createdAt).toLocaleDateString('en-US', { month:'short', day:'2-digit', year:'numeric' });
-    doc.fillColor('#7a1e1e').font('Helvetica').fontSize(6)
-       .text(stampDate, stampCX - 18, stampCY + 26, { lineBreak: false });
+    // Center text
+    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(7.5)
+       .text('OFFICIAL BREEDING SEAL', stampCX - 42, stampCY + 30, { width: 84, align: 'center', lineBreak: false });
+    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(7)
+       .text('★★  EST. 2011  ★★', stampCX - 36, stampCY + 42, { width: 72, align: 'center', lineBreak: false });
 
-    y += 130; // clear the stamp height
+    y += 148; // clear full stamp height
 
-    // ── Signature lines ── (BELOW the stamp, not overlapping)
+    // ── Signature lines ── clearly below the stamp
     if (inv.signatureData && inv.signatureData.startsWith('data:image/png;base64,')) {
       try {
         const sigBuf = Buffer.from(inv.signatureData.split(',')[1], 'base64');
-        doc.image(sigBuf, 50, y - 45, { width: 180, height: 42 });
+        doc.image(sigBuf, 50, y - 48, { width: 180, height: 45 });
       } catch(e) {}
     }
 
