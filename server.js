@@ -1472,94 +1472,32 @@ async function generateInvoicePDF(inv) {
       y += 20;
     }
 
-    // ── Official Stamp ── matching reference design
+    // ── Official Stamp ── (your real stamp image, recolored maroon)
     y += 14;
-    const stampCX = 140, stampCY = y + 68, stampR = 68;
-
-    // Arc text helper
-    function arcText(text, radius, startDeg, endDeg, fontSize, flip) {
-      const chars = text.split('');
-      const startRad = (startDeg - 90) * Math.PI / 180;
-      const endRad   = (endDeg   - 90) * Math.PI / 180;
-      const step = (endRad - startRad) / (chars.length - 1 || 1);
-      chars.forEach((ch, i) => {
-        const angle = startRad + i * step;
-        const x = stampCX + radius * Math.cos(angle);
-        const y = stampCY + radius * Math.sin(angle);
-        const rotDeg = (angle + Math.PI / 2) * 180 / Math.PI + (flip ? 180 : 0);
-        doc.save()
-           .translate(x, y)
-           .rotate(rotDeg)
-           .fillColor(maroon)
-           .font('Helvetica-Bold')
-           .fontSize(fontSize)
-           .text(ch, -fontSize * 0.28, -fontSize * 0.5, { lineBreak: false })
-           .restore();
-      });
+    const stampPaths = [
+      require('path').join(__dirname, 'public', 'stamp.png'),
+      require('path').join(__dirname, 'public', 'images', 'stamp.png'),
+    ];
+    let stampDrawn = false;
+    for (const sp of stampPaths) {
+      try {
+        if (require('fs').existsSync(sp)) {
+          doc.image(sp, 50, y, { width: 140, height: 130 });
+          stampDrawn = true;
+          break;
+        }
+      } catch(e) {}
     }
-
-    // Outer ring
-    doc.circle(stampCX, stampCY, stampR).lineWidth(2.8).strokeColor(maroon).stroke();
-    // Inner ring
-    doc.circle(stampCX, stampCY, stampR - 8).lineWidth(1.2).strokeColor(maroon).stroke();
-
-    // Arc text — top: "SHANTI & BRYAN"
-    arcText('SHANTI & BRYAN', stampR - 17, -58, 58, 10, false);
-
-    // Arc text — bottom: "PINSCHER KENNEL"
-    arcText('PINSCHER KENNEL', stampR - 17, 122, 238, 9.5, true);
-
-    // Stars on left and right between the two text arcs
-    [[-92, 0], [92, 0]].forEach(([deg]) => {
-      const a = (deg - 90) * Math.PI / 180;
-      const sx = stampCX + (stampR - 17) * Math.cos(a);
-      const sy = stampCY + (stampR - 17) * Math.sin(a);
-      doc.save().translate(sx, sy).fillColor(maroon).font('Helvetica-Bold').fontSize(11)
-         .text('★', -5.5, -7, { lineBreak: false }).restore();
-    });
-
-    // Min Pin silhouette — drawn with bezier curves (standing alert pose)
-    const dx = stampCX - 14, dy = stampCY - 22; // anchor point
-    doc.save();
-    doc.fillColor(maroon);
-    // Body
-    doc.moveTo(dx+4, dy+28)
-       .bezierCurveTo(dx-2, dy+20, dx-4, dy+10, dx+2, dy+4)
-       .bezierCurveTo(dx+8, dy-4, dx+18, dy-6, dx+26, dy-2)
-       .bezierCurveTo(dx+34, dy+2, dx+36, dy+12, dx+34, dy+20)
-       .bezierCurveTo(dx+32, dy+26, dx+28, dy+28, dx+24, dy+28)
-       .lineTo(dx+4, dy+28)
-       .fill();
-    // Head
-    doc.moveTo(dx+2, dy+4)
-       .bezierCurveTo(dx+2, dy-4, dx+8, dy-10, dx+14, dy-12)
-       .bezierCurveTo(dx+18, dy-14, dx+22, dy-12, dx+24, dy-8)
-       .bezierCurveTo(dx+26, dy-4, dx+26, dy+0, dx+24, dy+4)
-       .bezierCurveTo(dx+20, dy+6, dx+10, dy+6, dx+2, dy+4)
-       .fill();
-    // Ears (pointy erect)
-    doc.moveTo(dx+6, dy-8).lineTo(dx+4, dy-18).lineTo(dx+12, dy-12).fill();
-    doc.moveTo(dx+16, dy-10).lineTo(dx+18, dy-20).lineTo(dx+24, dy-10).fill();
-    // Front legs
-    doc.rect(dx+6, dy+28, 5, 18).fill();
-    doc.rect(dx+16, dy+28, 5, 20).fill();
-    // Back legs
-    doc.rect(dx+24, dy+28, 5, 16).fill();
-    doc.moveTo(dx+28, dy+44).lineTo(dx+36, dy+44).lineTo(dx+36, dy+48).lineTo(dx+28, dy+48).fill();
-    // Tail (upright)
-    doc.moveTo(dx+34, dy+18)
-       .bezierCurveTo(dx+42, dy+10, dx+44, dy+0, dx+40, dy-8)
-       .bezierCurveTo(dx+38, dy-4, dx+38, dy+4, dx+36, dy+18)
-       .fill();
-    doc.restore();
-
-    // Center text
-    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(7.5)
-       .text('OFFICIAL BREEDING SEAL', stampCX - 42, stampCY + 30, { width: 84, align: 'center', lineBreak: false });
-    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(7)
-       .text('★★  EST. 2011  ★★', stampCX - 36, stampCY + 42, { width: 72, align: 'center', lineBreak: false });
-
-    y += 148; // clear full stamp height
+    if (!stampDrawn) {
+      // Fallback: simple text stamp if image not found
+      doc.circle(115, y + 65, 60).lineWidth(2).strokeColor(maroon).stroke();
+      doc.fillColor(maroon).font('Helvetica-Bold').fontSize(8)
+         .text('SHANTI & BRYAN', 75, y + 40, { width: 80, align: 'center' })
+         .text('PINSCHER KENNEL', 75, y + 52, { width: 80, align: 'center' })
+         .text('OFFICIAL BREEDING SEAL', 68, y + 72, { width: 94, align: 'center' })
+         .text('★★ EST. 2011 ★★', 75, y + 84, { width: 80, align: 'center' });
+    }
+    y += 148;
 
     // ── Signature lines ── clearly below the stamp
     if (inv.signatureData && inv.signatureData.startsWith('data:image/png;base64,')) {
