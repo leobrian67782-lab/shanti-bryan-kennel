@@ -1422,7 +1422,7 @@ async function generateInvoicePDF(inv) {
     doc.rect(50, y, W, 26).fill(maroon);
     doc.fillColor('#fff').font('Helvetica-Bold').fontSize(8.5)
        .text('DESCRIPTION', 60, y + 8)
-       .text('AMOUNT', 490, y + 8, { width: 55, align: 'right' });
+       .text('AMOUNT', 460, y + 8, { width: 75, align: 'right' });
     y += 26;
 
     const rows = [
@@ -1433,7 +1433,7 @@ async function generateInvoicePDF(inv) {
       doc.rect(50, y, W, 24).fill(i % 2 === 0 ? '#fff' : light);
       doc.fillColor(navy).font('Helvetica').fontSize(8.5)
          .text(row[0], 60, y + 7)
-         .text(row[1], 490, y + 7, { width: 55, align: 'right' });
+         .text(row[1], 460, y + 7, { width: 75, align: 'right' });
       y += 24;
     });
 
@@ -1441,7 +1441,7 @@ async function generateInvoicePDF(inv) {
     doc.rect(50, y, W, 30).fill('#f0ece3');
     doc.fillColor(maroon).font('Helvetica-Bold').fontSize(11)
        .text('BALANCE DUE', 60, y + 8)
-       .text(`$${inv.balanceDue.toLocaleString()}`, 490, y + 8, { width: 55, align: 'right' });
+       .text(`$${inv.balanceDue.toLocaleString()}`, 460, y + 8, { width: 75, align: 'right' });
     y += 38;
 
     // ── Terms ──
