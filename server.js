@@ -1801,12 +1801,12 @@ async function generateCertificatePDF(cert) {
       else if (require('fs').existsSync(logoPath2)) doc.image(logoPath2, 35, 20, { width: 80, height: 80 });
     } catch(e) {}
 
-    doc.fillColor('#fff').font('Helvetica-Bold').fontSize(26)
-       .text('SHANTI & BRYAN PINSCHER KENNEL', 130, 28, { width: 420, align: 'center' });
-    doc.font('Helvetica').fontSize(10).fillColor('rgba(255,255,255,0.8)')
-       .text('Registered Miniature Pinscher Breeder  •  Est. 2011', 130, 62, { width: 420, align: 'center' });
-    doc.font('Helvetica').fontSize(9).fillColor(gold)
-       .text('info@shantibryankennel.com  |  shantibryankennel.com', 130, 78, { width: 420, align: 'center' });
+    doc.fillColor('#fff').font('Helvetica-Bold').fontSize(18)
+       .text('SHANTI & BRYAN PINSCHER KENNEL', 130, 32, { width: 420, align: 'center' });
+    doc.font('Helvetica').fontSize(9).fillColor('rgba(255,255,255,0.8)')
+       .text('Registered Miniature Pinscher Breeder  •  Est. 2011', 130, 58, { width: 420, align: 'center' });
+    doc.font('Helvetica').fontSize(8).fillColor(gold)
+       .text('info@shantibryankennel.com  |  shantibryankennel.com', 130, 72, { width: 420, align: 'center' });
 
     // ── Certificate title ──
     doc.fillColor(maroon).font('Helvetica-Bold').fontSize(22)
@@ -1915,37 +1915,36 @@ async function generateCertificatePDF(cert) {
     y += 16;
 
     // ── Signatures ──
-    const sigColW = 200;
-    const sig1X = 45, sig2X = 210, sig3X = 375;
+    const sig1X = 45, sig2X = 350;
 
-    // Bryan's signature image
+    // Stamp on Bryan's side (left)
+    const stampPath = require('path').join(__dirname, 'public', 'stamp.png');
+    try {
+      if (require('fs').existsSync(stampPath)) {
+        doc.image(stampPath, sig1X, y, { width: 90, height: 90 });
+      }
+    } catch(e) {}
+
+    // Bryan's signature image (over the stamp, slightly offset)
     if (cert.signatureData && cert.signatureData.startsWith('data:image/png;base64,')) {
       try {
         const sigBuf = Buffer.from(cert.signatureData.split(',')[1], 'base64');
-        doc.image(sigBuf, sig1X, y, { width: 150, height: 40 });
+        doc.image(sigBuf, sig1X + 10, y + 48, { width: 150, height: 36 });
       } catch(e) {}
     }
 
     // Signature lines
-    y += 45;
-    doc.moveTo(sig1X, y).lineTo(sig1X+sigColW, y).lineWidth(1).strokeColor(maroon).stroke();
-    doc.moveTo(sig2X+sigColW-30, y).lineTo(sig2X+sigColW+sigColW, y).lineWidth(1).strokeColor(maroon).stroke();
+    y += 90;
+    doc.moveTo(sig1X, y).lineTo(sig1X + 220, y).lineWidth(1).strokeColor(maroon).stroke();
+    doc.moveTo(sig2X, y).lineTo(sig2X + 200, y).lineWidth(1).strokeColor(maroon).stroke();
 
     y += 6;
     doc.fillColor(navy).font('Helvetica-Bold').fontSize(8)
        .text('Shanti & Bryan Pinscher Kennel', sig1X, y)
-       .text('New Owner Signature & Date', sig2X+sigColW-30, y);
+       .text('New Owner Signature & Date', sig2X, y);
     doc.fillColor(gray).font('Helvetica').fontSize(7.5)
-       .text('Authorized Breeder Signature', sig1X, y+11)
-       .text('I accept the transfer of ownership', sig2X+sigColW-30, y+11);
-
-    // ── Stamp ──
-    const stampPath = require('path').join(__dirname, 'public', 'stamp.png');
-    try {
-      if (require('fs').existsSync(stampPath)) {
-        doc.image(stampPath, sig2X+sigColW-15, y-60, { width: 100, height: 100 });
-      }
-    } catch(e) {}
+       .text('Authorized Breeder Signature', sig1X, y + 11)
+       .text('I accept the transfer of ownership', sig2X, y + 11);
 
     // ── Footer bar ──
     doc.rect(0, H-55, W, 55).fill(maroon);
