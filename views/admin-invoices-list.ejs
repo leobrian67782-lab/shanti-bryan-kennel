@@ -27,6 +27,7 @@
             <td style="color:var(--text-light);font-size:0.82rem;"><%= inv.createdAt.toLocaleDateString() %></td>
             <td class="admin-actions">
               <a href="/admin/invoices/<%= inv._id %>/pdf" class="admin-btn-sm" title="Download PDF" target="_blank"><i class="fa-solid fa-file-pdf"></i></a>
+              <a href="/admin/certificates/new?invoice=<%= inv._id %>" class="admin-btn-sm" title="Generate Ownership Certificate" style="background:#c9a227;color:#0d1117;"><i class="fa-solid fa-certificate"></i></a>
               <a href="/admin/invoices/<%= inv._id %>/send" class="admin-btn-sm" title="Resend Email" onclick="return confirm('Resend invoice to <%= inv.clientEmail %>?')"><i class="fa-solid fa-paper-plane"></i></a>
               <% if (inv.status !== 'Paid') { %>
                 <a href="/admin/invoices/<%= inv._id %>/mark-paid" class="admin-btn-sm" title="Mark as Paid" onclick="return confirm('Mark this invoice as paid?')"><i class="fa-solid fa-check"></i></a>
