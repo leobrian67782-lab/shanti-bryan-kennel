@@ -389,6 +389,34 @@ async function detectLocation(req) {
   return '';
 }
 
+// Calls Groq's chat completions API, automatically retrying once if we hit
+// their per-minute rate limit — Groq's error tells us exactly how long to
+// wait, so we parse that and retry instead of just failing.
+async function callGroqWithRetry(apiKey, body) {
+  const doCall = async () => {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    return { res, data };
+  };
+
+  let { res, data } = await doCall();
+
+  if (!res.ok && res.status === 429) {
+    const msg = data?.error?.message || '';
+    const match = msg.match(/try again in ([\d.]+)s/i);
+    const waitSeconds = match ? Math.min(parseFloat(match[1]) + 0.5, 20) : 5;
+    console.log(`[groq] Rate limited, waiting ${waitSeconds.toFixed(1)}s before retry...`);
+    await new Promise(r => setTimeout(r, waitSeconds * 1000));
+    ({ res, data } = await doCall());
+  }
+
+  return { res, data };
+}
+
 function stripThinking(text) {
   if (!text) return text;
   return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
@@ -1375,7 +1403,7 @@ async function buildSiteContext(isAdmin = false) {
     const faqs = await Faq.find().sort({ order: 1 }).lean();
     if (faqs.length > 0) {
       let block = '\n\n=== FAQ PAGE (LIVE) ===\n';
-      block += faqs.map(f => `  • Q: ${f.question}\n    A: ${f.answer.substring(0, 150)}${f.answer.length > 150 ? '...' : ''}`).join('\n');
+      block += faqs.map(f => `  • Q: ${f.question}\n    A: ${f.answer.substring(0, 90)}${f.answer.length > 90 ? '...' : ''}`).join('\n');
       sections.push(block);
     } else {
       sections.push('\n\n=== FAQ PAGE ===\n  No FAQs added yet.');
@@ -1385,7 +1413,7 @@ async function buildSiteContext(isAdmin = false) {
   // --- PUPPY APPLICATIONS (admin only) ---
   if (isAdmin) {
     try {
-      const applications = await Application.find().sort({ createdAt: -1 }).limit(15).lean();
+      const applications = await Application.find().sort({ createdAt: -1 }).limit(8).lean();
       if (applications.length > 0) {
         const pendingApps = applications.filter(a => a.status === 'Pending');
         let block = '\n\n=== PUPPY APPLICATIONS (most recent 15) ===\n';
@@ -1397,7 +1425,7 @@ async function buildSiteContext(isAdmin = false) {
 
     // --- WAITLIST (admin only) ---
     try {
-      const waitlist = await Waitlist.find().sort({ createdAt: -1 }).limit(20).lean();
+      const waitlist = await Waitlist.find().sort({ createdAt: -1 }).limit(10).lean();
       if (waitlist.length > 0) {
         const pendingDeposit = waitlist.filter(w => w.status === 'Pending Deposit');
         const active = waitlist.filter(w => w.status === 'Active');
@@ -1559,13 +1587,10 @@ BEHAVIOR RULES:
       { role: 'user', content: message }
     ];
 
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: 'qwen/qwen3.6-27b', messages, max_tokens: 600, temperature: 0.5, reasoning_effort: 'none' })
+    const { res: groqRes, data } = await callGroqWithRetry(apiKey, {
+      model: 'qwen/qwen3.6-27b', messages, max_tokens: 600, temperature: 0.5, reasoning_effort: 'none'
     });
 
-    const data = await groqRes.json();
     if (!groqRes.ok || !data.choices) {
       console.error('Groq error:', JSON.stringify(data).slice(0, 200));
       return res.json({ reply: "I'm having a moment — please try again or reach us at info@shantibryankennel.com!" });
@@ -1750,20 +1775,17 @@ RULES:
 
     const messages = [
       { role: 'system', content: systemText },
-      ...(Array.isArray(history) ? history : []).slice(-20).map(m => ({
+      ...(Array.isArray(history) ? history : []).slice(-8).map(m => ({
         role: m.r === 'assistant' ? 'assistant' : 'user',
-        content: String(m.t || '')
+        content: String(m.t || '').slice(0, 800)
       })),
       { role: 'user', content: message }
     ];
 
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: 'qwen/qwen3.6-27b', messages, max_tokens: 2000, temperature: 0.3, reasoning_effort: 'none' })
+    const { res: groqRes, data } = await callGroqWithRetry(apiKey, {
+      model: 'qwen/qwen3.6-27b', messages, max_tokens: 900, temperature: 0.3, reasoning_effort: 'none'
     });
 
-    const data = await groqRes.json();
     if (!groqRes.ok || !data.choices) {
       console.error('Admin chat Groq error:', JSON.stringify(data).slice(0, 500));
       return res.json({ reply: `AI error: ${data.error?.message || 'Unknown — check server logs for details.'}` });
@@ -1787,27 +1809,22 @@ app.post('/api/admin-vision', requireLogin, async (req, res) => {
 
     const userPrompt = prompt || 'You are an expert Min Pin breeder assistant. Please analyze this puppy photo and provide: 1) A professional puppy description for a kennel website listing (3-4 sentences), 2) Three social media caption ideas, 3) Any notable physical traits you can see (color, markings, build). Be warm, professional, and enthusiastic about the puppy.';
 
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: 'qwen/qwen3.6-27b',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'image_url', image_url: { url: `data:${mimeType || 'image/jpeg'};base64,${imageData}` } },
-              { type: 'text', text: userPrompt }
-            ]
-          }
-        ],
-        max_tokens: 800,
-        temperature: 0.5,
-        reasoning_effort: 'none'
-      })
+    const { res: groqRes, data } = await callGroqWithRetry(apiKey, {
+      model: 'qwen/qwen3.6-27b',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'image_url', image_url: { url: `data:${mimeType || 'image/jpeg'};base64,${imageData}` } },
+            { type: 'text', text: userPrompt }
+          ]
+        }
+      ],
+      max_tokens: 800,
+      temperature: 0.5,
+      reasoning_effort: 'none'
     });
 
-    const data = await groqRes.json();
     if (!groqRes.ok || !data.choices) {
       console.error('Vision error:', JSON.stringify(data).slice(0, 400));
       return res.json({ reply: `Vision AI error: ${data.error?.message || 'Unknown error'}. Try a smaller JPEG image.` });
