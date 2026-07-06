@@ -1,0 +1,37 @@
+<%- include('partials/admin-header', {title: 'Applications | Admin', active: 'applications', heading: 'Puppy Applications'}) %>
+
+<div class="admin-section">
+  <div class="admin-section-head">
+    <h3><i class="fa-solid fa-clipboard-list" style="color:var(--gold);"></i> All Applications</h3>
+  </div>
+
+  <% if (applications.length === 0) { %>
+    <p class="admin-empty">No applications yet.</p>
+  <% } else { %>
+    <table class="admin-table">
+      <thead><tr><th>Applicant</th><th>Interested In</th><th>Home</th><th>Status</th><th>Date</th><th></th></tr></thead>
+      <tbody>
+        <% applications.forEach(function(a) { %>
+          <tr>
+            <td>
+              <span style="font-weight:600;"><%= a.applicantName %></span><br>
+              <span style="color:var(--text-light);font-size:0.8rem;"><%= a.email %></span>
+            </td>
+            <td><%= a.interestedIn %></td>
+            <td style="color:var(--text-light);font-size:0.85rem;"><%= a.homeOwnership %></td>
+            <td>
+              <span style="background:<%= a.status === 'Approved' ? '#2e9e4f' : a.status === 'Declined' ? '#c0392b' : '#6b7585' %>;color:#fff;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;"><%= a.status %></span>
+            </td>
+            <td style="color:var(--text-light);font-size:0.82rem;"><%= a.createdAt.toLocaleDateString() %></td>
+            <td class="admin-actions">
+              <a href="/admin/applications/<%= a._id %>" class="admin-btn-sm" title="View Details"><i class="fa-solid fa-eye"></i></a>
+              <a href="/admin/applications/<%= a._id %>/delete" class="admin-btn-sm admin-btn-danger" onclick="return confirm('Delete this application?')"><i class="fa-solid fa-trash"></i></a>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
+<%- include('partials/admin-footer') %>
