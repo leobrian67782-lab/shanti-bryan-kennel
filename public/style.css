@@ -1133,7 +1133,13 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   font-weight: 700;
   font-family: 'Playfair Display', serif;
 }
-.admin-content { padding: 28px; background: #0d1117; flex: 1; }
+.admin-content { padding: 28px; background: #0d1117; flex: 1; color: #c5cdd8; }
+.admin-content p,
+.admin-content div,
+.admin-content span,
+.admin-content li,
+.admin-content td { color: #c5cdd8; }
+.admin-content h1, .admin-content h2, .admin-content h3, .admin-content h4 { color: #fff; }
 .admin-page-footer {
   padding: 18px 28px 24px;
   border-top: 1px solid #1f2733;
@@ -1423,6 +1429,18 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   background: #1c2430;
   border-color: #2a3441;
   color: #fff;
+}
+/* Chrome (and other browsers) force black autofilled text by default,
+   which is invisible on this dark background. This keeps autofilled
+   email/phone/etc fields readable, matching the rest of the form. */
+.admin-content .form-group input:-webkit-autofill,
+.admin-content .form-group input:-webkit-autofill:hover,
+.admin-content .form-group input:-webkit-autofill:focus,
+.admin-content .form-group input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #1c2430 inset !important;
+  -webkit-text-fill-color: #fff !important;
+  caret-color: #fff;
+  transition: background-color 5000s ease-in-out 0s;
 }
 .admin-content .form-success { background: #15311f; color: #6ee7a0; border-color: #1e4d2f; }
 
