@@ -242,8 +242,10 @@
       const low = reply.toLowerCase();
       const q = [];
       if (low.includes('puppies') || low.includes('available')) q.push({ label: 'View Available Puppies', href: '/puppies' });
+      if (low.includes('apply') || low.includes('application') || low.includes('reserve')) q.push({ label: 'Puppy Application', href: '/apply' });
+      if (low.includes('waitlist') || low.includes('future litter') || low.includes('no puppies')) q.push({ label: 'Join Waitlist', href: '/waitlist' });
       if (low.includes('contact') || low.includes('reach')) q.push({ label: 'Contact Us', href: '/contact' });
-      if (low.includes('deposit') || low.includes('reserve')) q.push({ label: 'Deposit Info', href: '/deposit' });
+      if (low.includes('deposit')) q.push({ label: 'Deposit Info', href: '/deposit' });
       if (low.includes('deliver') || low.includes('pickup')) q.push({ label: 'Adoption Process', href: '/process' });
       if (q.length === 0) q.push('Tell me more', { label: 'View Puppies', href: '/puppies' }, { label: 'Contact Us', href: '/contact' });
       setQR(q.slice(0, 3));
