@@ -5,6 +5,7 @@ const applicationSchema = new mongoose.Schema({
   email:         { type: String, required: true },
   phone:         { type: String },
   location:      { type: String },
+  detectedLocation: { type: String },
 
   interestedIn:  { type: String, default: 'General / Future Litter' }, // puppy name or general
 
