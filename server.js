@@ -1370,6 +1370,65 @@ async function buildSiteContext(isAdmin = false) {
     }
   } catch(e) {}
 
+  // --- FAQs ---
+  try {
+    const faqs = await Faq.find().sort({ order: 1 }).lean();
+    if (faqs.length > 0) {
+      let block = '\n\n=== FAQ PAGE (LIVE) ===\n';
+      block += faqs.map(f => `  • Q: ${f.question}\n    A: ${f.answer.substring(0, 150)}${f.answer.length > 150 ? '...' : ''}`).join('\n');
+      sections.push(block);
+    } else {
+      sections.push('\n\n=== FAQ PAGE ===\n  No FAQs added yet.');
+    }
+  } catch(e) {}
+
+  // --- PUPPY APPLICATIONS (admin only) ---
+  if (isAdmin) {
+    try {
+      const applications = await Application.find().sort({ createdAt: -1 }).limit(15).lean();
+      if (applications.length > 0) {
+        const pendingApps = applications.filter(a => a.status === 'Pending');
+        let block = '\n\n=== PUPPY APPLICATIONS (most recent 15) ===\n';
+        block += applications.map(a => `  • [${a.status}] ${a.applicantName} (${a.email}) — Interested in: ${a.interestedIn}, Home: ${a.homeOwnership}${a.location ? ', ' + a.location : ''}`).join('\n');
+        if (pendingApps.length > 0) block += `\n  → ${pendingApps.length} application(s) awaiting review`;
+        sections.push(block);
+      }
+    } catch(e) {}
+
+    // --- WAITLIST (admin only) ---
+    try {
+      const waitlist = await Waitlist.find().sort({ createdAt: -1 }).limit(20).lean();
+      if (waitlist.length > 0) {
+        const pendingDeposit = waitlist.filter(w => w.status === 'Pending Deposit');
+        const active = waitlist.filter(w => w.status === 'Active');
+        let block = '\n\n=== WAITLIST (most recent 20) ===\n';
+        block += waitlist.map(w => `  • [${w.status}] ${w.name} (${w.email}) — Wants: ${w.preferredGender}, ${w.preferredColor}`).join('\n');
+        block += `\n  → ${pendingDeposit.length} awaiting deposit, ${active.length} active on waitlist`;
+        sections.push(block);
+      }
+    } catch(e) {}
+
+    // --- INVOICES (admin only) ---
+    try {
+      const invoices = await Invoice.find().sort({ createdAt: -1 }).limit(10).lean();
+      if (invoices.length > 0) {
+        let block = '\n\n=== RECENT PUPPY PURCHASE INVOICES (last 10) ===\n';
+        block += invoices.map(i => `  • ${i.invoiceNumber} — ${i.clientName}, ${i.puppyName}, Balance Due: $${i.balanceDue}, Status: ${i.status}`).join('\n');
+        sections.push(block);
+      }
+    } catch(e) {}
+
+    // --- CERTIFICATES (admin only) ---
+    try {
+      const certificates = await Certificate.find().sort({ createdAt: -1 }).limit(10).lean();
+      if (certificates.length > 0) {
+        let block = '\n\n=== OWNERSHIP CERTIFICATES ISSUED (last 10) ===\n';
+        block += certificates.map(c => `  • ${c.certificateNumber} — ${c.puppyName} → ${c.buyerName}`).join('\n');
+        sections.push(block);
+      }
+    } catch(e) {}
+  }
+
   // --- PENDING REVIEWS (admin only) ---
   if (isAdmin) {
     try {
@@ -1393,7 +1452,7 @@ async function buildSiteContext(isAdmin = false) {
 
     // --- STATS SUMMARY (admin only) ---
     try {
-      const [totalPuppies, availablePuppies, reservedPuppies, soldPuppies, totalLitters, totalDogs, totalReviews, pendingReviews, totalInquiries] = await Promise.all([
+      const [totalPuppies, availablePuppies, reservedPuppies, soldPuppies, totalLitters, totalDogs, totalReviews, pendingReviews, totalInquiries, totalApplications, pendingApplications, totalWaitlist, activeWaitlist, totalInvoices, totalCertificates, totalFaqs] = await Promise.all([
         Puppy.countDocuments(),
         Puppy.countDocuments({ status: 'Available' }),
         Puppy.countDocuments({ status: 'Reserved' }),
@@ -1402,9 +1461,16 @@ async function buildSiteContext(isAdmin = false) {
         Dog.countDocuments(),
         Testimonial.countDocuments({ approved: true }),
         Testimonial.countDocuments({ approved: false }),
-        Contact.countDocuments()
+        Contact.countDocuments(),
+        Application.countDocuments(),
+        Application.countDocuments({ status: 'Pending' }),
+        Waitlist.countDocuments(),
+        Waitlist.countDocuments({ status: 'Active' }),
+        Invoice.countDocuments(),
+        Certificate.countDocuments(),
+        Faq.countDocuments()
       ]);
-      sections.push(`\n\n=== SITE STATS ===\n  Puppies: ${totalPuppies} total (${availablePuppies} available, ${reservedPuppies} reserved, ${soldPuppies} sold)\n  Litters: ${totalLitters} | Dogs: ${totalDogs}\n  Reviews: ${totalReviews} approved, ${pendingReviews} pending\n  Inquiries: ${totalInquiries} total`);
+      sections.push(`\n\n=== SITE STATS ===\n  Puppies: ${totalPuppies} total (${availablePuppies} available, ${reservedPuppies} reserved, ${soldPuppies} sold)\n  Litters: ${totalLitters} | Dogs: ${totalDogs} | FAQs: ${totalFaqs}\n  Reviews: ${totalReviews} approved, ${pendingReviews} pending\n  Inquiries: ${totalInquiries} total\n  Applications: ${totalApplications} total, ${pendingApplications} pending review\n  Waitlist: ${totalWaitlist} total, ${activeWaitlist} active\n  Puppy Purchase Invoices: ${totalInvoices} | Ownership Certificates: ${totalCertificates}`);
     } catch(e) {}
   }
 
@@ -1449,9 +1515,10 @@ HEALTH & VETERINARY:
 
 PRICING & DEPOSITS:
 - Puppy prices vary by gender, color, and availability — see the live puppy data below
-- A non-refundable deposit is required to reserve a puppy
+- To reserve a puppy, visitors should first fill out our Puppy Application at shantibryankennel.com/apply — this helps us make sure our puppies go to the right homes
+- A non-refundable deposit is required to reserve a puppy after an application is approved
 - The deposit is applied toward the total purchase price
-- For reservations, direct visitors to the contact form
+- If no puppies are currently available matching what they want, direct them to join our Waitlist at shantibryankennel.com/waitlist — a deposit is required to activate a waitlist spot, but it's fully applied toward their future puppy
 
 DELIVERY & PICKUP:
 - Nationwide delivery through a trusted professional pet transport agency
@@ -1465,10 +1532,14 @@ ABOUT MINIATURE PINSCHERS:
 - Need daily exercise and mental stimulation
 - Lifespan 12-16 years, low-shedding, easy to groom
 
-CONTACT:
+CONTACT & KEY PAGES:
 - Email: info@shantibryankennel.com
 - Contact form: shantibryankennel.com/contact
+- Puppy Application (to reserve a puppy): shantibryankennel.com/apply
+- Join Waitlist (for future litters): shantibryankennel.com/waitlist
+- Available Puppies: shantibryankennel.com/puppies
 - Submit a review: shantibryankennel.com/submit-review
+- FAQ: shantibryankennel.com/faq (also see live FAQ content below — answer directly from it when relevant)
 
 BEHAVIOR RULES:
 - Always respond warmly and helpfully
@@ -1565,6 +1636,54 @@ app.post('/api/admin-action', requireLogin, async (req, res) => {
         await settings.save();
         return res.json({ ok: true, message: '✅ Homepage stats updated.' });
       }
+
+      case 'create_faq': {
+        const count = await Faq.countDocuments();
+        const faq = await Faq.create({
+          question: params.question,
+          answer: params.answer,
+          order: params.order !== undefined ? params.order : count
+        });
+        return res.json({ ok: true, message: `✅ New FAQ added: **"${faq.question}"** — now live on the FAQ page.` });
+      }
+      case 'update_faq': {
+        const faq = await Faq.findByIdAndUpdate(params.id, {
+          question: params.question,
+          answer: params.answer
+        }, { new: true });
+        return res.json({ ok: true, message: `✅ FAQ updated: **"${faq.question}"**.` });
+      }
+      case 'delete_faq': {
+        const faq = await Faq.findByIdAndDelete(params.id);
+        return res.json({ ok: true, message: `🗑️ FAQ **"${faq ? faq.question : params.id}"** deleted.` });
+      }
+
+      case 'approve_application': {
+        const a = await Application.findByIdAndUpdate(params.id, { status: 'Approved' }, { new: true });
+        return res.json({ ok: true, message: `✅ Application from **${a.applicantName}** approved.` });
+      }
+      case 'decline_application': {
+        const a = await Application.findByIdAndUpdate(params.id, { status: 'Declined' }, { new: true });
+        return res.json({ ok: true, message: `❌ Application from **${a.applicantName}** declined.` });
+      }
+      case 'delete_application': {
+        const a = await Application.findByIdAndDelete(params.id);
+        return res.json({ ok: true, message: `🗑️ Application from **${a ? a.applicantName : params.id}** deleted.` });
+      }
+
+      case 'mark_waitlist_matched': {
+        const w = await Waitlist.findByIdAndUpdate(params.id, { status: 'Matched' }, { new: true });
+        return res.json({ ok: true, message: `✅ **${w.name}** marked as Matched on the waitlist.` });
+      }
+      case 'mark_waitlist_fulfilled': {
+        const w = await Waitlist.findByIdAndUpdate(params.id, { status: 'Fulfilled' }, { new: true });
+        return res.json({ ok: true, message: `✅ **${w.name}**'s waitlist entry marked Fulfilled.` });
+      }
+      case 'cancel_waitlist': {
+        const w = await Waitlist.findByIdAndUpdate(params.id, { status: 'Cancelled' }, { new: true });
+        return res.json({ ok: true, message: `🗑️ Waitlist entry for **${w.name}** cancelled.` });
+      }
+
       default:
         return res.json({ ok: false, message: `Unknown action: ${action}` });
     }
@@ -1599,10 +1718,21 @@ AVAILABLE ACTIONS:
 - delete_puppy: params: {id} — permanently delete a puppy
 - delete_inquiry: params: {id} — delete one inquiry
 - delete_all_inquiries: params: {} — clear all inquiries
-- mark_invoice_paid: params: {id} — mark invoice as paid
-- delete_invoice: params: {id} — delete an invoice
+- mark_invoice_paid: params: {id} — mark a puppy purchase invoice as paid
+- delete_invoice: params: {id} — delete a puppy purchase invoice
 - send_email_to_client: params: {subject, html} — send notification email
 - update_stats: params: {statYears, statPuppies, statHealth} — update homepage stats
+- create_faq: params: {question, answer, order} — add a new FAQ to the public FAQ page (order is optional, controls position)
+- update_faq: params: {id, question, answer} — edit an existing FAQ
+- delete_faq: params: {id} — remove a FAQ
+- approve_application: params: {id} — approve a puppy application
+- decline_application: params: {id} — decline a puppy application
+- delete_application: params: {id} — permanently delete an application
+- mark_waitlist_matched: params: {id} — mark a waitlist entry as Matched to a puppy
+- mark_waitlist_fulfilled: params: {id} — mark a waitlist entry as Fulfilled (puppy placed)
+- cancel_waitlist: params: {id} — cancel a waitlist entry
+
+NOTE ON DOCUMENTS: Invoices are for puppy purchases (created manually via the Invoices page with a signature). Waitlist deposits use a SEPARATE document called a Waitlist Deposit Receipt, created from the Waitlist page — you cannot generate either of these documents yourself, only manage their status once created.
 
 RULES:
 - Always use IDs from the live data — never guess an ID
