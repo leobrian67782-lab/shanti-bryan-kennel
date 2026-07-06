@@ -61,6 +61,56 @@ async function sendNotification(subject, html) {
   }
 }
 
+// Sends a warm, branded confirmation email to a client right after they submit
+// the contact form, letting them know their message was received.
+async function sendClientAutoReply(name, email, subject) {
+  if (!process.env.RESEND_API_KEY) {
+    console.log('[email] RESEND_API_KEY not set — auto-reply skipped');
+    return;
+  }
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: '"Shanti & Bryan Pinscher Kennel" <notifications@shantibryankennel.com>',
+        to: [email],
+        replyTo: NOTIFY_EMAIL,
+        subject: `We've received your message — Shanti & Bryan Pinscher Kennel`,
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;">
+            <div style="background:#7a1e1e;padding:26px 30px;border-radius:8px 8px 0 0;text-align:center;">
+              <h1 style="color:#fff;margin:0;font-size:19px;">Thank You for Reaching Out!</h1>
+              <p style="color:rgba(255,255,255,0.8);margin:6px 0 0;font-size:12px;">Shanti & Bryan Pinscher Kennel</p>
+            </div>
+            <div style="background:#fff;padding:26px 30px;border:1px solid #e6ddc8;">
+              <p style="color:#1e293b;font-size:14px;">Hi <strong>${name}</strong>,</p>
+              <p style="color:#4a5568;font-size:14px;line-height:1.6;">Thank you for contacting Shanti & Bryan Pinscher Kennel! We've received your message${subject ? ` about "<strong>${subject}</strong>"` : ''} and a member of our team will get back to you personally, usually within 24 hours.</p>
+              <div style="background:#f9f7f4;border:1px solid #ece5d8;border-radius:8px;padding:16px 18px;margin:18px 0;">
+                <p style="margin:0 0 8px;color:#7a1e1e;font-weight:700;font-size:13px;">While you wait, feel free to:</p>
+                <p style="margin:0 0 6px;font-size:13px;"><a href="https://shantibryankennel.com/puppies" style="color:#7a1e1e;text-decoration:none;">🐾 Browse our available puppies</a></p>
+                <p style="margin:0 0 6px;font-size:13px;"><a href="https://shantibryankennel.com/faq" style="color:#7a1e1e;text-decoration:none;">❓ Check our frequently asked questions</a></p>
+                <p style="margin:0;font-size:13px;"><a href="https://shantibryankennel.com/testimonials" style="color:#7a1e1e;text-decoration:none;">⭐ Read reviews from happy families</a></p>
+              </div>
+              <p style="color:#4a5568;font-size:13px;">If your inquiry is urgent, you can reply directly to this email.</p>
+              <p style="color:#4a5568;font-size:14px;margin-top:20px;">With love,<br><strong>Shanti & Bryan Pinscher Kennel</strong></p>
+            </div>
+            <div style="background:#f0ece3;padding:12px 30px;text-align:center;border-radius:0 0 8px 8px;">
+              <p style="margin:0;color:#9ca3af;font-size:10px;">shantibryankennel.com | info@shantibryankennel.com</p>
+            </div>
+          </div>`
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || JSON.stringify(data));
+    console.log('[email] Auto-reply sent to', email, '— id:', data.id);
+  } catch (err) {
+    console.error('[email] Auto-reply FAILED —', err.message);
+  }
+}
 
 // Logs the real error for debugging, but never exposes raw error details
 // (stack traces, database messages, etc.) to whoever is looking at the page.
@@ -426,6 +476,9 @@ app.post('/contact', async (req, res) => {
         <p style="margin-top:20px;"><a href="https://shantibryankennel.com/admin/inquiries" style="background:#7a1e1e;color:#fff;padding:10px 20px;text-decoration:none;border-radius:6px;">View in Admin</a></p>
       </div>`
     );
+
+    // Send an automatic confirmation reply to the client
+    sendClientAutoReply(name, email, subject);
 
     res.render('contact', { message: 'Thank you! Your message has been received. We\'ll get back to you soon.', success: true });
   } catch (err) {
