@@ -7,6 +7,7 @@ const settingsSchema = new mongoose.Schema({
   statPuppies: { type: Number, default: 479 },
   statHealth: { type: Number, default: 95 },
   adminPasswordHash: { type: String, default: '' },
+  aiInstructions: { type: String, default: '' },
   updatedAt: { type: Date, default: Date.now }
 });
 
