@@ -1365,7 +1365,7 @@ app.post('/api/admin-vision', requireLogin, async (req, res) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
       body: JSON.stringify({
-        model: 'meta-llama/llama-4-maverick-17b-128e-instruct',
+        model: 'qwen/qwen3.6-27b',
         messages: [{ role: 'user', content }],
         max_tokens: 1000,
         temperature: 0.5
