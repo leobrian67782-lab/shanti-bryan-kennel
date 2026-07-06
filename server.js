@@ -8,6 +8,7 @@ const multer = require('multer');
 const https = require('https');
 const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 const bcrypt = require('bcryptjs');
 const { v2: cloudinary } = require('cloudinary');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
@@ -25,6 +26,62 @@ const Certificate = require('./models/Certificate');
 const PDFDocument = require('pdfkit');
 
 const app = express();
+
+// Safety net: without this, ANY unexpected error anywhere in the app (a brief
+// MongoDB hiccup, a bad third-party API response, etc.) can crash the entire
+// server and take the whole site down. These log the problem instead of
+// crashing, so one bad request can't bring down every visitor's connection.
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection] Prevented a crash:', reason?.message || reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException] Prevented a crash:', err.message);
+});
+
+// Security headers — protects against clickjacking, MIME-sniffing, and other
+// common attacks. CSP is disabled because the site relies on inline scripts
+// and styles throughout (chat widgets, admin dashboard); a strict CSP would
+// break those without a larger rewrite. Every other protection stays active.
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false
+}));
+
+// Rate limiters for public-facing forms — defined here, early, so they're
+// available to every route below regardless of where each route is declared.
+
+// Prevents spam/abuse on the contact form — 5 submissions per 15 min per IP
+const contactLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).render('contact', { message: 'Too many messages sent. Please wait a few minutes and try again.', success: false });
+  }
+});
+
+// Prevents spam/fake review submissions — 5 per 15 min per IP
+const reviewLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).render('submit-review', { sent: false, error: 'Too many submissions. Please wait a few minutes and try again.' });
+  }
+});
+
+// Prevents abuse of the AI chat, which costs API credits per message — 20 per 5 min per IP
+const chatLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({ reply: "You've sent a lot of messages! Please wait a few minutes before trying again." });
+  }
+});
 
 // ===== EMAIL NOTIFICATIONS via Resend =====
 // Free tier: 100 emails/day, no SMTP (works on Render free plan).
@@ -315,7 +372,7 @@ app.get('/submit-review', (req, res) => {
   res.render('submit-review', { sent: false, error: '' });
 });
 
-app.post('/submit-review', upload.single('photo'), async (req, res) => {
+app.post('/submit-review', reviewLimiter, upload.single('photo'), async (req, res) => {
   try {
     const { customerName, location, tag, rating, message } = req.body;
     if (!customerName || !message) {
@@ -446,7 +503,7 @@ app.get('/contact', (req, res) => {
   res.render('contact', { message: '', success: false });
 });
 
-app.post('/contact', async (req, res) => {
+app.post('/contact', contactLimiter, async (req, res) => {
   try {
     const { name, email, phone, location, subject, message } = req.body;
     if (!name || !email || !subject || !message) {
@@ -1127,7 +1184,7 @@ async function buildSiteContext(isAdmin = false) {
   return sections.join('');
 }
 
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', chatLimiter, async (req, res) => {
   try {
     const { message, history } = req.body;
     if (!message) return res.json({ reply: 'No message received.' });
