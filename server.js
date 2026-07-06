@@ -370,6 +370,25 @@ const litterUpload = upload.fields([
 // Turns a title into a URL-friendly slug
 // Removes <think>...</think> reasoning blocks that thinking-mode models
 // sometimes include in their output — visitors should only see the final answer.
+// Auto-detects a visitor's approximate location from their IP address.
+// Best-effort — never throws, just returns '' on any failure.
+async function detectLocation(req) {
+  try {
+    let ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || '';
+    ip = ip.replace('::ffff:', '');
+    if (ip && ip !== '127.0.0.1' && ip !== '::1' && !ip.startsWith('192.168.') && !ip.startsWith('10.')) {
+      const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,regionName,city`);
+      const geo = await geoRes.json();
+      if (geo && geo.status === 'success') {
+        return [geo.city, geo.regionName, geo.country].filter(Boolean).join(', ');
+      }
+    }
+  } catch (geoErr) {
+    console.log('Geo lookup skipped:', geoErr.message);
+  }
+  return '';
+}
+
 function stripThinking(text) {
   if (!text) return text;
   return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
@@ -540,11 +559,14 @@ app.post('/apply', applicationLimiter, async (req, res) => {
       return res.render('apply', { sent: false, error: 'Please fill in all required fields.', puppies });
     }
 
+    const detectedLocation = await detectLocation(req);
+
     const application = await Application.create({
       applicantName: data.applicantName,
       email: data.email,
       phone: data.phone || '',
       location: data.location || '',
+      detectedLocation,
       interestedIn: data.interestedIn || 'General / Future Litter',
       homeOwnership: data.homeOwnership,
       landlordApproval: data.landlordApproval || 'N/A',
@@ -596,11 +618,14 @@ app.post('/waitlist', waitlistLimiter, async (req, res) => {
       return res.render('waitlist', { sent: false, error: 'Please fill in your name and email.' });
     }
 
+    const detectedLocation = await detectLocation(req);
+
     const entry = await Waitlist.create({
       name: data.name,
       email: data.email,
       phone: data.phone || '',
       location: data.location || '',
+      detectedLocation,
       preferredGender: data.preferredGender || 'No preference',
       preferredColor: data.preferredColor || 'No preference',
       notes: data.notes || '',
@@ -725,21 +750,8 @@ app.post('/contact', contactLimiter, async (req, res) => {
       return res.render('contact', { message: 'All fields are required.', success: false });
     }
 
-    // Try to auto-detect location from the visitor's IP (best-effort, never blocks the message)
-    let detectedLocation = '';
-    try {
-      let ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || '';
-      ip = ip.replace('::ffff:', '');
-      if (ip && ip !== '127.0.0.1' && ip !== '::1' && !ip.startsWith('192.168.') && !ip.startsWith('10.')) {
-        const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,regionName,city`);
-        const geo = await geoRes.json();
-        if (geo && geo.status === 'success') {
-          detectedLocation = [geo.city, geo.regionName, geo.country].filter(Boolean).join(', ');
-        }
-      }
-    } catch (geoErr) {
-      console.log('Geo lookup skipped:', geoErr.message);
-    }
+    // Auto-detect location from the visitor's IP (best-effort, never blocks the message)
+    const detectedLocation = await detectLocation(req);
 
     await new Contact({ name, email, phone, location, detectedLocation, subject, message }).save();
 
@@ -1807,9 +1819,8 @@ async function generateWaitlistInvoicePDF(wInv) {
     doc.font('Helvetica').fontSize(8).fillColor('rgba(255,255,255,0.75)')
        .text('info@shantibryankennel.com  |  shantibryankennel.com', 118, 42)
        .text('Nationwide Delivery  |  1-Year Health Guarantee', 118, 54);
-    doc.fillColor(gold).font('Helvetica-Bold').fontSize(19).text('WAITLIST', 430, 18);
-    doc.fillColor(gold).font('Helvetica-Bold').fontSize(19).text('DEPOSIT RECEIPT', 400, 38, { width: 145, align: 'right' });
-    doc.fillColor('rgba(255,255,255,0.85)').font('Helvetica').fontSize(9).text(wInv.receiptNumber, 430, 60, { width: 115, align: 'right' });
+    doc.fillColor(gold).font('Helvetica-Bold').fontSize(16).text('WAITLIST RECEIPT', 350, 30, { width: 195, align: 'right' });
+    doc.fillColor('rgba(255,255,255,0.85)').font('Helvetica').fontSize(9).text(wInv.receiptNumber, 350, 52, { width: 195, align: 'right' });
 
     // Meta strip
     doc.rect(0, 90, 595, 34).fill('#f0ece3');
