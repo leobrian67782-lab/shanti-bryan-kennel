@@ -2077,6 +2077,88 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
+// ===== SITEMAP — auto-updates as puppies/litters/posts are added or removed =====
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const baseUrl = 'https://shantibryankennel.com';
+    const today = new Date().toISOString().split('T')[0];
+
+    // Static pages that always exist
+    const staticPages = [
+      { url: '/',              priority: '1.0', changefreq: 'weekly'  },
+      { url: '/puppies',       priority: '0.9', changefreq: 'daily'   },
+      { url: '/litters',       priority: '0.8', changefreq: 'weekly'  },
+      { url: '/our-dogs',      priority: '0.7', changefreq: 'monthly' },
+      { url: '/about',         priority: '0.6', changefreq: 'monthly' },
+      { url: '/process',       priority: '0.6', changefreq: 'monthly' },
+      { url: '/deposit',       priority: '0.5', changefreq: 'monthly' },
+      { url: '/faq',           priority: '0.6', changefreq: 'monthly' },
+      { url: '/testimonials',  priority: '0.7', changefreq: 'weekly'  },
+      { url: '/submit-review', priority: '0.4', changefreq: 'monthly' },
+      { url: '/blog',          priority: '0.6', changefreq: 'weekly'  },
+      { url: '/contact',       priority: '0.7', changefreq: 'monthly' },
+    ];
+
+    // Dynamic pages pulled live from the database
+    const [puppies, litters, posts] = await Promise.all([
+      Puppy.find().select('_id createdAt').lean(),
+      Litter.find().select('_id createdAt').lean(),
+      Post.find({ published: true }).select('slug createdAt').lean()
+    ]);
+
+    let urls = staticPages.map(p => `
+  <url>
+    <loc>${baseUrl}${p.url}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${p.changefreq}</changefreq>
+    <priority>${p.priority}</priority>
+  </url>`).join('');
+
+    puppies.forEach(p => {
+      const lastmod = (p.createdAt || new Date()).toISOString().split('T')[0];
+      urls += `
+  <url>
+    <loc>${baseUrl}/puppies/${p._id}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>`;
+    });
+
+    litters.forEach(l => {
+      const lastmod = (l.createdAt || new Date()).toISOString().split('T')[0];
+      urls += `
+  <url>
+    <loc>${baseUrl}/litters/${l._id}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>`;
+    });
+
+    posts.forEach(post => {
+      const lastmod = (post.createdAt || new Date()).toISOString().split('T')[0];
+      urls += `
+  <url>
+    <loc>${baseUrl}/blog/${post.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>`;
+    });
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}
+</urlset>`;
+
+    res.set('Content-Type', 'application/xml');
+    res.send(xml);
+  } catch (err) {
+    console.error('Sitemap error:', err.message);
+    res.status(500).send('Error generating sitemap');
+  }
+});
+
 // ===== 404 — must be the last route, catches anything not matched above =====
 app.use((req, res) => {
   res.status(404).render('404');
