@@ -25,5 +25,10 @@
     "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^9.0.1",
     "pdfkit": "^0.19.1"
+  },
+  "overrides": {
+    "multer-storage-cloudinary": {
+      "cloudinary": "$cloudinary"
+    }
   }
 }
