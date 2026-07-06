@@ -1588,7 +1588,7 @@ BEHAVIOR RULES:
     ];
 
     const { res: groqRes, data } = await callGroqWithRetry(apiKey, {
-      model: 'qwen/qwen3.6-27b', messages, max_tokens: 600, temperature: 0.5, reasoning_effort: 'none'
+      model: 'openai/gpt-oss-120b', messages, max_tokens: 600, temperature: 0.5, reasoning_effort: 'low'
     });
 
     if (!groqRes.ok || !data.choices) {
@@ -1783,7 +1783,7 @@ RULES:
     ];
 
     const { res: groqRes, data } = await callGroqWithRetry(apiKey, {
-      model: 'qwen/qwen3.6-27b', messages, max_tokens: 900, temperature: 0.3, reasoning_effort: 'none'
+      model: 'openai/gpt-oss-120b', messages, max_tokens: 900, temperature: 0.3, reasoning_effort: 'low'
     });
 
     if (!groqRes.ok || !data.choices) {
