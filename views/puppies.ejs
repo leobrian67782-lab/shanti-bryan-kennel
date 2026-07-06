@@ -6,8 +6,13 @@
   <div class="section-underline"></div>
   <p style="margin-top:20px;">Meet our adorable Miniature Pinscher puppies looking for their forever homes. Each one comes with full vet records, vaccinations, and our written 1-year health guarantee.</p>
 
+  <div style="background:#faf7f0;border:1px solid #ece5d8;border-radius:10px;padding:14px 20px;margin-top:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+    <span style="color:var(--text-light);font-size:0.9rem;"><i class="fa-solid fa-heart" style="color:var(--gold);"></i> Don't see the perfect match? Join our waitlist for the next litter.</span>
+    <a href="/waitlist" class="btn btn-gold" style="padding:8px 20px;font-size:0.85rem;">Join Waitlist</a>
+  </div>
+
   <% if (puppies.length === 0) { %>
-    <p style="margin-top:40px;">No puppies listed right now. Check back soon!</p>
+    <p style="margin-top:40px;">No puppies listed right now. Check back soon, or <a href="/waitlist" style="color:var(--maroon);font-weight:600;">join our waitlist</a> to be notified about our next litter.</p>
   <% } else { %>
     <div class="puppy-filter-panel">
       <div class="puppy-filter-header">
@@ -35,7 +40,7 @@
       </div>
     </div>
 
-    <p id="filterEmptyMsg" style="display:none;margin-top:40px;color:var(--text-light);">No puppies match these filters right now. Try adjusting your selection above.</p>
+    <p id="filterEmptyMsg" style="display:none;margin-top:40px;color:var(--text-light);">No puppies match these filters right now. Try adjusting your selection above, or <a href="/waitlist" style="color:var(--maroon);font-weight:600;">join our waitlist</a>.</p>
 
     <div class="card-grid" id="puppyGrid">
       <% puppies.forEach(function(puppy) { %>

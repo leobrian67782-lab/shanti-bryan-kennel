@@ -1,0 +1,71 @@
+<%- include('partials/header', {title: 'Puppy Waitlist | Shanti & Bryan Pinscher Kennel', description: 'Join our waitlist for an upcoming Miniature Pinscher litter.'}) %>
+
+<section class="page-section">
+  <div class="container" style="max-width:640px;">
+
+    <div style="text-align:center;margin-bottom:36px;">
+      <p class="section-label">Future Litters</p>
+      <h1 class="section-title">Join Our Waitlist</h1>
+      <div class="section-divider"></div>
+      <p style="color:var(--text-light);margin-top:16px;">Don't see the puppy you're looking for right now? Join our waitlist to be matched with our next available litter.</p>
+    </div>
+
+    <div style="background:#fff8f0;border:1px solid #e6ddc8;border-radius:10px;padding:18px 22px;margin-bottom:28px;">
+      <p style="margin:0 0 8px;color:var(--maroon);font-weight:700;font-size:0.9rem;"><i class="fa-solid fa-circle-info"></i> How Our Waitlist Works</p>
+      <p style="margin:0;color:var(--text-light);font-size:0.88rem;line-height:1.6;">Submitting this form reserves your interest, but a <strong>deposit is required to secure your place</strong> on the active waitlist. After you submit, we'll personally reach out to arrange your deposit. Once received, your spot is confirmed and the deposit is applied toward your future puppy.</p>
+    </div>
+
+    <% if (sent) { %>
+      <div class="form-success" style="text-align:center;padding:32px;font-size:1.05rem;">
+        <i class="fa-solid fa-circle-check" style="font-size:2rem;display:block;margin-bottom:12px;"></i>
+        <strong>Request received!</strong><br>
+        <span style="font-size:0.95rem;color:#155724;">We'll reach out personally within 2-3 days to arrange your deposit and confirm your place on the waitlist.</span>
+      </div>
+    <% } else { %>
+
+      <% if (error) { %>
+        <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> <%= error %></div>
+      <% } %>
+
+      <form method="POST" action="/waitlist" class="contact-form">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" name="name" required>
+        </div>
+        <div class="form-group">
+          <label>Email *</label>
+          <input type="email" name="email" required>
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="text" name="phone">
+        </div>
+        <div class="form-group">
+          <label>Location</label>
+          <input type="text" name="location" placeholder="e.g. Texas, USA">
+        </div>
+        <div class="form-group">
+          <label>Preferred Gender</label>
+          <select name="preferredGender">
+            <option value="No preference">No preference</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Preferred Color</label>
+          <input type="text" name="preferredColor" placeholder="e.g. Black and Tan, Red, No preference">
+        </div>
+        <div class="form-group">
+          <label>Anything else we should know?</label>
+          <textarea name="notes" rows="3" placeholder="Timeline you're hoping for, questions, etc."></textarea>
+        </div>
+
+        <button type="submit" class="form-submit"><i class="fa-solid fa-paper-plane"></i> Request to Join Waitlist</button>
+      </form>
+
+    <% } %>
+  </div>
+</section>
+
+<%- include('partials/footer') %>
