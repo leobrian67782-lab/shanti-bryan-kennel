@@ -1,15 +1,7 @@
 <%- include('partials/admin-header', {title: 'Create Invoice | Admin', active: 'invoice', heading: 'Create Invoice'}) %>
 
 <div class="admin-section" style="max-width:700px;">
-  <% if (typeof prefill !== 'undefined' && prefill) { %>
-    <div style="background:#1a2433;border:1px solid #c9a22740;border-radius:8px;padding:12px 16px;margin-bottom:20px;color:#c9a227;font-size:0.85rem;">
-      <i class="fa-solid fa-list-check"></i> Recording a <strong>waitlist deposit</strong> for <%= prefill.clientName %>. Once you submit, they'll move to the Active waitlist.
-    </div>
-  <% } %>
   <form method="POST" action="/admin/invoices/new" id="invoiceForm">
-    <% if (typeof prefill !== 'undefined' && prefill && prefill.waitlistId) { %>
-      <input type="hidden" name="waitlistId" value="<%= prefill.waitlistId %>">
-    <% } %>
 
     <!-- Puppy Selection -->
     <h3 style="color:#c5cdd8;margin-bottom:16px;font-size:1rem;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #1f2733;padding-bottom:10px;">Puppy Details</h3>
@@ -29,11 +21,11 @@
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
       <div class="form-group">
         <label>Puppy Name *</label>
-        <input type="text" name="puppyName" id="puppyName" value="<%= (typeof prefill !== 'undefined' && prefill) ? prefill.puppyName : '' %>" required>
+        <input type="text" name="puppyName" id="puppyName" required>
       </div>
       <div class="form-group">
         <label>Price ($) *</label>
-        <input type="number" name="puppyPrice" id="puppyPrice" value="<%= (typeof prefill !== 'undefined' && prefill) ? prefill.puppyPrice : '' %>" required onchange="calcBalance()">
+        <input type="number" name="puppyPrice" id="puppyPrice" required onchange="calcBalance()">
       </div>
       <div class="form-group">
         <label>Gender</label>
@@ -55,19 +47,19 @@
 
     <div class="form-group">
       <label>Client Full Name *</label>
-      <input type="text" name="clientName" value="<%= (typeof prefill !== 'undefined' && prefill) ? prefill.clientName : '' %>" required>
+      <input type="text" name="clientName" required>
     </div>
     <div class="form-group">
       <label>Client Email *</label>
-      <input type="email" name="clientEmail" value="<%= (typeof prefill !== 'undefined' && prefill) ? prefill.clientEmail : '' %>" required>
+      <input type="email" name="clientEmail" required>
     </div>
     <div class="form-group">
       <label>Client Phone</label>
-      <input type="text" name="clientPhone" value="<%= (typeof prefill !== 'undefined' && prefill) ? prefill.clientPhone : '' %>">
+      <input type="text" name="clientPhone">
     </div>
     <div class="form-group">
       <label>Client Address / Location</label>
-      <input type="text" name="clientAddress" placeholder="e.g. Texas, USA" value="<%= (typeof prefill !== 'undefined' && prefill) ? prefill.clientAddress : '' %>">
+      <input type="text" name="clientAddress" placeholder="e.g. Texas, USA">
     </div>
 
     <!-- Payment -->
@@ -76,7 +68,7 @@
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;">
       <div class="form-group">
         <label>Deposit Paid ($)</label>
-        <input type="number" name="depositPaid" id="depositPaid" value="<%= (typeof prefill !== 'undefined' && prefill) ? prefill.depositPaid : 0 %>" onchange="calcBalance()">
+        <input type="number" name="depositPaid" id="depositPaid" value="0" onchange="calcBalance()">
       </div>
       <div class="form-group">
         <label>Balance Due ($)</label>
@@ -94,7 +86,7 @@
     <!-- Notes -->
     <div class="form-group">
       <label>Additional Notes</label>
-      <textarea name="notes" placeholder="Any special notes for this invoice…"><%= (typeof prefill !== 'undefined' && prefill) ? prefill.notes : '' %></textarea>
+      <textarea name="notes" placeholder="Any special notes for this invoice…"></textarea>
     </div>
 
     <!-- Signature -->

@@ -25,27 +25,27 @@
 
     <h4 style="color:var(--gold);font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;">Contact Info</h4>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;font-size:0.9rem;">
-      <div><span style="color:#6b7585;">Email:</span> <%= app.email %></div>
-      <div><span style="color:#6b7585;">Phone:</span> <%= app.phone || '—' %></div>
-      <div><span style="color:#6b7585;">Location:</span> <%= app.location || '—' %></div>
-      <div><span style="color:#6b7585;">Interested in:</span> <%= app.interestedIn %></div>
+      <div><span style="color:#6b7585;">Email:</span> <span style="color:#fff;"><%= app.email %></span></div>
+      <div><span style="color:#6b7585;">Phone:</span> <span style="color:#fff;"><%= app.phone || '—' %></span></div>
+      <div><span style="color:#6b7585;">Location:</span> <span style="color:#fff;"><%= app.location || '—' %></span></div>
+      <div><span style="color:#6b7585;">Interested in:</span> <span style="color:#fff;"><%= app.interestedIn %></span></div>
     </div>
 
     <h4 style="color:var(--gold);font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;">Home Situation</h4>
     <div style="font-size:0.9rem;line-height:1.9;margin-bottom:24px;">
-      <p><span style="color:#6b7585;">Home ownership:</span> <%= app.homeOwnership || '—' %></p>
-      <p><span style="color:#6b7585;">Landlord approval:</span> <%= app.landlordApproval || '—' %></p>
-      <p><span style="color:#6b7585;">Yard / exercise plan:</span> <%= app.yardOrExercise || '—' %></p>
-      <p><span style="color:#6b7585;">Other pets:</span> <%= app.otherPets || '—' %></p>
-      <p><span style="color:#6b7585;">Children in home:</span> <%= app.childrenInHome || '—' %></p>
+      <p><span style="color:#6b7585;">Home ownership:</span> <span style="color:#fff;"><%= app.homeOwnership || '—' %></span></p>
+      <p><span style="color:#6b7585;">Landlord approval:</span> <span style="color:#fff;"><%= app.landlordApproval || '—' %></span></p>
+      <p><span style="color:#6b7585;">Yard / exercise plan:</span> <span style="color:#fff;"><%= app.yardOrExercise || '—' %></span></p>
+      <p><span style="color:#6b7585;">Other pets:</span> <span style="color:#fff;"><%= app.otherPets || '—' %></span></p>
+      <p><span style="color:#6b7585;">Children in home:</span> <span style="color:#fff;"><%= app.childrenInHome || '—' %></span></p>
     </div>
 
     <h4 style="color:var(--gold);font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;">Experience & Motivation</h4>
     <div style="font-size:0.9rem;line-height:1.9;margin-bottom:24px;">
-      <p><span style="color:#6b7585;">Previous experience:</span> <%= app.previousExperience || '—' %></p>
-      <p><span style="color:#6b7585;">Primary caretaker:</span> <%= app.primaryCaretaker || '—' %></p>
-      <p><span style="color:#6b7585;">Why a Min Pin:</span> <%= app.whyMinPin || '—' %></p>
-      <p><span style="color:#6b7585;">Ready for responsibility:</span> <%= app.readyForResponsibility ? '✅ Yes, confirmed' : '❌ Not confirmed' %></p>
+      <p><span style="color:#6b7585;">Previous experience:</span> <span style="color:#fff;"><%= app.previousExperience || '—' %></span></p>
+      <p><span style="color:#6b7585;">Primary caretaker:</span> <span style="color:#fff;"><%= app.primaryCaretaker || '—' %></span></p>
+      <p><span style="color:#6b7585;">Why a Min Pin:</span> <span style="color:#fff;"><%= app.whyMinPin || '—' %></span></p>
+      <p><span style="color:#6b7585;">Ready for responsibility:</span> <span style="color:#fff;"><%= app.readyForResponsibility ? '✅ Yes, confirmed' : '❌ Not confirmed' %></span></p>
     </div>
 
   </div>

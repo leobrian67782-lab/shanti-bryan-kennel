@@ -17,7 +17,7 @@
           <small style="color:#6b7585;">Requested <%= w.createdAt.toLocaleDateString() %></small>
         </div>
         <div style="display:flex;gap:8px;flex-shrink:0;">
-          <a href="/admin/invoices/new?waitlistId=<%= w._id %>" class="admin-btn" style="background:var(--gold);color:#0d1117;"><i class="fa-solid fa-file-invoice-dollar"></i> Record Deposit</a>
+          <a href="/admin/waitlist/<%= w._id %>/deposit-invoice/new" class="admin-btn" style="background:var(--gold);color:#0d1117;"><i class="fa-solid fa-receipt"></i> Record Deposit</a>
           <a href="/admin/waitlist/<%= w._id %>/cancel" class="admin-btn-sm admin-btn-danger" onclick="return confirm('Remove this waitlist request?')"><i class="fa-solid fa-trash"></i></a>
         </div>
       </div>
