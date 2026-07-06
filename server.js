@@ -1204,6 +1204,51 @@ app.post('/api/admin-action', requireLogin, async (req, res) => {
         await settings.save();
         return res.json({ ok: true, message: '✅ Homepage stats updated.' });
       }
+
+      case 'create_puppy': {
+        const p = await Puppy.create({
+          name: params.name, gender: params.gender, color: params.color,
+          price: params.price || 0, status: params.status || 'Available',
+          description: params.description || '',
+          dateOfBirth: params.dateOfBirth || null,
+          sireName: params.sireName || '', damName: params.damName || '',
+          vaccinated: params.vaccinated || false, dewormed: params.dewormed || false,
+          microchipped: params.microchipped || false,
+          photos: params.photos || []
+        });
+        return res.json({ ok: true, message: `✅ New puppy **${p.name}** created and listed as ${p.status}.${params.photos?.length ? ` ${params.photos.length} photo(s) uploaded.` : ''}` });
+      }
+
+      case 'create_litter': {
+        const l = await Litter.create({
+          litterName: params.litterName, birthDate: params.birthDate || new Date(),
+          numberOfPuppies: params.numberOfPuppies || 0,
+          description: params.description || '',
+          sireName: params.sireName || 'Unknown', damName: params.damName || 'Unknown',
+          sireWeight: params.sireWeight || '', damWeight: params.damWeight || '',
+          photos: params.photos || []
+        });
+        return res.json({ ok: true, message: `✅ New litter **${l.litterName}** created.${params.photos?.length ? ` ${params.photos.length} photo(s) uploaded.` : ''}` });
+      }
+
+      case 'create_post': {
+        const slug = params.title ? params.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : 'post-' + Date.now();
+        const post = await Post.create({
+          title: params.title, slug, content: params.content || '',
+          excerpt: params.excerpt || params.content?.substring(0, 150) || '',
+          category: params.category || 'General'
+        });
+        return res.json({ ok: true, message: `✅ Blog post **"${post.title}"** created. Visit /blog to see it.` });
+      }
+
+      case 'create_review': {
+        const t = await Testimonial.create({
+          customerName: params.customerName, location: params.location || '',
+          tag: params.tag || '', rating: params.rating || 5,
+          message: params.message, approved: params.approved || false
+        });
+        return res.json({ ok: true, message: `✅ Review from **${t.customerName}** created.${t.approved ? ' It is now live.' : ' It is pending approval.'}` });
+      }
       default:
         return res.json({ ok: false, message: `Unknown action: ${action}` });
     }
@@ -1240,8 +1285,10 @@ AVAILABLE ACTIONS:
 - delete_all_inquiries: params: {} — clear all inquiries
 - mark_invoice_paid: params: {id} — mark invoice as paid
 - delete_invoice: params: {id} — delete an invoice
-- send_email_to_client: params: {subject, html} — send notification email
-- update_stats: params: {statYears, statPuppies, statHealth} — update homepage stats
+- create_puppy: params: {name, gender, color, price, status, description, dateOfBirth, sireName, damName, vaccinated, dewormed, microchipped, photos:[urls]} — create a new puppy listing (photos must be Cloudinary URLs from uploaded images)
+- create_litter: params: {litterName, birthDate, numberOfPuppies, description, sireName, damName, photos:[urls]} — create a new litter
+- create_post: params: {title, content, excerpt, category} — create a new blog post
+- create_review: params: {customerName, location, tag, rating, message, approved} — create a review (approved:true to make it live immediately)
 
 RULES:
 - Always use IDs from the live data — never guess an ID
@@ -1276,49 +1323,65 @@ RULES:
   }
 });
 
-// ===== ADMIN VISION — Image analysis for puppy photos =====
+// ===== CLOUDINARY UPLOAD from admin AI =====
+app.post('/api/admin-upload-images', requireLogin, async (req, res) => {
+  try {
+    const { images } = req.body; // [{data, mimeType}]
+    if (!images || !images.length) return res.json({ ok: false, urls: [] });
+    const urls = [];
+    for (const img of images.slice(0, 10)) {
+      const dataUri = `data:${img.mimeType || 'image/jpeg'};base64,${img.data}`;
+      const result = await cloudinary.uploader.upload(dataUri, { folder: 'shanti-bryan-kennel' });
+      urls.push(result.secure_url);
+    }
+    res.json({ ok: true, urls });
+  } catch(err) {
+    console.error('AI upload error:', err.message);
+    res.json({ ok: false, message: err.message, urls: [] });
+  }
+});
+
+// ===== ADMIN VISION — Image analysis (up to 5 images) =====
 app.post('/api/admin-vision', requireLogin, async (req, res) => {
   try {
-    const { imageData, mimeType, prompt } = req.body;
-    if (!imageData) return res.json({ reply: 'No image received.' });
+    const { images, prompt } = req.body; // images = array of {data, mimeType}
+    if (!images || !images.length) return res.json({ reply: 'No images received.' });
 
     const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) return res.json({ reply: 'GROQ_API_KEY not set.' });
 
-    const userPrompt = prompt || 'You are an expert Min Pin breeder assistant. Please analyze this puppy photo and provide: 1) A professional puppy description for a kennel website listing (3-4 sentences), 2) Three social media caption ideas, 3) Any notable physical traits you can see (color, markings, build). Be warm, professional, and enthusiastic about the puppy.';
+    const userPrompt = prompt || 'You are an expert Min Pin breeder assistant. Please analyze this puppy photo and provide:\n1) A professional listing description (3-4 sentences)\n2) Three social media caption ideas\n3) Notable physical traits (color, markings, build)';
+
+    // Build content array — text first, then up to 5 images
+    const content = [{ type: 'text', text: userPrompt }];
+    images.slice(0, 5).forEach(img => {
+      content.push({
+        type: 'image_url',
+        image_url: { url: `data:${img.mimeType || 'image/jpeg'};base64,${img.data}` }
+      });
+    });
 
     const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
       body: JSON.stringify({
-        model: 'llama-3.2-11b-vision-preview',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'image_url',
-                image_url: { url: `data:${mimeType || 'image/jpeg'};base64,${imageData}` }
-              },
-              { type: 'text', text: userPrompt }
-            ]
-          }
-        ],
-        max_tokens: 800,
+        model: 'meta-llama/llama-4-maverick-17b-128e-instruct',
+        messages: [{ role: 'user', content }],
+        max_tokens: 1000,
         temperature: 0.5
       })
     });
 
     const data = await groqRes.json();
     if (!groqRes.ok || !data.choices) {
-      console.error('Vision error:', JSON.stringify(data).slice(0, 300));
-      return res.json({ reply: 'Vision AI error — the image may be too large or in an unsupported format. Try a smaller JPEG.' });
+      console.error('Vision error:', JSON.stringify(data).slice(0, 400));
+      return res.json({ reply: `Vision AI error: ${data.error?.message || 'Unknown error'}. Try a smaller JPEG image.` });
     }
 
     res.json({ reply: data.choices[0]?.message?.content || 'No response.' });
   } catch (err) {
     console.error('Vision error:', err.message);
-    res.json({ reply: 'Something went wrong with image analysis.' });
+    res.json({ reply: `Something went wrong: ${err.message}` });
   }
 });
 
