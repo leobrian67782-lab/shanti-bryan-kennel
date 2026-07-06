@@ -862,7 +862,23 @@ app.get('/admin/dashboard', requireLogin, async (req, res) => {
   const posts = await Post.find().sort({ createdAt: -1 });
   const inquiries = await Contact.find().sort({ createdAt: -1 });
   const dogs = await Dog.find().sort({ order: 1 });
-  res.render('admin-dashboard', { puppies, litters, testimonials, pendingReviews, faqs, posts, inquiries, dogs });
+
+  // Extra pipeline data so the dashboard can surface what actually needs attention
+  const pendingApplications = await Application.countDocuments({ status: 'Pending' });
+  const totalApplications   = await Application.countDocuments();
+  const waitlistPendingDeposit = await Waitlist.countDocuments({ status: 'Pending Deposit' });
+  const waitlistActive = await Waitlist.countDocuments({ status: 'Active' });
+  const totalWaitlist = await Waitlist.countDocuments();
+  const totalInvoices = await Invoice.countDocuments();
+  const unpaidInvoices = await Invoice.countDocuments({ status: { $ne: 'Paid' } });
+  const totalCertificates = await Certificate.countDocuments();
+
+  res.render('admin-dashboard', {
+    puppies, litters, testimonials, pendingReviews, faqs, posts, inquiries, dogs,
+    pendingApplications, totalApplications,
+    waitlistPendingDeposit, waitlistActive, totalWaitlist,
+    totalInvoices, unpaidInvoices, totalCertificates
+  });
 });
 
 // ===== ADMIN INQUIRIES =====
