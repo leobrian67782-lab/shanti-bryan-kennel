@@ -2077,6 +2077,11 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
+// ===== 404 — must be the last route, catches anything not matched above =====
+app.use((req, res) => {
+  res.status(404).render('404');
+});
+
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
