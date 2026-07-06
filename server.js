@@ -3,6 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
 const session = require('express-session');
+const { MongoStore } = require('connect-mongo');
 const multer = require('multer');
 const https = require('https');
 const crypto = require('crypto');
@@ -162,15 +163,24 @@ app.get('/healthz', (req, res) => {
   res.status(200).send('ok');
 });
 
-// Sessions
+// Sessions — stored in MongoDB instead of server memory, so logins survive
+// server restarts and redeploys (previously everyone was logged out on every deploy).
 if (!process.env.SESSION_SECRET) {
-  console.warn('[security] SESSION_SECRET is not set in your environment variables. Using a random secret generated for this run instead — this means everyone will be logged out every time the server restarts or redeploys. Set SESSION_SECRET in Render for persistent, secure sessions.');
+  console.warn('[security] SESSION_SECRET is not set in your environment variables. Using a random secret generated for this run instead. Set SESSION_SECRET in Render for consistent session encryption across restarts.');
 }
 const sessionSecret = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 app.use(session({
   secret: sessionSecret,
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI,
+    collectionName: 'sessions',
+    ttl: 14 * 24 * 60 * 60 // sessions expire after 14 days of inactivity
+  }),
+  cookie: {
+    maxAge: 14 * 24 * 60 * 60 * 1000 // 14 days
+  }
 }));
 
 // Connect to MongoDB
