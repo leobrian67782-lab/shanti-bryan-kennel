@@ -173,7 +173,10 @@
 <div class="admin-section" style="margin-top:24px;">
   <div class="admin-section-head">
     <h3><i class="fa-solid fa-robot" style="color:var(--gold);"></i> AI Assistant</h3>
-    <span style="color:#6b7585;font-size:0.8rem;">Knows everything about your site in real time</span>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span style="color:#6b7585;font-size:0.8rem;">Knows everything about your site in real time</span>
+      <button id="adminChatClear" title="Clear conversation" style="background:none;border:1px solid #2a3441;color:#6b7585;padding:4px 10px;border-radius:6px;font-size:0.72rem;cursor:pointer;"><i class="fa-solid fa-trash"></i> Clear</button>
+    </div>
   </div>
   <div id="adminChatMsgs" style="min-height:120px;max-height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 0 12px;"></div>
   <div style="display:flex;gap:8px;margin-top:12px;align-items:flex-end;">
@@ -192,14 +195,46 @@
   <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;" id="adminChatQR"></div>
 </div>
 
+<style>
+  #adminChatMsgs, #adminChatInp, #adminChatQR button {
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: 0.1px;
+  }
+  #adminChatMsgs > div { line-height: 1.65; }
+  .admin-dot {
+    width: 7px; height: 7px;
+    background: var(--gold);
+    border-radius: 50%;
+    display: inline-block;
+    animation: adminDotPulse 1.1s ease-in-out infinite;
+    opacity: 0.4;
+  }
+  .admin-dot:nth-child(2) { animation-delay: 0.15s; }
+  .admin-dot:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes adminDotPulse {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-5px); opacity: 1; }
+  }
+</style>
+
 <script>
 (function() {
   const msgs = document.getElementById('adminChatMsgs');
   const inp  = document.getElementById('adminChatInp');
   const send = document.getElementById('adminChatSend');
   const qr   = document.getElementById('adminChatQR');
-  const hist = [];
+  const STORAGE_KEY = 'sbk_admin_chat_history';
+  let hist = [];
+  try {
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    if (saved) hist = JSON.parse(saved);
+  } catch(e) { hist = []; }
   let busy = false;
+
+  function saveHist() {
+    try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(hist.slice(-40))); } catch(e) {}
+  }
 
   function fmt(t) {
     return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
@@ -221,8 +256,8 @@
   function showTyping() {
     const d = document.createElement('div');
     d.id = 'adminTyping';
-    d.style.cssText = 'align-self:flex-start;background:#151b26;border:1px solid #1f2733;color:#6b7585;padding:10px 14px;border-radius:12px;font-size:0.8rem;font-family:Poppins,sans-serif;';
-    d.innerHTML = '<i class="fa-solid fa-robot" style="color:var(--gold);margin-right:6px;"></i> Thinking...';
+    d.style.cssText = 'align-self:flex-start;background:#151b26;border:1px solid #1f2733;padding:12px 16px;border-radius:12px;display:flex;gap:4px;align-items:center;';
+    d.innerHTML = '<span class="admin-dot"></span><span class="admin-dot"></span><span class="admin-dot"></span>';
     msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
   }
   function hideTyping() { const t = document.getElementById('adminTyping'); if(t) t.remove(); }
@@ -312,7 +347,7 @@
     const displayText = text || '📸 Analyzing this puppy photo…';
     inp.value = ''; qr.innerHTML = '';
     addMsg('user', displayText);
-    hist.push({ r:'user', t:displayText });
+    hist.push({ r:'user', t:displayText }); saveHist();
 
     showTyping();
     try {
@@ -342,7 +377,7 @@
       }
 
       const displayReply = reply.replace(/<ACTION>[\s\S]*?<\/ACTION>/g, '').trim();
-      if (displayReply) { addMsg('assistant', displayReply); hist.push({ r:'assistant', t:displayReply }); }
+      if (displayReply) { addMsg('assistant', displayReply); hist.push({ r:'assistant', t:displayReply }); saveHist(); }
 
       for (const actionObj of actions) {
         showTyping();
@@ -351,7 +386,7 @@
         const result = await executeAction(actionObj);
         const resultMsg = result.ok ? `✅ Done: ${result.message}` : `❌ Failed: ${result.message}`;
         addMsg('assistant', resultMsg);
-        hist.push({ r:'assistant', t:resultMsg });
+        hist.push({ r:'assistant', t:resultMsg }); saveHist();
       }
 
       if (hasImage) {
@@ -368,15 +403,34 @@
     busy = false;
   }
 
-  // Welcome message
-  setTimeout(() => {
-    addMsg('assistant', 'Hi Bryan! 👋 I have full access to your site data right now. Ask me anything — puppy stats, pending reviews, customer inquiries, or upload a photo and I can draft a description and captions for you.');
+  // Restore previous conversation, or show welcome message if none
+  if (hist.length > 0) {
+    hist.forEach(m => addMsg(m.r === 'assistant' ? 'assistant' : 'user', m.t));
     setQR(['Show site stats', 'Any pending reviews?', 'Recent inquiries', 'Approve all reviews']);
-  }, 400);
+  } else {
+    setTimeout(() => {
+      addMsg('assistant', 'Hi Bryan! 👋 I have full access to your site data right now. Ask me anything — puppy stats, pending reviews, customer inquiries, or upload a photo and I can draft a description and captions for you.');
+      hist.push({ r:'assistant', t: 'Hi Bryan! 👋 I have full access to your site data right now. Ask me anything — puppy stats, pending reviews, customer inquiries, or upload a photo and I can draft a description and captions for you.' });
+      saveHist();
+      setQR(['Show site stats', 'Any pending reviews?', 'Recent inquiries', 'Approve all reviews']);
+    }, 400);
+  }
 
   send.addEventListener('click', () => go());
   inp.addEventListener('keydown', e => { if(e.key==='Enter' && !e.shiftKey) { e.preventDefault(); go(); } });
   inp.addEventListener('input', () => { inp.style.height='auto'; inp.style.height=Math.min(inp.scrollHeight,80)+'px'; });
+  document.getElementById('adminChatClear').addEventListener('click', () => {
+    if (!confirm('Clear this conversation?')) return;
+    hist = [];
+    sessionStorage.removeItem(STORAGE_KEY);
+    msgs.innerHTML = '';
+    qr.innerHTML = '';
+    const welcome = 'Hi Bryan! 👋 I have full access to your site data right now. Ask me anything — puppy stats, pending reviews, customer inquiries, or upload a photo and I can draft a description and captions for you.';
+    addMsg('assistant', welcome);
+    hist.push({ r:'assistant', t: welcome });
+    saveHist();
+    setQR(['Show site stats', 'Any pending reviews?', 'Recent inquiries', 'Approve all reviews']);
+  });
 })();
 </script>
 
