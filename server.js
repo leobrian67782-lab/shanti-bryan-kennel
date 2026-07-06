@@ -23,6 +23,7 @@ const Post = require('./models/Post');
 const Dog     = require('./models/Dog');
 const Invoice     = require('./models/Invoice');
 const Certificate = require('./models/Certificate');
+const Application = require('./models/Application');
 const PDFDocument = require('pdfkit');
 
 const app = express();
@@ -69,6 +70,17 @@ const reviewLimiter = rateLimit({
   legacyHeaders: false,
   handler: (req, res) => {
     res.status(429).render('submit-review', { sent: false, error: 'Too many submissions. Please wait a few minutes and try again.' });
+  }
+});
+
+// Prevents spam applications — 5 per 15 min per IP
+const applicationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).render('apply', { sent: false, error: 'Too many submissions. Please wait a few minutes and try again.', puppies: [] });
   }
 });
 
@@ -167,6 +179,45 @@ async function sendClientAutoReply(name, email, subject) {
     console.log('[email] Auto-reply sent to', email, '— id:', data.id);
   } catch (err) {
     console.error('[email] Auto-reply FAILED —', err.message);
+  }
+}
+
+// Confirms receipt of a puppy application to the applicant
+async function sendApplicationAutoReply(name, email) {
+  if (!process.env.RESEND_API_KEY) return;
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: '"Shanti & Bryan Pinscher Kennel" <notifications@shantibryankennel.com>',
+        to: [email],
+        replyTo: NOTIFY_EMAIL,
+        subject: `We've received your application — Shanti & Bryan Pinscher Kennel`,
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;">
+            <div style="background:#7a1e1e;padding:26px 30px;border-radius:8px 8px 0 0;text-align:center;">
+              <h1 style="color:#fff;margin:0;font-size:19px;">Application Received!</h1>
+              <p style="color:rgba(255,255,255,0.8);margin:6px 0 0;font-size:12px;">Shanti & Bryan Pinscher Kennel</p>
+            </div>
+            <div style="background:#fff;padding:26px 30px;border:1px solid #e6ddc8;">
+              <p style="color:#1e293b;font-size:14px;">Hi <strong>${name}</strong>,</p>
+              <p style="color:#4a5568;font-size:14px;line-height:1.6;">Thank you for applying to adopt a puppy from Shanti & Bryan Pinscher Kennel! We take great care in reviewing every application personally to make sure our puppies go to the right homes.</p>
+              <p style="color:#4a5568;font-size:14px;line-height:1.6;">We will review your application and reach out within 2-3 days with next steps.</p>
+              <p style="color:#4a5568;font-size:13px;">If you have any questions in the meantime, feel free to reply directly to this email.</p>
+              <p style="color:#4a5568;font-size:14px;margin-top:20px;">With love,<br><strong>Shanti & Bryan Pinscher Kennel</strong></p>
+            </div>
+            <div style="background:#f0ece3;padding:12px 30px;text-align:center;border-radius:0 0 8px 8px;">
+              <p style="margin:0;color:#9ca3af;font-size:10px;">shantibryankennel.com | info@shantibryankennel.com</p>
+            </div>
+          </div>`
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || JSON.stringify(data));
+    console.log('[email] Application auto-reply sent to', email);
+  } catch (err) {
+    console.error('[email] Application auto-reply FAILED —', err.message);
   }
 }
 
@@ -412,6 +463,69 @@ app.post('/submit-review', reviewLimiter, upload.single('photo'), async (req, re
   } catch (err) {
     console.error('SUBMIT REVIEW ERROR:', err);
     res.render('submit-review', { sent: false, error: 'Something went wrong. Please try again.' });
+  }
+});
+
+// ===== PUPPY APPLICATION =====
+app.get('/apply', async (req, res) => {
+  try {
+    const puppies = await Puppy.find({ status: { $ne: 'Sold' } }).sort({ createdAt: -1 });
+    res.render('apply', { sent: false, error: '', puppies });
+  } catch (err) {
+    console.error(err);
+    res.render('apply', { sent: false, error: '', puppies: [] });
+  }
+});
+
+app.post('/apply', applicationLimiter, async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data.applicantName || !data.email || !data.homeOwnership) {
+      const puppies = await Puppy.find({ status: { $ne: 'Sold' } }).sort({ createdAt: -1 });
+      return res.render('apply', { sent: false, error: 'Please fill in all required fields.', puppies });
+    }
+
+    const application = await Application.create({
+      applicantName: data.applicantName,
+      email: data.email,
+      phone: data.phone || '',
+      location: data.location || '',
+      interestedIn: data.interestedIn || 'General / Future Litter',
+      homeOwnership: data.homeOwnership,
+      landlordApproval: data.landlordApproval || 'N/A',
+      yardOrExercise: data.yardOrExercise || '',
+      otherPets: data.otherPets || '',
+      previousExperience: data.previousExperience || '',
+      childrenInHome: data.childrenInHome || '',
+      primaryCaretaker: data.primaryCaretaker || '',
+      whyMinPin: data.whyMinPin || '',
+      readyForResponsibility: data.readyForResponsibility === 'yes',
+      status: 'Pending'
+    });
+
+    // Notify Bryan
+    sendNotification(
+      `📋 New Puppy Application from ${application.applicantName}`,
+      `<div style="font-family:Arial,sans-serif;max-width:580px;">
+        <h2 style="color:#7a1e1e;">New Puppy Application</h2>
+        <table style="width:100%;border-collapse:collapse;">
+          <tr><td style="padding:8px 0;font-weight:bold;color:#555;width:130px;">Name</td><td style="padding:8px 0;">${application.applicantName}</td></tr>
+          <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Email</td><td style="padding:8px 0;"><a href="mailto:${application.email}">${application.email}</a></td></tr>
+          <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Interested In</td><td style="padding:8px 0;">${application.interestedIn}</td></tr>
+          <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Home</td><td style="padding:8px 0;">${application.homeOwnership}</td></tr>
+        </table>
+        <p style="margin-top:20px;"><a href="https://shantibryankennel.com/admin/applications" style="background:#c9a227;color:#0d1117;padding:10px 20px;text-decoration:none;border-radius:6px;font-weight:bold;">Review Application</a></p>
+      </div>`
+    );
+
+    // Confirm to applicant
+    sendApplicationAutoReply(application.applicantName, application.email);
+
+    res.render('apply', { sent: true, error: '', puppies: [] });
+  } catch (err) {
+    console.error('APPLICATION ERROR:', err);
+    const puppies = await Puppy.find({ status: { $ne: 'Sold' } }).sort({ createdAt: -1 }).catch(() => []);
+    res.render('apply', { sent: false, error: 'Something went wrong. Please try again.', puppies });
   }
 });
 
@@ -1454,6 +1568,37 @@ app.post('/api/admin-vision', requireLogin, async (req, res) => {
   }
 });
 
+// ===== PUPPY APPLICATIONS (ADMIN) =====
+app.get('/admin/applications', requireLogin, async (req, res) => {
+  const applications = await Application.find().sort({ createdAt: -1 });
+  res.render('admin-applications-list', { applications });
+});
+
+app.get('/admin/applications/:id', requireLogin, async (req, res) => {
+  try {
+    const app_ = await Application.findById(req.params.id);
+    if (!app_) return res.status(404).send('Application not found');
+    res.render('admin-application-detail', { app: app_ });
+  } catch (err) {
+    adminError(res, 'APPLICATION DETAIL ERROR:', err);
+  }
+});
+
+app.get('/admin/applications/:id/approve', requireLogin, async (req, res) => {
+  await Application.findByIdAndUpdate(req.params.id, { status: 'Approved' });
+  res.redirect('/admin/applications/' + req.params.id);
+});
+
+app.get('/admin/applications/:id/decline', requireLogin, async (req, res) => {
+  await Application.findByIdAndUpdate(req.params.id, { status: 'Declined' });
+  res.redirect('/admin/applications/' + req.params.id);
+});
+
+app.get('/admin/applications/:id/delete', requireLogin, async (req, res) => {
+  await Application.findByIdAndDelete(req.params.id);
+  res.redirect('/admin/applications');
+});
+
 // ===== INVOICES =====
 app.get('/admin/invoices', requireLogin, async (req, res) => {
   const invoices = await Invoice.find().sort({ createdAt: -1 });
@@ -2158,6 +2303,7 @@ app.get('/sitemap.xml', async (req, res) => {
     const staticPages = [
       { url: '/',              priority: '1.0', changefreq: 'weekly'  },
       { url: '/puppies',       priority: '0.9', changefreq: 'daily'   },
+      { url: '/apply',         priority: '0.8', changefreq: 'monthly' },
       { url: '/litters',       priority: '0.8', changefreq: 'weekly'  },
       { url: '/our-dogs',      priority: '0.7', changefreq: 'monthly' },
       { url: '/about',         priority: '0.6', changefreq: 'monthly' },
