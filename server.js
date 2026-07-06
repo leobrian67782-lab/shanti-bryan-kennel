@@ -804,6 +804,7 @@ app.post('/admin/settings', requireLogin, async (req, res) => {
     settings.statYears = req.body.statYears;
     settings.statPuppies = req.body.statPuppies;
     settings.statHealth = req.body.statHealth;
+    settings.aiInstructions = req.body.aiInstructions || '';
     settings.updatedAt = Date.now();
     await settings.save();
     res.redirect('/admin/settings?saved=1');
@@ -1070,6 +1071,7 @@ app.post('/api/chat', async (req, res) => {
     }
 
     const liveContext = await buildSiteContext(false);
+    const settings = res.locals.settings || {};
 
     const systemText = `You are Bella, the friendly and knowledgeable AI assistant for Shanti & Bryan Pinscher Kennel. You are warm, helpful, and passionate about Miniature Pinschers. You work exclusively for this kennel.
 
@@ -1124,7 +1126,7 @@ BEHAVIOR RULES:
 - Keep responses concise and friendly, under 200 words unless more detail is needed
 - Use line breaks for readability
 - Always end with a helpful next step
-- Respond in the same language the customer uses${liveContext}`;
+- Respond in the same language the customer uses${liveContext}${settings.aiInstructions ? `\n\nSPECIAL INSTRUCTIONS FROM THE KENNEL OWNER (follow these closely — they override general guidance above where they conflict):\n${settings.aiInstructions}` : ''}`;
 
     const messages = [
       { role: 'system', content: systemText },
