@@ -145,6 +145,13 @@ const litterUpload = upload.fields([
 ]);
 
 // Turns a title into a URL-friendly slug
+// Removes <think>...</think> reasoning blocks that thinking-mode models
+// sometimes include in their output — visitors should only see the final answer.
+function stripThinking(text) {
+  if (!text) return text;
+  return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+}
+
 function makeSlug(title) {
   return title.toLowerCase().trim()
     .replace(/[^a-z0-9\s-]/g, '')
@@ -1131,7 +1138,7 @@ BEHAVIOR RULES:
     const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: 'qwen/qwen3.6-27b', messages, max_tokens: 600, temperature: 0.5 })
+      body: JSON.stringify({ model: 'qwen/qwen3.6-27b', messages, max_tokens: 600, temperature: 0.5, reasoning_effort: 'none' })
     });
 
     const data = await groqRes.json();
@@ -1140,7 +1147,7 @@ BEHAVIOR RULES:
       return res.json({ reply: "I'm having a moment — please try again or reach us at info@shantibryankennel.com!" });
     }
 
-    res.json({ reply: data.choices[0]?.message?.content || "Could you rephrase that?" });
+    res.json({ reply: stripThinking(data.choices[0]?.message?.content) || "Could you rephrase that?" });
   } catch (err) {
     console.error('Chat error:', err.message);
     res.json({ reply: "Something went wrong. Please try again or contact info@shantibryankennel.com" });
@@ -1264,12 +1271,12 @@ RULES:
     const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: 'qwen/qwen3.6-27b', messages, max_tokens: 1200, temperature: 0.3 })
+      body: JSON.stringify({ model: 'qwen/qwen3.6-27b', messages, max_tokens: 1200, temperature: 0.3, reasoning_effort: 'none' })
     });
 
     const data = await groqRes.json();
     if (!groqRes.ok || !data.choices) return res.json({ reply: 'AI error — try again.' });
-    res.json({ reply: data.choices[0]?.message?.content || 'No response.' });
+    res.json({ reply: stripThinking(data.choices[0]?.message?.content) || 'No response.' });
 
   } catch (err) {
     console.error('Admin chat error:', err.message);
@@ -1303,7 +1310,8 @@ app.post('/api/admin-vision', requireLogin, async (req, res) => {
           }
         ],
         max_tokens: 800,
-        temperature: 0.5
+        temperature: 0.5,
+        reasoning_effort: 'none'
       })
     });
 
@@ -1313,7 +1321,7 @@ app.post('/api/admin-vision', requireLogin, async (req, res) => {
       return res.json({ reply: `Vision AI error: ${data.error?.message || 'Unknown error'}. Try a smaller JPEG image.` });
     }
 
-    res.json({ reply: data.choices[0]?.message?.content || 'No response.' });
+    res.json({ reply: stripThinking(data.choices[0]?.message?.content) || 'No response.' });
   } catch (err) {
     console.error('Vision error:', err.message);
     res.json({ reply: `Something went wrong: ${err.message}` });
