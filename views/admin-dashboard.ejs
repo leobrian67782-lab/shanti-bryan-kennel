@@ -1,5 +1,29 @@
 <%- include('partials/admin-header', {title: 'Dashboard | Admin', active: 'dashboard', heading: 'Dashboard Overview'}) %>
 
+<!-- Needs Your Attention -->
+<% 
+  var attentionItems = [];
+  if (typeof pendingReviews !== 'undefined' && pendingReviews > 0) attentionItems.push({ count: pendingReviews, label: 'Review' + (pendingReviews > 1 ? 's' : '') + ' awaiting approval', href: '/admin/testimonials' });
+  if (typeof pendingApplications !== 'undefined' && pendingApplications > 0) attentionItems.push({ count: pendingApplications, label: 'Application' + (pendingApplications > 1 ? 's' : '') + ' to review', href: '/admin/applications' });
+  if (typeof waitlistPendingDeposit !== 'undefined' && waitlistPendingDeposit > 0) attentionItems.push({ count: waitlistPendingDeposit, label: 'Waitlist request' + (waitlistPendingDeposit > 1 ? 's' : '') + ' awaiting deposit', href: '/admin/waitlist' });
+  if (typeof unpaidInvoices !== 'undefined' && unpaidInvoices > 0) attentionItems.push({ count: unpaidInvoices, label: 'Invoice' + (unpaidInvoices > 1 ? 's' : '') + ' with balance due', href: '/admin/invoices' });
+%>
+<div class="admin-attention">
+  <div class="admin-attention-head"><i class="fa-solid fa-bell" style="color:var(--gold);"></i> Needs Your Attention</div>
+  <% if (attentionItems.length === 0) { %>
+    <div class="admin-attention-empty"><i class="fa-solid fa-circle-check"></i> All caught up — nothing waiting on you right now.</div>
+  <% } else { %>
+    <div class="admin-attention-grid">
+      <% attentionItems.forEach(function(item) { %>
+        <a href="<%= item.href %>" class="admin-attention-item">
+          <span class="admin-attention-count"><%= item.count %></span>
+          <span class="admin-attention-label"><%= item.label %></span>
+        </a>
+      <% }); %>
+    </div>
+  <% } %>
+</div>
+
 <!-- Summary cards -->
 <div class="admin-overview-grid">
   <div class="admin-overview-card card-gold">
@@ -51,6 +75,30 @@
   </div>
 </div>
 
+<!-- Pipeline at a glance -->
+<div class="admin-stat-pills">
+  <a href="/admin/litters" class="admin-stat-pill">
+    <span class="admin-stat-pill-num"><%= litters.length %></span>
+    <span class="admin-stat-pill-label">Litters</span>
+  </a>
+  <a href="/admin/applications" class="admin-stat-pill">
+    <span class="admin-stat-pill-num"><%= typeof totalApplications !== 'undefined' ? totalApplications : 0 %></span>
+    <span class="admin-stat-pill-label">Applications</span>
+  </a>
+  <a href="/admin/waitlist" class="admin-stat-pill">
+    <span class="admin-stat-pill-num"><%= typeof waitlistActive !== 'undefined' ? waitlistActive : 0 %> / <%= typeof totalWaitlist !== 'undefined' ? totalWaitlist : 0 %></span>
+    <span class="admin-stat-pill-label">Active Waitlist</span>
+  </a>
+  <a href="/admin/invoices" class="admin-stat-pill">
+    <span class="admin-stat-pill-num"><%= typeof totalInvoices !== 'undefined' ? totalInvoices : 0 %></span>
+    <span class="admin-stat-pill-label">Invoices</span>
+  </a>
+  <a href="/admin/certificates" class="admin-stat-pill">
+    <span class="admin-stat-pill-num"><%= typeof totalCertificates !== 'undefined' ? totalCertificates : 0 %></span>
+    <span class="admin-stat-pill-label">Certificates</span>
+  </a>
+</div>
+
 <!-- Quick Actions -->
 <div class="admin-section">
   <div class="admin-section-head">
@@ -83,6 +131,8 @@
     </a>
   </div>
 </div>
+
+<h3 style="color:#6b7585;font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;margin:32px 0 16px;font-weight:700;">Recent Activity</h3>
 
 <!-- Recent Messages -->
 <div class="admin-section">
@@ -169,8 +219,10 @@
   <% } %>
 </div>
 
+<h3 style="color:#6b7585;font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;margin:32px 0 16px;font-weight:700;">Assistant</h3>
+
 <!-- Admin AI Assistant -->
-<div class="admin-section" style="margin-top:24px;">
+<div class="admin-section" style="margin-top:0;">
   <div class="admin-section-head">
     <h3><i class="fa-solid fa-robot" style="color:var(--gold);"></i> AI Assistant</h3>
     <div style="display:flex;align-items:center;gap:12px;">
