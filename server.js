@@ -25,6 +25,7 @@ const Invoice     = require('./models/Invoice');
 const Certificate = require('./models/Certificate');
 const Application = require('./models/Application');
 const Waitlist = require('./models/Waitlist');
+const WaitlistInvoice = require('./models/WaitlistInvoice');
 const PDFDocument = require('pdfkit');
 
 const app = express();
@@ -1721,6 +1722,241 @@ app.get('/admin/waitlist/:id/cancel', requireLogin, async (req, res) => {
   res.redirect('/admin/waitlist');
 });
 
+// ===== WAITLIST DEPOSIT RECEIPT — separate document from puppy purchase invoices =====
+app.get('/admin/waitlist/:id/deposit-invoice/new', requireLogin, async (req, res) => {
+  try {
+    const entry = await Waitlist.findById(req.params.id);
+    if (!entry) return res.status(404).send('Waitlist entry not found');
+    res.render('admin-waitlist-invoice-form', { entry });
+  } catch (err) {
+    adminError(res, 'WAITLIST INVOICE FORM ERROR:', err);
+  }
+});
+
+app.post('/admin/waitlist/:id/deposit-invoice', requireLogin, async (req, res) => {
+  try {
+    const data = req.body;
+    const year = new Date().getFullYear();
+    const count = await WaitlistInvoice.countDocuments();
+    const receiptNumber = `SBK-WL-${year}-${String(count + 1).padStart(4, '0')}`;
+
+    const wInv = await WaitlistInvoice.create({
+      receiptNumber,
+      waitlist: req.params.id,
+      clientName: data.clientName,
+      clientEmail: data.clientEmail,
+      clientPhone: data.clientPhone,
+      clientAddress: data.clientAddress,
+      preferredGender: data.preferredGender,
+      preferredColor: data.preferredColor,
+      depositAmount: parseFloat(data.depositAmount) || 0,
+      notes: data.notes,
+      signatureData: data.signatureData,
+      status: 'Draft'
+    });
+
+    try {
+      const pdfBuf = await generateWaitlistInvoicePDF(wInv);
+      await sendWaitlistInvoiceEmail(wInv, pdfBuf);
+      await WaitlistInvoice.findByIdAndUpdate(wInv._id, { status: 'Sent' });
+    } catch (emailErr) {
+      console.error('Waitlist invoice PDF/email error:', emailErr.message);
+    }
+
+    // Mark the waitlist entry Active and link the receipt
+    await Waitlist.findByIdAndUpdate(req.params.id, { status: 'Active', invoice: wInv._id });
+
+    res.redirect('/admin/waitlist');
+  } catch (err) {
+    adminError(res, 'CREATE WAITLIST INVOICE ERROR:', err);
+  }
+});
+
+app.get('/admin/waitlist-invoices/:id/pdf', requireLogin, async (req, res) => {
+  try {
+    const wInv = await WaitlistInvoice.findById(req.params.id);
+    if (!wInv) return res.status(404).send('Not found');
+    const pdfBuf = await generateWaitlistInvoicePDF(wInv);
+    res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="${wInv.receiptNumber}.pdf"` });
+    res.send(pdfBuf);
+  } catch (err) { adminError(res, 'WAITLIST PDF ERROR:', err); }
+});
+
+async function generateWaitlistInvoicePDF(wInv) {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ margin: 50, size: 'A4', autoFirstPage: true });
+    const chunks = [];
+    doc.on('data', c => chunks.push(c));
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+
+    const maroon = '#7a1e1e', gold = '#c9a227', navy = '#0d1117', gray = '#6b7585', light = '#f9f7f4';
+    const W = 495;
+
+    // Header
+    doc.rect(0, 0, 595, 90).fill(maroon);
+    const possibleLogoPaths = [
+      require('path').join(__dirname, 'public', 'images', 'images', 'emblem.png'),
+      require('path').join(__dirname, 'public', 'images', 'emblem.png'),
+    ];
+    for (const lp of possibleLogoPaths) {
+      try { if (require('fs').existsSync(lp)) { doc.image(lp, 50, 15, { width: 58, height: 58 }); break; } } catch(e) {}
+    }
+    doc.fillColor('#fff').font('Helvetica-Bold').fontSize(14)
+       .text('SHANTI & BRYAN PINSCHER KENNEL', 118, 22, { width: 300 });
+    doc.font('Helvetica').fontSize(8).fillColor('rgba(255,255,255,0.75)')
+       .text('info@shantibryankennel.com  |  shantibryankennel.com', 118, 42)
+       .text('Nationwide Delivery  |  1-Year Health Guarantee', 118, 54);
+    doc.fillColor(gold).font('Helvetica-Bold').fontSize(19).text('WAITLIST', 430, 18);
+    doc.fillColor(gold).font('Helvetica-Bold').fontSize(19).text('DEPOSIT RECEIPT', 400, 38, { width: 145, align: 'right' });
+    doc.fillColor('rgba(255,255,255,0.85)').font('Helvetica').fontSize(9).text(wInv.receiptNumber, 430, 60, { width: 115, align: 'right' });
+
+    // Meta strip
+    doc.rect(0, 90, 595, 34).fill('#f0ece3');
+    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(7.5)
+       .text('DATE ISSUED', 50, 99).text('STATUS', 340, 99).text('PREFERENCES', 450, 99);
+    doc.fillColor(navy).font('Helvetica').fontSize(8.5)
+       .text(new Date(wInv.createdAt).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}), 50, 110)
+       .text(wInv.status.toUpperCase(), 340, 110)
+       .text(`${wInv.preferredGender || 'N/A'}, ${wInv.preferredColor || 'N/A'}`, 450, 110, { width: 100 });
+
+    let y = 144;
+
+    // Client info
+    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(8).text('CLIENT', 50, y);
+    y += 13;
+    doc.moveTo(50, y).lineTo(545, y).strokeColor(gold).lineWidth(1.5).stroke();
+    y += 12;
+    doc.fillColor(navy).font('Helvetica-Bold').fontSize(10).text(wInv.clientName, 50, y); y += 15;
+    doc.fillColor(gray).font('Helvetica').fontSize(8.5);
+    if (wInv.clientEmail)   { doc.text(wInv.clientEmail, 50, y); y += 12; }
+    if (wInv.clientPhone)   { doc.text(wInv.clientPhone, 50, y); y += 12; }
+    if (wInv.clientAddress) { doc.text(wInv.clientAddress, 50, y); y += 12; }
+
+    y += 16;
+
+    // Deposit amount box
+    doc.rect(50, y, W, 30).fill('#f0ece3');
+    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(11)
+       .text('WAITLIST DEPOSIT RECEIVED', 60, y + 9)
+       .text(`$${wInv.depositAmount.toLocaleString()}`, 490, y + 9, { width: 55, align: 'right' });
+    y += 40;
+
+    // Terms — waitlist-specific, distinct from puppy purchase terms
+    doc.rect(50, y, W, 13).fill(maroon);
+    doc.fillColor('#fff').font('Helvetica-Bold').fontSize(7.5).text('WAITLIST TERMS & CONDITIONS', 60, y + 3);
+    y += 18;
+
+    const policies = [
+      '1. This deposit secures your place on our waitlist for an upcoming litter matching your stated preferences.',
+      '2. This receipt does NOT guarantee a specific puppy, litter, or exact timeline — placement depends on availability.',
+      '3. The deposit is non-refundable, but is fully transferable and will be applied toward your future puppy purchase.',
+      '4. Once you are matched with a specific puppy, a separate Puppy Purchase Invoice will be issued for the remaining balance.',
+      '5. You are responsible for keeping your contact information up to date so we can reach you when a match is available.',
+      '6. Waitlist position is maintained in the order deposits are received, though matching also depends on puppy availability, gender, and color preferences.',
+      '7. Shanti & Bryan Pinscher Kennel will make reasonable efforts to match you within a fair timeframe, but cannot guarantee an exact date.',
+      '8. By signing below, you acknowledge and accept these waitlist terms.',
+    ];
+    doc.fillColor(navy).font('Helvetica').fontSize(7.8);
+    policies.forEach(p => { doc.text(p, 50, y, { width: W, lineGap: 1 }); y += 18; });
+    y += 6;
+
+    if (wInv.notes && wInv.notes.trim()) {
+      doc.rect(50, y, W, 13).fill('#1a2433');
+      doc.fillColor('#fff').font('Helvetica-Bold').fontSize(7.5).text('NOTES', 60, y + 3);
+      y += 17;
+      doc.fillColor(navy).font('Helvetica').fontSize(8).text(wInv.notes, 50, y, { width: W });
+      y += 20;
+    }
+
+    // Stamp (dedicated section, own space)
+    y += 10;
+    const stampPaths = [
+      require('path').join(__dirname, 'public', 'stamp.png'),
+    ];
+    for (const sp of stampPaths) {
+      try { if (require('fs').existsSync(sp)) { doc.image(sp, 50, y, { width: 120, height: 112 }); break; } } catch(e) {}
+    }
+    y += 128;
+
+    // Signature
+    if (wInv.signatureData && wInv.signatureData.startsWith('data:image/png;base64,')) {
+      try {
+        const sigBuf = Buffer.from(wInv.signatureData.split(',')[1], 'base64');
+        doc.image(sigBuf, 50, y - 45, { width: 160, height: 42 });
+      } catch(e) {}
+    }
+    doc.moveTo(50, y).lineTo(230, y).strokeColor(gold).lineWidth(1).stroke();
+    doc.moveTo(310, y).lineTo(545, y).strokeColor(gold).lineWidth(1).stroke();
+    y += 7;
+    doc.fillColor(gray).font('Helvetica').fontSize(7.5)
+       .text('Authorized Signature — Shanti & Bryan Kennel', 50, y, { width: 200 })
+       .text('Client Signature & Date (Required)', 310, y, { width: 200 });
+    y += 14;
+    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(7)
+       .text('ACTION REQUIRED: Sign above, photograph this page, and email to info@shantibryankennel.com', 50, y, { width: W, align: 'center' });
+    y += 24;
+
+    doc.rect(50, y, W, 1).fill('#ece5d8');
+    y += 8;
+    doc.fillColor(gray).font('Helvetica').fontSize(7)
+       .text('Thank you for your patience — we look forward to matching you with your future companion.', 50, y, { width: W, align: 'center' });
+    y += 12;
+    doc.fillColor(maroon).font('Helvetica-Bold').fontSize(7)
+       .text('info@shantibryankennel.com | shantibryankennel.com', 50, y, { width: W, align: 'center' });
+
+    doc.end();
+  });
+}
+
+async function sendWaitlistInvoiceEmail(wInv, pdfBuf) {
+  if (!process.env.RESEND_API_KEY) return;
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: '"Shanti & Bryan Pinscher Kennel" <notifications@shantibryankennel.com>',
+        to: [wInv.clientEmail],
+        subject: `Waitlist Deposit Receipt ${wInv.receiptNumber} | Shanti & Bryan Pinscher Kennel`,
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;">
+            <div style="background:#7a1e1e;padding:28px 32px;border-radius:8px 8px 0 0;">
+              <h1 style="color:#fff;margin:0;font-size:20px;">Waitlist Deposit Receipt</h1>
+              <p style="color:rgba(255,255,255,0.8);margin:6px 0 0;font-size:13px;">Shanti & Bryan Pinscher Kennel</p>
+            </div>
+            <div style="background:#fff;padding:28px 32px;border:1px solid #e6ddc8;">
+              <p style="color:#1e293b;font-size:15px;">Dear <strong>${wInv.clientName}</strong>,</p>
+              <p style="color:#4a5568;font-size:14px;line-height:1.6;">Thank you! Your deposit has been received and your place on our waitlist is now <strong>active</strong>.</p>
+              <div style="background:#f9f7f4;border:1px solid #ece5d8;border-radius:8px;padding:18px;margin:20px 0;">
+                <table style="width:100%;border-collapse:collapse;">
+                  <tr><td style="padding:5px 0;color:#6b7585;font-size:13px;">Receipt No.</td><td style="padding:5px 0;font-weight:700;color:#1e293b;font-size:13px;text-align:right;">${wInv.receiptNumber}</td></tr>
+                  <tr><td style="padding:5px 0;color:#6b7585;font-size:13px;">Preferences</td><td style="padding:5px 0;color:#1e293b;font-size:13px;text-align:right;">${wInv.preferredGender || 'N/A'}, ${wInv.preferredColor || 'N/A'}</td></tr>
+                  <tr><td style="padding:5px 0;color:#6b7585;font-size:13px;">Deposit Received</td><td style="padding:5px 0;font-weight:700;color:#2e9e4f;font-size:13px;text-align:right;">$${wInv.depositAmount.toLocaleString()}</td></tr>
+                </table>
+              </div>
+              <div style="background:#fff8f0;border:2px solid #7a1e1e;border-radius:8px;padding:16px;margin:16px 0;">
+                <p style="margin:0 0 8px;color:#7a1e1e;font-weight:700;font-size:13px;">✍️ Action Required</p>
+                <p style="margin:0;color:#4a5568;font-size:13px;">Please sign the attached receipt, photograph the signed page, and email it back to <a href="mailto:info@shantibryankennel.com" style="color:#7a1e1e;">info@shantibryankennel.com</a>.</p>
+              </div>
+              <p style="color:#4a5568;font-size:13px;">We'll reach out as soon as a matching puppy becomes available. Thank you for your patience!</p>
+              <p style="color:#4a5568;font-size:14px;margin-top:20px;">With love,<br><strong>Shanti & Bryan Pinscher Kennel</strong></p>
+            </div>
+            <div style="background:#f0ece3;padding:14px 32px;text-align:center;border-radius:0 0 8px 8px;">
+              <p style="margin:0;color:#9ca3af;font-size:11px;">shantibryankennel.com | info@shantibryankennel.com</p>
+            </div>
+          </div>`,
+        attachments: [{ filename: `${wInv.receiptNumber}.pdf`, content: pdfBuf.toString('base64') }]
+      })
+    });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.message || JSON.stringify(d));
+    console.log('[waitlist invoice email] Sent to', wInv.clientEmail);
+  } catch (err) {
+    console.error('[waitlist invoice email] Failed:', err.message);
+  }
+}
+
 // ===== INVOICES =====
 app.get('/admin/invoices', requireLogin, async (req, res) => {
   const invoices = await Invoice.find().sort({ createdAt: -1 });
@@ -1729,24 +1965,7 @@ app.get('/admin/invoices', requireLogin, async (req, res) => {
 
 app.get('/admin/invoices/new', requireLogin, async (req, res) => {
   const puppies = await Puppy.find().sort({ createdAt: -1 });
-  let prefill = null;
-  if (req.query.waitlistId) {
-    const w = await Waitlist.findById(req.query.waitlistId).catch(() => null);
-    if (w) {
-      prefill = {
-        clientName: w.name,
-        clientEmail: w.email,
-        clientPhone: w.phone || '',
-        clientAddress: w.location || '',
-        puppyName: `Waitlist Deposit — ${w.preferredGender}, ${w.preferredColor}`,
-        puppyPrice: w.depositAmount,
-        depositPaid: w.depositAmount,
-        notes: `Waitlist deposit. Preferences: ${w.preferredGender}, ${w.preferredColor}.${w.notes ? ' Notes: ' + w.notes : ''}`,
-        waitlistId: w._id
-      };
-    }
-  }
-  res.render('admin-invoice-form', { puppies, prefill });
+  res.render('admin-invoice-form', { puppies, prefill: null });
 });
 
 // Generate the PDF as a buffer (shared by create and resend routes)
@@ -1991,11 +2210,6 @@ app.post('/admin/invoices/new', requireLogin, async (req, res) => {
     } catch (emailErr) {
       console.error('Invoice PDF/email error:', emailErr.message);
       // Invoice is saved — admin can resend from the list
-    }
-
-    // If this invoice was for a waitlist deposit, mark that entry Active
-    if (data.waitlistId) {
-      await Waitlist.findByIdAndUpdate(data.waitlistId, { status: 'Active', invoice: inv._id }).catch(() => {});
     }
 
     res.redirect('/admin/invoices');
