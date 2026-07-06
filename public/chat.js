@@ -37,6 +37,11 @@
       align-items: center !important; justify-content: center !important;
       font-family: sans-serif !important;
     }
+    #kWin, #kMsgs, .kb, .kqr, #kInp, .kNm, .kSt {
+      font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+      -webkit-font-smoothing: antialiased;
+    }
+    .kb { letter-spacing: 0.1px; }
     #kWin {
       position: fixed !important;
       bottom: 144px !important; right: 20px !important;
@@ -130,7 +135,15 @@
   `);
 
   let isOpen = false, busy = false;
-  const hist = [];
+  const STORAGE_KEY = 'sbk_bella_chat_history';
+  let hist = [];
+  try {
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    if (saved) hist = JSON.parse(saved);
+  } catch(e) { hist = []; }
+  function saveHist() {
+    try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(hist.slice(-30))); } catch(e) {}
+  }
   const wait = ms => new Promise(r => setTimeout(r, ms));
 
   function toggle() {
@@ -140,7 +153,14 @@
     if (ic) ic.className = isOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-paw';
     const badge = document.getElementById('kBtn').querySelector('.kN');
     if (badge) badge.remove();
-    if (isOpen && document.getElementById('kMsgs').children.length === 0) setTimeout(welcome, 200);
+    if (isOpen && document.getElementById('kMsgs').children.length === 0) {
+      if (hist.length > 0) {
+        hist.forEach(m => addMsg(m.r === 'assistant' ? 'assistant' : 'user', m.t));
+        setQR(['Available puppies', 'How to reserve a puppy', 'Do you deliver?', 'About Min Pins']);
+      } else {
+        setTimeout(welcome, 200);
+      }
+    }
   }
 
   function addMsg(role, text) {
@@ -198,7 +218,7 @@
   async function welcome() {
     showTyping(); await wait(700); hideTyping();
     const t = `Hi there! I'm **Bella**, your assistant at Shanti & Bryan Pinscher Kennel.\n\nI can help you with:\n• **Available puppies** & pricing\n• **Deposits** & how to reserve\n• **Delivery** & local pickup\n• **Health guarantees** & vaccinations\n• **Breed information** about Min Pins\n\nWhat can I help you with today?`;
-    addMsg('assistant', t); hist.push({ r: 'assistant', t });
+    addMsg('assistant', t); hist.push({ r: 'assistant', t }); saveHist();
     setQR(['Available puppies', 'How to reserve a puppy', 'Do you deliver?', 'About Min Pins']);
   }
 
@@ -210,7 +230,7 @@
     document.getElementById('kQR').innerHTML = '';
     resize();
     addMsg('user', text);
-    hist.push({ r: 'user', t: text });
+    hist.push({ r: 'user', t: text }); saveHist();
     document.getElementById('kSend').disabled = true;
 
     showTyping();
@@ -218,7 +238,7 @@
     hideTyping();
 
     if (reply) {
-      addMsg('assistant', reply); hist.push({ r: 'assistant', t: reply });
+      addMsg('assistant', reply); hist.push({ r: 'assistant', t: reply }); saveHist();
       const low = reply.toLowerCase();
       const q = [];
       if (low.includes('puppies') || low.includes('available')) q.push({ label: 'View Available Puppies', href: '/puppies' });
@@ -229,7 +249,7 @@
       setQR(q.slice(0, 3));
     } else {
       const m = `I'm having a moment — please try again or reach us at **info@shantibryankennel.com** and we'll respond shortly!`;
-      addMsg('assistant', m); hist.push({ r: 'assistant', t: m });
+      addMsg('assistant', m); hist.push({ r: 'assistant', t: m }); saveHist();
       setQR([{ label: 'Contact Us', href: '/contact' }, { label: 'View Puppies', href: '/puppies' }]);
     }
 
