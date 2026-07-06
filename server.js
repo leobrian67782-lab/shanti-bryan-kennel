@@ -1657,6 +1657,10 @@ app.post('/api/admin-action', requireLogin, async (req, res) => {
         const faq = await Faq.findByIdAndDelete(params.id);
         return res.json({ ok: true, message: `🗑️ FAQ **"${faq ? faq.question : params.id}"** deleted.` });
       }
+      case 'delete_all_faqs': {
+        const r = await Faq.deleteMany({});
+        return res.json({ ok: true, message: `🗑️ Deleted all **${r.deletedCount}** FAQs.` });
+      }
 
       case 'approve_application': {
         const a = await Application.findByIdAndUpdate(params.id, { status: 'Approved' }, { new: true });
@@ -1724,7 +1728,8 @@ AVAILABLE ACTIONS:
 - update_stats: params: {statYears, statPuppies, statHealth} — update homepage stats
 - create_faq: params: {question, answer, order} — add a new FAQ to the public FAQ page (order is optional, controls position)
 - update_faq: params: {id, question, answer} — edit an existing FAQ
-- delete_faq: params: {id} — remove a FAQ
+- delete_faq: params: {id} — remove a single FAQ
+- delete_all_faqs: params: {} — remove ALL FAQs in one action (use this instead of many delete_faq calls when Bryan wants everything cleared)
 - approve_application: params: {id} — approve a puppy application
 - decline_application: params: {id} — decline a puppy application
 - delete_application: params: {id} — permanently delete an application
@@ -1738,7 +1743,8 @@ RULES:
 - Always use IDs from the live data — never guess an ID
 - For destructive actions (delete, delete_all), describe what you will do and ask Bryan to confirm BEFORE including the ACTION block
 - When Bryan confirms, include the ACTION block in your response
-- You can include multiple ACTION blocks in one response if needed
+- You can include multiple ACTION blocks in one response, but keep it to a small number (roughly 5 or fewer) — if a bulk action exists (like delete_all_faqs, delete_all_inquiries, approve_all_reviews), always use that instead of many individual actions, since generating many action blocks in one reply can fail
+- If Bryan wants to bulk-delete something that has no dedicated bulk action available, say so honestly and offer to do a few at a time across multiple messages, rather than attempting a large number of individual actions in one response
 - Keep responses concise — Bryan is busy
 - You can also draft content, answer questions, and give advice without any action${liveContext}`;
 
@@ -1754,11 +1760,14 @@ RULES:
     const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: 'qwen/qwen3.6-27b', messages, max_tokens: 1200, temperature: 0.3, reasoning_effort: 'none' })
+      body: JSON.stringify({ model: 'qwen/qwen3.6-27b', messages, max_tokens: 2000, temperature: 0.3, reasoning_effort: 'none' })
     });
 
     const data = await groqRes.json();
-    if (!groqRes.ok || !data.choices) return res.json({ reply: 'AI error — try again.' });
+    if (!groqRes.ok || !data.choices) {
+      console.error('Admin chat Groq error:', JSON.stringify(data).slice(0, 500));
+      return res.json({ reply: `AI error: ${data.error?.message || 'Unknown — check server logs for details.'}` });
+    }
     res.json({ reply: stripThinking(data.choices[0]?.message?.content) || 'No response.' });
 
   } catch (err) {
