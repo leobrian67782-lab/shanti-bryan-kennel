@@ -5,6 +5,7 @@ const waitlistSchema = new mongoose.Schema({
   email:  { type: String, required: true },
   phone:  { type: String },
   location: { type: String },
+  detectedLocation: { type: String },
 
   preferredGender: { type: String, default: 'No preference' },
   preferredColor:  { type: String, default: 'No preference' },
