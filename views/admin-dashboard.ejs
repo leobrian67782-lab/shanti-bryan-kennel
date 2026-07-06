@@ -185,9 +185,12 @@
     <textarea id="adminChatInp" placeholder="Ask anything, or upload photos above — I can describe puppies, create listings, litters, reviews, blog posts and more…" style="flex:1;background:#1c2430;border:1.5px solid #2a3441;color:#fff;border-radius:8px;padding:10px 12px;font-family:'Poppins',sans-serif;font-size:0.85rem;resize:none;outline:none;line-height:1.5;max-height:80px;" rows="2"></textarea>
     <button id="adminChatSend" style="background:var(--gold);color:#0d1117;border:none;border-radius:8px;width:42px;height:42px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-solid fa-paper-plane"></i></button>
   </div>
-  <div id="adminImgPreview" style="display:none;margin-top:8px;padding:8px 10px;background:#1c2430;border:1px solid #2a3441;border-radius:8px;align-items:center;gap:8px;flex-wrap:wrap;">
-    <span style="color:#c9a227;font-size:0.75rem;font-weight:600;"><i class="fa-solid fa-images"></i> <span id="adminImgPreviewText"></span></span>
-    <button onclick="clearImgs()" style="background:none;border:none;color:#e8848f;cursor:pointer;font-size:0.75rem;margin-left:auto;"><i class="fa-solid fa-xmark"></i> Clear</button>
+  <div id="adminImgPreview" style="display:none;margin-top:8px;padding:8px 10px;background:#1c2430;border:1px solid #2a3441;border-radius:8px;flex-direction:column;gap:8px;">
+    <div id="adminImgThumbs" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+    <div style="display:flex;align-items:center;">
+      <span style="color:#c9a227;font-size:0.75rem;font-weight:600;"><i class="fa-solid fa-images"></i> <span id="adminImgPreviewText"></span></span>
+      <button onclick="clearImgs()" style="background:none;border:none;color:#e8848f;cursor:pointer;font-size:0.75rem;margin-left:auto;"><i class="fa-solid fa-xmark"></i> Clear</button>
+    </div>
   </div>
   <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;" id="adminChatQR"></div>
 </div>
@@ -253,16 +256,34 @@
   function updateImgPreview() {
     const preview = document.getElementById('adminImgPreview');
     const count = document.getElementById('adminImgCount');
+    const thumbs = document.getElementById('adminImgThumbs');
     if (pendingImages.length === 0) {
       preview.style.display = 'none';
       count.style.display = 'none';
+      thumbs.innerHTML = '';
     } else {
       preview.style.display = 'flex';
       count.textContent = pendingImages.length;
       count.style.display = 'flex';
       document.getElementById('adminImgPreviewText').textContent =
         pendingImages.length + ' photo' + (pendingImages.length > 1 ? 's' : '') + ' ready — tap Send or type what you want';
+
+      thumbs.innerHTML = '';
+      pendingImages.forEach((img, i) => {
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'position:relative;width:56px;height:56px;border-radius:6px;overflow:hidden;flex-shrink:0;';
+        wrap.innerHTML = `
+          <img src="data:${img.mimeType};base64,${img.data}" style="width:100%;height:100%;object-fit:cover;display:block;">
+          <button onclick="removeImg(${i})" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.7);border:none;color:#fff;width:16px;height:16px;border-radius:50%;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">✕</button>
+        `;
+        thumbs.appendChild(wrap);
+      });
     }
+  }
+
+  function removeImg(index) {
+    pendingImages.splice(index, 1);
+    updateImgPreview();
   }
 
   document.getElementById('adminImgInput').addEventListener('change', async function() {
@@ -304,6 +325,16 @@
     this.value = '';
   });
 
+  async function safeJson(res) {
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch(e) {
+      console.error('Non-JSON response:', text.slice(0, 200));
+      return { ok: false, reply: `Server returned an unexpected response (status ${res.status}). This usually means the request was too large or the server hit an error.` };
+    }
+  }
+
   async function uploadImagesToCloud() {
     if (!pendingImages.length) return [];
     try {
@@ -312,7 +343,7 @@
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ images: pendingImages })
       });
-      const data = await res.json();
+      const data = await safeJson(res);
       return data.ok ? data.urls : [];
     } catch(e) { return []; }
   }
@@ -322,7 +353,7 @@
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ images, prompt: customPrompt || null })
     });
-    const data = await res.json();
+    const data = await safeJson(res);
     return data.reply || 'No response from vision AI.';
   }
 
