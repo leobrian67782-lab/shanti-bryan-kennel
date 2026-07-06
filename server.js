@@ -378,6 +378,10 @@ app.get('/faq', async (req, res) => {
   }
 });
 
+app.get('/privacy', (req, res) => {
+  res.render('privacy');
+});
+
 app.get('/blog', async (req, res) => {
   try {
     const posts = await Post.find({ published: true }).sort({ createdAt: -1 });
@@ -2107,6 +2111,7 @@ app.get('/sitemap.xml', async (req, res) => {
       { url: '/submit-review', priority: '0.4', changefreq: 'monthly' },
       { url: '/blog',          priority: '0.6', changefreq: 'weekly'  },
       { url: '/contact',       priority: '0.7', changefreq: 'monthly' },
+      { url: '/privacy',       priority: '0.3', changefreq: 'yearly'  },
     ];
 
     // Dynamic pages pulled live from the database
