@@ -13,9 +13,9 @@
       <tbody>
         <% faqs.forEach(function(f) { %>
           <tr>
-            <td style="color:var(--text-light);">#<%= f.order %></td>
+            <td style="color:#8b96a8;">#<%= f.order %></td>
             <td style="font-weight:600;max-width:240px;"><%= f.question %></td>
-            <td style="max-width:320px;color:var(--text-light);font-size:0.88rem;"><%= f.answer %></td>
+            <td style="max-width:320px;color:#8b96a8;font-size:0.88rem;"><%= f.answer %></td>
             <td class="admin-actions">
               <a href="/admin/faqs/edit/<%= f._id %>" class="admin-btn-sm"><i class="fa-solid fa-pen"></i></a>
               <a href="/admin/faqs/delete/<%= f._id %>" class="admin-btn-sm admin-btn-danger" onclick="return confirm('Delete this FAQ?')"><i class="fa-solid fa-trash"></i></a>

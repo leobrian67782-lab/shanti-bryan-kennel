@@ -5,9 +5,9 @@
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
     <div>
       <h3 style="margin:0;"><%= app.applicantName %></h3>
-      <p style="color:var(--text-light);margin:4px 0 0;font-size:0.85rem;">Applied <%= app.createdAt.toLocaleDateString() %></p>
+      <p style="color:#8b96a8;margin:4px 0 0;font-size:0.85rem;">Applied <%= app.createdAt.toLocaleDateString() %></p>
     </div>
-    <span style="background:<%= app.status === 'Approved' ? '#2e9e4f' : app.status === 'Declined' ? '#c0392b' : '#6b7585' %>;color:#fff;padding:6px 16px;border-radius:20px;font-size:0.85rem;font-weight:700;"><%= app.status %></span>
+    <span style="background:<%= app.status === 'Approved' ? '#2e9e4f' : app.status === 'Declined' ? '#c0392b' : '#8b96a8' %>;color:#fff;padding:6px 16px;border-radius:20px;font-size:0.85rem;font-weight:700;"><%= app.status %></span>
   </div>
 
   <div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;">
@@ -25,32 +25,32 @@
 
     <h4 style="color:var(--gold);font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;">Contact Info</h4>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;font-size:0.9rem;">
-      <div><span style="color:#6b7585;">Email:</span> <span style="color:#fff;"><%= app.email %></span></div>
-      <div><span style="color:#6b7585;">Phone:</span> <span style="color:#fff;"><%= app.phone || '—' %></span></div>
-      <div><span style="color:#6b7585;">Location:</span> <span style="color:#fff;"><%= app.location || '—' %></span></div>
-      <div><span style="color:#6b7585;">Interested in:</span> <span style="color:#fff;"><%= app.interestedIn %></span></div>
+      <div><span style="color:#8b96a8;">Email:</span> <span style="color:#fff;"><%= app.email %></span></div>
+      <div><span style="color:#8b96a8;">Phone:</span> <span style="color:#fff;"><%= app.phone || '—' %></span></div>
+      <div><span style="color:#8b96a8;">Location:</span> <span style="color:#fff;"><%= app.location || '—' %></span><% if (app.detectedLocation) { %> <span style="color:#8b96a8;font-size:0.8rem;">(auto: <%= app.detectedLocation %>)</span><% } %></div>
+      <div><span style="color:#8b96a8;">Interested in:</span> <span style="color:#fff;"><%= app.interestedIn %></span></div>
     </div>
 
     <h4 style="color:var(--gold);font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;">Home Situation</h4>
     <div style="font-size:0.9rem;line-height:1.9;margin-bottom:24px;">
-      <p><span style="color:#6b7585;">Home ownership:</span> <span style="color:#fff;"><%= app.homeOwnership || '—' %></span></p>
-      <p><span style="color:#6b7585;">Landlord approval:</span> <span style="color:#fff;"><%= app.landlordApproval || '—' %></span></p>
-      <p><span style="color:#6b7585;">Yard / exercise plan:</span> <span style="color:#fff;"><%= app.yardOrExercise || '—' %></span></p>
-      <p><span style="color:#6b7585;">Other pets:</span> <span style="color:#fff;"><%= app.otherPets || '—' %></span></p>
-      <p><span style="color:#6b7585;">Children in home:</span> <span style="color:#fff;"><%= app.childrenInHome || '—' %></span></p>
+      <p><span style="color:#8b96a8;">Home ownership:</span> <span style="color:#fff;"><%= app.homeOwnership || '—' %></span></p>
+      <p><span style="color:#8b96a8;">Landlord approval:</span> <span style="color:#fff;"><%= app.landlordApproval || '—' %></span></p>
+      <p><span style="color:#8b96a8;">Yard / exercise plan:</span> <span style="color:#fff;"><%= app.yardOrExercise || '—' %></span></p>
+      <p><span style="color:#8b96a8;">Other pets:</span> <span style="color:#fff;"><%= app.otherPets || '—' %></span></p>
+      <p><span style="color:#8b96a8;">Children in home:</span> <span style="color:#fff;"><%= app.childrenInHome || '—' %></span></p>
     </div>
 
     <h4 style="color:var(--gold);font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;">Experience & Motivation</h4>
     <div style="font-size:0.9rem;line-height:1.9;margin-bottom:24px;">
-      <p><span style="color:#6b7585;">Previous experience:</span> <span style="color:#fff;"><%= app.previousExperience || '—' %></span></p>
-      <p><span style="color:#6b7585;">Primary caretaker:</span> <span style="color:#fff;"><%= app.primaryCaretaker || '—' %></span></p>
-      <p><span style="color:#6b7585;">Why a Min Pin:</span> <span style="color:#fff;"><%= app.whyMinPin || '—' %></span></p>
-      <p><span style="color:#6b7585;">Ready for responsibility:</span> <span style="color:#fff;"><%= app.readyForResponsibility ? '✅ Yes, confirmed' : '❌ Not confirmed' %></span></p>
+      <p><span style="color:#8b96a8;">Previous experience:</span> <span style="color:#fff;"><%= app.previousExperience || '—' %></span></p>
+      <p><span style="color:#8b96a8;">Primary caretaker:</span> <span style="color:#fff;"><%= app.primaryCaretaker || '—' %></span></p>
+      <p><span style="color:#8b96a8;">Why a Min Pin:</span> <span style="color:#fff;"><%= app.whyMinPin || '—' %></span></p>
+      <p><span style="color:#8b96a8;">Ready for responsibility:</span> <span style="color:#fff;"><%= app.readyForResponsibility ? '✅ Yes, confirmed' : '❌ Not confirmed' %></span></p>
     </div>
 
   </div>
 
-  <a href="/admin/applications" style="display:inline-block;margin-top:20px;color:var(--text-light);font-size:0.85rem;"><i class="fa-solid fa-arrow-left"></i> Back to all applications</a>
+  <a href="/admin/applications" style="display:inline-block;margin-top:20px;color:#8b96a8;font-size:0.85rem;"><i class="fa-solid fa-arrow-left"></i> Back to all applications</a>
 </div>
 
 <%- include('partials/admin-footer') %>

@@ -15,8 +15,8 @@
           <tr>
             <td style="font-weight:600;"><%= d.name %></td>
             <td><%= d.gender %></td>
-            <td style="color:var(--text-light);"><%= d.role || '—' %></td>
-            <td style="color:var(--text-light);">#<%= d.order %></td>
+            <td style="color:#8b96a8;"><%= d.role || '—' %></td>
+            <td style="color:#8b96a8;">#<%= d.order %></td>
             <td class="admin-actions">
               <a href="/admin/dogs/edit/<%= d._id %>" class="admin-btn-sm"><i class="fa-solid fa-pen"></i></a>
               <a href="/admin/dogs/delete/<%= d._id %>" class="admin-btn-sm admin-btn-danger" onclick="return confirm('Delete this dog?')"><i class="fa-solid fa-trash"></i></a>

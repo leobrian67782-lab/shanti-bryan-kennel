@@ -10,7 +10,7 @@
       <span class="admin-overview-sub">
         <span style="color:#2e9e4f;"><%= puppies.filter(p => p.status === 'Available').length %> available</span> •
         <span style="color:var(--gold);"><%= puppies.filter(p => p.status === 'Reserved').length %> reserved</span> •
-        <span style="color:var(--text-light);"><%= puppies.filter(p => p.status === 'Sold').length %> sold</span>
+        <span style="color:#8b96a8;"><%= puppies.filter(p => p.status === 'Sold').length %> sold</span>
       </span>
     </div>
   </div>
@@ -124,11 +124,11 @@
           <tr>
             <td>
               <span style="font-weight:600;"><%= p.name %></span><br>
-              <span style="color:var(--text-light);font-size:0.82rem;"><%= p.gender %> • <%= p.color %></span>
+              <span style="color:#8b96a8;font-size:0.82rem;"><%= p.gender %> • <%= p.color %></span>
             </td>
             <td><span class="status-badge status-<%= p.status.toLowerCase() %>"><%= p.status %></span></td>
             <td style="color:var(--maroon);font-weight:600;">$<%= p.price %></td>
-            <td style="color:var(--text-light);font-size:0.85rem;"><%= p.createdAt.toLocaleDateString() %></td>
+            <td style="color:#8b96a8;font-size:0.85rem;"><%= p.createdAt.toLocaleDateString() %></td>
             <td class="admin-actions">
               <a href="/admin/puppies/edit/<%= p._id %>" class="admin-btn-sm"><i class="fa-solid fa-pen"></i></a>
               <a href="/admin/puppies/delete/<%= p._id %>" class="admin-btn-sm admin-btn-danger" onclick="return confirm('Delete this puppy?')"><i class="fa-solid fa-trash"></i></a>
@@ -156,7 +156,7 @@
           <tr>
             <td><%= p.title %></td>
             <td><span class="status-badge status-available">Published</span></td>
-            <td style="color:var(--text-light);font-size:0.85rem;"><%= p.createdAt.toLocaleDateString() %></td>
+            <td style="color:#8b96a8;font-size:0.85rem;"><%= p.createdAt.toLocaleDateString() %></td>
             <td class="admin-actions">
               <a href="/blog/<%= p.slug %>" target="_blank" class="admin-btn-sm"><i class="fa-solid fa-eye"></i></a>
               <a href="/admin/posts/edit/<%= p._id %>" class="admin-btn-sm"><i class="fa-solid fa-pen"></i></a>
@@ -174,8 +174,8 @@
   <div class="admin-section-head">
     <h3><i class="fa-solid fa-robot" style="color:var(--gold);"></i> AI Assistant</h3>
     <div style="display:flex;align-items:center;gap:12px;">
-      <span style="color:#6b7585;font-size:0.8rem;">Knows everything about your site in real time</span>
-      <button id="adminChatClear" title="Clear conversation" style="background:none;border:1px solid #2a3441;color:#6b7585;padding:4px 10px;border-radius:6px;font-size:0.72rem;cursor:pointer;"><i class="fa-solid fa-trash"></i> Clear</button>
+      <span style="color:#8b96a8;font-size:0.8rem;">Knows everything about your site in real time</span>
+      <button id="adminChatClear" title="Clear conversation" style="background:none;border:1px solid #2a3441;color:#8b96a8;padding:4px 10px;border-radius:6px;font-size:0.72rem;cursor:pointer;"><i class="fa-solid fa-trash"></i> Clear</button>
     </div>
   </div>
   <div id="adminChatMsgs" style="min-height:120px;max-height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 0 12px;"></div>
