@@ -103,7 +103,8 @@ app.set('views', path.join(__dirname, 'views'));
 // Static + body parsing
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+app.use(express.json({ limit: '25mb' }));
+app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
 // Lightweight health-check (used by the keep-alive self-ping below, and can
 // also be pointed to by an external uptime monitor like UptimeRobot or cron-job.org)
@@ -2068,6 +2069,16 @@ async function sendCertificateEmail(cert, pdfBuf) {
     console.error('[cert email] Failed:', err.message);
   }
 }
+
+// Ensures /api/ routes always get JSON back, even on unexpected crashes
+// (prevents "Unexpected token '<'" errors in the frontend)
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err.message);
+  if (req.path.startsWith('/api/')) {
+    return res.status(err.status || 500).json({ ok: false, reply: `Server error: ${err.message}` });
+  }
+  next(err);
+});
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
