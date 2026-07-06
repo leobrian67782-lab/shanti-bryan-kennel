@@ -24,6 +24,7 @@ const Dog     = require('./models/Dog');
 const Invoice     = require('./models/Invoice');
 const Certificate = require('./models/Certificate');
 const Application = require('./models/Application');
+const Waitlist = require('./models/Waitlist');
 const PDFDocument = require('pdfkit');
 
 const app = express();
@@ -81,6 +82,17 @@ const applicationLimiter = rateLimit({
   legacyHeaders: false,
   handler: (req, res) => {
     res.status(429).render('apply', { sent: false, error: 'Too many submissions. Please wait a few minutes and try again.', puppies: [] });
+  }
+});
+
+// Prevents spam waitlist signups — 5 per 15 min per IP
+const waitlistLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).render('waitlist', { sent: false, error: 'Too many submissions. Please wait a few minutes and try again.' });
   }
 });
 
@@ -218,6 +230,48 @@ async function sendApplicationAutoReply(name, email) {
     console.log('[email] Application auto-reply sent to', email);
   } catch (err) {
     console.error('[email] Application auto-reply FAILED —', err.message);
+  }
+}
+
+// Confirms a waitlist request and explains that a deposit is required to activate it
+async function sendWaitlistAutoReply(name, email) {
+  if (!process.env.RESEND_API_KEY) return;
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: '"Shanti & Bryan Pinscher Kennel" <notifications@shantibryankennel.com>',
+        to: [email],
+        replyTo: NOTIFY_EMAIL,
+        subject: `We've received your waitlist request — Shanti & Bryan Pinscher Kennel`,
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;">
+            <div style="background:#7a1e1e;padding:26px 30px;border-radius:8px 8px 0 0;text-align:center;">
+              <h1 style="color:#fff;margin:0;font-size:19px;">Waitlist Request Received!</h1>
+              <p style="color:rgba(255,255,255,0.8);margin:6px 0 0;font-size:12px;">Shanti & Bryan Pinscher Kennel</p>
+            </div>
+            <div style="background:#fff;padding:26px 30px;border:1px solid #e6ddc8;">
+              <p style="color:#1e293b;font-size:14px;">Hi <strong>${name}</strong>,</p>
+              <p style="color:#4a5568;font-size:14px;line-height:1.6;">Thank you for your interest in joining our waitlist for an upcoming litter!</p>
+              <div style="background:#fff8f0;border:2px solid #7a1e1e;border-radius:8px;padding:16px 18px;margin:18px 0;">
+                <p style="margin:0 0 8px;color:#7a1e1e;font-size:14px;font-weight:700;">✍️ Next Step: Deposit Required</p>
+                <p style="margin:0;color:#4a5568;font-size:13px;line-height:1.6;">To secure an active spot on our waitlist, a deposit is required. We will personally reach out within 2-3 days to arrange this with you. Once received, your place will be confirmed and the deposit applied toward your future puppy.</p>
+              </div>
+              <p style="color:#4a5568;font-size:13px;">If you have any questions in the meantime, feel free to reply directly to this email.</p>
+              <p style="color:#4a5568;font-size:14px;margin-top:20px;">With love,<br><strong>Shanti & Bryan Pinscher Kennel</strong></p>
+            </div>
+            <div style="background:#f0ece3;padding:12px 30px;text-align:center;border-radius:0 0 8px 8px;">
+              <p style="margin:0;color:#9ca3af;font-size:10px;">shantibryankennel.com | info@shantibryankennel.com</p>
+            </div>
+          </div>`
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || JSON.stringify(data));
+    console.log('[email] Waitlist auto-reply sent to', email);
+  } catch (err) {
+    console.error('[email] Waitlist auto-reply FAILED —', err.message);
   }
 }
 
@@ -526,6 +580,52 @@ app.post('/apply', applicationLimiter, async (req, res) => {
     console.error('APPLICATION ERROR:', err);
     const puppies = await Puppy.find({ status: { $ne: 'Sold' } }).sort({ createdAt: -1 }).catch(() => []);
     res.render('apply', { sent: false, error: 'Something went wrong. Please try again.', puppies });
+  }
+});
+
+// ===== PUPPY WAITLIST =====
+app.get('/waitlist', (req, res) => {
+  res.render('waitlist', { sent: false, error: '' });
+});
+
+app.post('/waitlist', waitlistLimiter, async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data.name || !data.email) {
+      return res.render('waitlist', { sent: false, error: 'Please fill in your name and email.' });
+    }
+
+    const entry = await Waitlist.create({
+      name: data.name,
+      email: data.email,
+      phone: data.phone || '',
+      location: data.location || '',
+      preferredGender: data.preferredGender || 'No preference',
+      preferredColor: data.preferredColor || 'No preference',
+      notes: data.notes || '',
+      status: 'Pending Deposit'
+    });
+
+    sendNotification(
+      `📋 New Waitlist Request from ${entry.name}`,
+      `<div style="font-family:Arial,sans-serif;max-width:580px;">
+        <h2 style="color:#7a1e1e;">New Waitlist Request</h2>
+        <table style="width:100%;border-collapse:collapse;">
+          <tr><td style="padding:8px 0;font-weight:bold;color:#555;width:130px;">Name</td><td style="padding:8px 0;">${entry.name}</td></tr>
+          <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Email</td><td style="padding:8px 0;"><a href="mailto:${entry.email}">${entry.email}</a></td></tr>
+          <tr><td style="padding:8px 0;font-weight:bold;color:#555;">Wants</td><td style="padding:8px 0;">${entry.preferredGender}, ${entry.preferredColor}</td></tr>
+        </table>
+        <p style="margin-top:20px;color:#7a8494;font-size:13px;">A deposit is required before this request becomes active on the waitlist.</p>
+        <p style="margin-top:14px;"><a href="https://shantibryankennel.com/admin/waitlist" style="background:#c9a227;color:#0d1117;padding:10px 20px;text-decoration:none;border-radius:6px;font-weight:bold;">Review in Admin</a></p>
+      </div>`
+    );
+
+    sendWaitlistAutoReply(entry.name, entry.email);
+
+    res.render('waitlist', { sent: true, error: '' });
+  } catch (err) {
+    console.error('WAITLIST ERROR:', err);
+    res.render('waitlist', { sent: false, error: 'Something went wrong. Please try again.' });
   }
 });
 
@@ -1599,6 +1699,28 @@ app.get('/admin/applications/:id/delete', requireLogin, async (req, res) => {
   res.redirect('/admin/applications');
 });
 
+// ===== PUPPY WAITLIST (ADMIN) =====
+app.get('/admin/waitlist', requireLogin, async (req, res) => {
+  const pending = await Waitlist.find({ status: 'Pending Deposit' }).sort({ createdAt: 1 });
+  const active = await Waitlist.find({ status: { $in: ['Active', 'Matched', 'Fulfilled'] } }).sort({ createdAt: 1 });
+  res.render('admin-waitlist-list', { pending, active });
+});
+
+app.get('/admin/waitlist/:id/matched', requireLogin, async (req, res) => {
+  await Waitlist.findByIdAndUpdate(req.params.id, { status: 'Matched' });
+  res.redirect('/admin/waitlist');
+});
+
+app.get('/admin/waitlist/:id/fulfilled', requireLogin, async (req, res) => {
+  await Waitlist.findByIdAndUpdate(req.params.id, { status: 'Fulfilled' });
+  res.redirect('/admin/waitlist');
+});
+
+app.get('/admin/waitlist/:id/cancel', requireLogin, async (req, res) => {
+  await Waitlist.findByIdAndUpdate(req.params.id, { status: 'Cancelled' });
+  res.redirect('/admin/waitlist');
+});
+
 // ===== INVOICES =====
 app.get('/admin/invoices', requireLogin, async (req, res) => {
   const invoices = await Invoice.find().sort({ createdAt: -1 });
@@ -1607,7 +1729,24 @@ app.get('/admin/invoices', requireLogin, async (req, res) => {
 
 app.get('/admin/invoices/new', requireLogin, async (req, res) => {
   const puppies = await Puppy.find().sort({ createdAt: -1 });
-  res.render('admin-invoice-form', { puppies });
+  let prefill = null;
+  if (req.query.waitlistId) {
+    const w = await Waitlist.findById(req.query.waitlistId).catch(() => null);
+    if (w) {
+      prefill = {
+        clientName: w.name,
+        clientEmail: w.email,
+        clientPhone: w.phone || '',
+        clientAddress: w.location || '',
+        puppyName: `Waitlist Deposit — ${w.preferredGender}, ${w.preferredColor}`,
+        puppyPrice: w.depositAmount,
+        depositPaid: w.depositAmount,
+        notes: `Waitlist deposit. Preferences: ${w.preferredGender}, ${w.preferredColor}.${w.notes ? ' Notes: ' + w.notes : ''}`,
+        waitlistId: w._id
+      };
+    }
+  }
+  res.render('admin-invoice-form', { puppies, prefill });
 });
 
 // Generate the PDF as a buffer (shared by create and resend routes)
@@ -1852,6 +1991,11 @@ app.post('/admin/invoices/new', requireLogin, async (req, res) => {
     } catch (emailErr) {
       console.error('Invoice PDF/email error:', emailErr.message);
       // Invoice is saved — admin can resend from the list
+    }
+
+    // If this invoice was for a waitlist deposit, mark that entry Active
+    if (data.waitlistId) {
+      await Waitlist.findByIdAndUpdate(data.waitlistId, { status: 'Active', invoice: inv._id }).catch(() => {});
     }
 
     res.redirect('/admin/invoices');
@@ -2304,6 +2448,7 @@ app.get('/sitemap.xml', async (req, res) => {
       { url: '/',              priority: '1.0', changefreq: 'weekly'  },
       { url: '/puppies',       priority: '0.9', changefreq: 'daily'   },
       { url: '/apply',         priority: '0.8', changefreq: 'monthly' },
+      { url: '/waitlist',      priority: '0.7', changefreq: 'monthly' },
       { url: '/litters',       priority: '0.8', changefreq: 'weekly'  },
       { url: '/our-dogs',      priority: '0.7', changefreq: 'monthly' },
       { url: '/about',         priority: '0.6', changefreq: 'monthly' },
