@@ -177,17 +177,17 @@
   </div>
   <div id="adminChatMsgs" style="min-height:120px;max-height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 0 12px;"></div>
   <div style="display:flex;gap:8px;margin-top:12px;align-items:flex-end;">
-    <label id="adminImgBtn" title="Upload a puppy photo for AI analysis" style="width:42px;height:42px;background:#1c2430;border:1px solid #2a3441;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#c9a227;font-size:1rem;flex-shrink:0;">
-      <i class="fa-solid fa-image"></i>
-      <input type="file" id="adminImgInput" accept="image/*" style="display:none;">
+    <label id="adminImgBtn" title="Upload puppy photos (up to 5)" style="width:42px;height:42px;background:#1c2430;border:1px solid #2a3441;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#c9a227;font-size:1rem;flex-shrink:0;position:relative;">
+      <i class="fa-solid fa-images"></i>
+      <span id="adminImgCount" style="display:none;position:absolute;top:-4px;right:-4px;background:#c9a227;color:#0d1117;width:16px;height:16px;border-radius:50%;font-size:9px;font-weight:800;display:none;align-items:center;justify-content:center;"></span>
+      <input type="file" id="adminImgInput" accept="image/*" multiple style="display:none;">
     </label>
-    <textarea id="adminChatInp" placeholder="Ask anything, or upload a photo above for AI to describe the puppy…" style="flex:1;background:#1c2430;border:1.5px solid #2a3441;color:#fff;border-radius:8px;padding:10px 12px;font-family:'Poppins',sans-serif;font-size:0.85rem;resize:none;outline:none;line-height:1.5;max-height:80px;" rows="2"></textarea>
+    <textarea id="adminChatInp" placeholder="Ask anything, or upload photos above — I can describe puppies, create listings, litters, reviews, blog posts and more…" style="flex:1;background:#1c2430;border:1.5px solid #2a3441;color:#fff;border-radius:8px;padding:10px 12px;font-family:'Poppins',sans-serif;font-size:0.85rem;resize:none;outline:none;line-height:1.5;max-height:80px;" rows="2"></textarea>
     <button id="adminChatSend" style="background:var(--gold);color:#0d1117;border:none;border-radius:8px;width:42px;height:42px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-solid fa-paper-plane"></i></button>
   </div>
-  <div id="adminImgPreview" style="display:none;margin-top:8px;padding:8px 10px;background:#1c2430;border:1px solid #2a3441;border-radius:8px;display:none;align-items:center;gap:10px;">
-    <img id="adminImgThumb" style="width:50px;height:50px;object-fit:cover;border-radius:6px;">
-    <span style="color:#c5cdd8;font-size:0.8rem;flex:1;" id="adminImgName"></span>
-    <button onclick="clearImg()" style="background:none;border:none;color:#e8848f;cursor:pointer;font-size:0.8rem;"><i class="fa-solid fa-xmark"></i></button>
+  <div id="adminImgPreview" style="display:none;margin-top:8px;padding:8px 10px;background:#1c2430;border:1px solid #2a3441;border-radius:8px;align-items:center;gap:8px;flex-wrap:wrap;">
+    <span style="color:#c9a227;font-size:0.75rem;font-weight:600;"><i class="fa-solid fa-images"></i> <span id="adminImgPreviewText"></span></span>
+    <button onclick="clearImgs()" style="background:none;border:none;color:#e8848f;cursor:pointer;font-size:0.75rem;margin-left:auto;"><i class="fa-solid fa-xmark"></i> Clear</button>
   </div>
   <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;" id="adminChatQR"></div>
 </div>
@@ -240,42 +240,87 @@
     });
   }
 
-  // Image upload handling
-  let pendingImage = null;
+  // Multi-image upload handling
+  let pendingImages = [];
 
-  function clearImg() {
-    pendingImage = null;
+  function clearImgs() {
+    pendingImages = [];
     document.getElementById('adminImgInput').value = '';
     document.getElementById('adminImgPreview').style.display = 'none';
+    document.getElementById('adminImgCount').style.display = 'none';
   }
 
-  document.getElementById('adminImgInput').addEventListener('change', function() {
-    const file = this.files[0];
-    if (!file) return;
-    if (file.size > 4 * 1024 * 1024) {
-      addMsg('assistant', '⚠️ Image too large — please use a photo under 4MB.');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      pendingImage = { data: e.target.result, file };
-      const preview = document.getElementById('adminImgPreview');
-      document.getElementById('adminImgThumb').src = e.target.result;
-      document.getElementById('adminImgName').textContent = file.name + ' — ready to analyze';
+  function updateImgPreview() {
+    const preview = document.getElementById('adminImgPreview');
+    const count = document.getElementById('adminImgCount');
+    if (pendingImages.length === 0) {
+      preview.style.display = 'none';
+      count.style.display = 'none';
+    } else {
       preview.style.display = 'flex';
-    };
-    reader.readAsDataURL(file);
+      count.textContent = pendingImages.length;
+      count.style.display = 'flex';
+      document.getElementById('adminImgPreviewText').textContent =
+        pendingImages.length + ' photo' + (pendingImages.length > 1 ? 's' : '') + ' ready — tap Send or type what you want';
+    }
+  }
+
+  document.getElementById('adminImgInput').addEventListener('change', async function() {
+    const files = Array.from(this.files);
+    if (!files.length) return;
+    for (const file of files.slice(0, 5)) {
+      if (file.size > 4 * 1024 * 1024) {
+        addMsg('assistant', `⚠️ **${file.name}** is too large (max 4MB). Skipped.`);
+        continue;
+      }
+      await new Promise((resolve) => {
+        // Compress before storing
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = new Image();
+          img.onload = function() {
+            const MAX = 1000;
+            const ratio = Math.min(MAX/img.width, MAX/img.height, 1);
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(img.width * ratio);
+            canvas.height = Math.round(img.height * ratio);
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(function(blob) {
+              const r2 = new FileReader();
+              r2.onload = function(e2) {
+                const b64 = e2.target.result.split(',')[1];
+                pendingImages.push({ data: b64, mimeType: 'image/jpeg', name: file.name });
+                resolve();
+              };
+              r2.readAsDataURL(blob);
+            }, 'image/jpeg', 0.75);
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+    updateImgPreview();
+    this.value = '';
   });
 
-  async function analyzeImage(imageDataUrl, file, customPrompt) {
-    const base64 = imageDataUrl.split(',')[1];
-    const mimeType = file.type || 'image/jpeg';
-    const prompt = customPrompt || null;
+  async function uploadImagesToCloud() {
+    if (!pendingImages.length) return [];
+    try {
+      addMsg('assistant', '☁️ Uploading photos to cloud storage...');
+      const res = await fetch('/api/admin-upload-images', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ images: pendingImages })
+      });
+      const data = await res.json();
+      return data.ok ? data.urls : [];
+    } catch(e) { return []; }
+  }
 
+  async function analyzeImages(images, customPrompt) {
     const res = await fetch('/api/admin-vision', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageData: base64, mimeType, prompt })
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ images, prompt: customPrompt || null })
     });
     const data = await res.json();
     return data.reply || 'No response from vision AI.';
@@ -296,36 +341,51 @@
 
   async function go(text) {
     text = (text || inp.value).trim();
-    const hasImage = pendingImage !== null;
-    if (!text && !hasImage) return;
+    const hasImages = pendingImages.length > 0;
+    if (!text && !hasImages) return;
     if (busy) return;
     busy = true;
 
-    const displayText = text || '📸 Analyzing this puppy photo…';
+    const displayText = text || `📸 Analyzing ${pendingImages.length} photo${pendingImages.length>1?'s':''}…`;
     inp.value = ''; qr.innerHTML = '';
     addMsg('user', displayText);
     hist.push({ r:'user', t:displayText });
 
-    // Show image thumbnail in chat if one is attached
-    if (hasImage) {
-      const imgDiv = document.createElement('div');
-      imgDiv.className = 'km u';
-      imgDiv.innerHTML = `<div class="kav u" style="visibility:hidden"></div><div style="max-width:82%;"><img src="${pendingImage.data}" style="max-width:180px;max-height:140px;border-radius:10px;object-fit:cover;display:block;"></div>`;
-      // Don't add to adminChatMsgs since that's a different widget, skip
-    }
-
     showTyping();
     try {
       let reply;
+      let uploadedUrls = [];
 
-      if (hasImage) {
-        // Vision analysis
-        const customPrompt = text || null;
-        const imgData = pendingImage;
-        clearImg();
-        reply = await analyzeImage(imgData.data, imgData.file, customPrompt);
+      if (hasImages) {
+        const imagesToAnalyze = [...pendingImages];
+
+        // Check if the request is to CREATE something (needs Cloudinary upload)
+        const isCreateRequest = text && /create|add|new|post|litter|puppy|listing|upload/i.test(text);
+
+        if (isCreateRequest) {
+          // Upload to Cloudinary first
+          uploadedUrls = await uploadImagesToCloud();
+          // Remove the "Uploading" message
+          const msgs = document.getElementById('adminChatMsgs');
+          const last = msgs.lastElementChild;
+          if (last && last.textContent.includes('Uploading')) msgs.removeChild(last);
+        }
+
+        clearImgs();
+
+        // Always analyze with vision
+        const visionPrompt = text || 'Analyze these puppy photos and provide a description, captions, and traits.';
+        const fullPrompt = uploadedUrls.length
+          ? `${visionPrompt}\n\nNote: These images have been uploaded to Cloudinary. URLs: ${uploadedUrls.join(', ')}\nIf creating a listing, use these photo URLs in the action.`
+          : visionPrompt;
+
+        reply = await analyzeImages(imagesToAnalyze, fullPrompt);
+
+        // Inject uploaded URLs into any ACTION blocks
+        if (uploadedUrls.length) {
+          reply = reply.replace(/"photos"\s*:\s*\[\]/, `"photos": ${JSON.stringify(uploadedUrls)}`);
+        }
       } else {
-        // Normal chat
         const res = await fetch('/api/admin-chat', {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ message: text, history: hist.slice(-20) })
@@ -336,7 +396,7 @@
 
       hideTyping();
 
-      // Parse and execute any ACTION blocks
+      // Parse and execute ACTION blocks
       const actionRegex = /<ACTION>([\s\S]*?)<\/ACTION>/g;
       const actions = [];
       let match;
@@ -357,24 +417,24 @@
         hist.push({ r:'assistant', t:resultMsg });
       }
 
-      if (hasImage) {
-        setQR(['Use this as a listing description', 'Give me more caption ideas', 'What breed traits do you see?', 'Make it shorter']);
+      if (hasImages) {
+        setQR(['Create a puppy listing from this photo', 'Write a Facebook caption', 'What breed traits do you see?', 'Write a shorter description']);
       } else {
-        setQR(['Show site stats', 'Any pending reviews?', 'Approve all reviews', 'Show all puppies', 'Recent inquiries']);
+        setQR(['Show site stats', 'Pending reviews?', 'Approve all reviews', 'Show all puppies', 'Recent inquiries']);
       }
 
     } catch(e) {
       hideTyping();
-      addMsg('assistant', 'Something went wrong. Please try again.');
-      clearImg();
+      addMsg('assistant', `Something went wrong: ${e.message}`);
+      clearImgs();
     }
     busy = false;
   }
 
   // Welcome message
   setTimeout(() => {
-    addMsg('assistant', `Hi Bryan! 👋 I'm your all-in-one admin AI. I can **read and act on everything** in your site.\n\nTry saying:\n• "Approve all pending reviews"\n• "Mark Stella as Reserved"\n• "Delete the inquiry from Jane"\n• "Show me this week's stats"\n• "Draft a description for a new female black & tan puppy"`);
-    setQR(['Show site stats', 'Any pending reviews?', 'Approve all reviews', 'Show all puppies', 'Recent inquiries']);
+    addMsg('assistant', `Hi Bryan! 👋 I'm your all-in-one admin AI. I can **read, create, and act on everything** in your site.\n\n📸 **Upload photos** and tell me:\n• "Create a new puppy listing from these photos"\n• "Add this as a new litter"\n• "Write a caption for Facebook"\n\n💬 **Or just type:**\n• "Approve all pending reviews"\n• "Mark Stella as Reserved"\n• "Write a blog post about Min Pin care"\n• "Show me today's stats"`);
+    setQR(['Show site stats', 'Pending reviews?', 'Approve all reviews', 'Create new puppy listing', 'Recent inquiries']);
   }, 400);
 
   send.addEventListener('click', () => go());
