@@ -73,9 +73,9 @@
     <div class="form-group">
       <label>Photos (you can select up to 5 at once)</label>
       <input type="file" name="photos" accept="image/*" multiple>
-      <small style="color:#7a8494;display:block;margin-top:4px;">Tip: Hold Ctrl (or Cmd) to select multiple photos. New photos are added to the gallery below, they won't remove your existing ones.</small>
+      <small style="color:#8b96a8;display:block;margin-top:4px;">Tip: Hold Ctrl (or Cmd) to select multiple photos. New photos are added to the gallery below, they won't remove your existing ones.</small>
       <% if (puppy && puppy.photos && puppy.photos.length > 0) { %>
-        <p style="margin-top:14px;color:#c5cdd8;">Current photos <span style="color:#7a8494;font-weight:400;">(check a photo to remove it when you save)</span>:</p>
+        <p style="margin-top:14px;color:#c5cdd8;">Current photos <span style="color:#8b96a8;font-weight:400;">(check a photo to remove it when you save)</span>:</p>
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;">
           <% puppy.photos.forEach(function(p, i) { %>
             <label class="photo-remove-card" style="display:block;width:100px;flex-shrink:0;position:relative;border-radius:8px;overflow:hidden;cursor:pointer;">
