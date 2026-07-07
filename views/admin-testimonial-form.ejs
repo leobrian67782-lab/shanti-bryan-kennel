@@ -39,11 +39,11 @@
       <% if (testimonial && testimonial.photo) { %>
         <div style="margin-bottom:12px;">
           <img src="<%= testimonial.photo %>" style="width:100px;height:100px;object-fit:cover;border-radius:8px;display:block;margin-bottom:8px;">
-          <label style="display:flex;align-items:center;gap:8px;color:#e8848f;font-weight:600;font-size:0.85rem;cursor:pointer;">
+          <label style="display:flex;align-items:center;gap:8px;color:#dc2626;font-weight:600;font-size:0.85rem;cursor:pointer;">
             <input type="checkbox" name="deletePhoto" value="yes" style="width:auto;margin:0;accent-color:#c0392b;">
             <i class="fa-solid fa-trash"></i> Remove this photo
           </label>
-          <small style="color:#8b96a8;display:block;margin-top:6px;">Or upload a new photo below to replace it automatically.</small>
+          <small style="color:#6b7280;display:block;margin-top:6px;">Or upload a new photo below to replace it automatically.</small>
         </div>
       <% } %>
       <input type="file" name="photo" accept="image/*">

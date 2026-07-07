@@ -16,18 +16,18 @@
             <td style="font-weight:700;color:var(--gold);"><%= inv.invoiceNumber %></td>
             <td>
               <span style="font-weight:600;"><%= inv.clientName %></span><br>
-              <span style="color:#8b96a8;font-size:0.8rem;"><%= inv.clientEmail %></span>
+              <span style="color:#6b7280;font-size:0.8rem;"><%= inv.clientEmail %></span>
             </td>
             <td><%= inv.puppyName %></td>
             <td style="font-weight:600;">$<%= inv.puppyPrice %></td>
-            <td style="color:<%= inv.balanceDue > 0 ? '#e8848f' : '#2e9e4f' %>;font-weight:600;">$<%= inv.balanceDue %></td>
+            <td style="color:<%= inv.balanceDue > 0 ? '#dc2626' : '#2e9e4f' %>;font-weight:600;">$<%= inv.balanceDue %></td>
             <td>
-              <span style="background:<%= inv.status === 'Paid' ? '#2e9e4f' : inv.status === 'Sent' ? '#2b6cb0' : '#8b96a8' %>;color:#fff;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;"><%= inv.status %></span>
+              <span style="background:<%= inv.status === 'Paid' ? '#2e9e4f' : inv.status === 'Sent' ? '#2b6cb0' : '#6b7280' %>;color:#fff;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;"><%= inv.status %></span>
             </td>
-            <td style="color:#8b96a8;font-size:0.82rem;"><%= inv.createdAt.toLocaleDateString() %></td>
+            <td style="color:#6b7280;font-size:0.82rem;"><%= inv.createdAt.toLocaleDateString() %></td>
             <td class="admin-actions">
               <a href="/admin/invoices/<%= inv._id %>/pdf" class="admin-btn-sm" title="Download PDF" target="_blank"><i class="fa-solid fa-file-pdf"></i></a>
-              <a href="/admin/certificates/new?invoice=<%= inv._id %>" class="admin-btn-sm" title="Generate Ownership Certificate" style="background:#c9a227;color:#0d1117;"><i class="fa-solid fa-certificate"></i></a>
+              <a href="/admin/certificates/new?invoice=<%= inv._id %>" class="admin-btn-sm" title="Generate Ownership Certificate" style="background:#c9a227;color:var(--navy);"><i class="fa-solid fa-certificate"></i></a>
               <a href="/admin/invoices/<%= inv._id %>/send" class="admin-btn-sm" title="Resend Email" onclick="return confirm('Resend invoice to <%= inv.clientEmail %>?')"><i class="fa-solid fa-paper-plane"></i></a>
               <% if (inv.status !== 'Paid') { %>
                 <a href="/admin/invoices/<%= inv._id %>/mark-paid" class="admin-btn-sm" title="Mark as Paid" onclick="return confirm('Mark this invoice as paid?')"><i class="fa-solid fa-check"></i></a>

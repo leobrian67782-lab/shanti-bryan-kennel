@@ -14,9 +14,9 @@
         <% litters.forEach(function(l) { %>
           <tr>
             <td style="font-weight:600;"><%= l.litterName %></td>
-            <td style="color:#8b96a8;font-size:0.85rem;"><%= l.sireName %> &times; <%= l.damName %></td>
+            <td style="color:#6b7280;font-size:0.85rem;"><%= l.sireName %> &times; <%= l.damName %></td>
             <td><%= l.numberOfPuppies || '—' %></td>
-            <td style="color:#8b96a8;font-size:0.85rem;"><%= l.birthDate.toLocaleDateString() %></td>
+            <td style="color:#6b7280;font-size:0.85rem;"><%= l.birthDate.toLocaleDateString() %></td>
             <td class="admin-actions">
               <a href="/admin/litters/edit/<%= l._id %>" class="admin-btn-sm"><i class="fa-solid fa-pen"></i></a>
               <a href="/admin/litters/delete/<%= l._id %>" class="admin-btn-sm admin-btn-danger" onclick="return confirm('Delete this litter?')"><i class="fa-solid fa-trash"></i></a>

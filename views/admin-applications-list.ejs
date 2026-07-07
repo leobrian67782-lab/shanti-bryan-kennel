@@ -15,14 +15,14 @@
           <tr>
             <td>
               <span style="font-weight:600;"><%= a.applicantName %></span><br>
-              <span style="color:#8b96a8;font-size:0.8rem;"><%= a.email %></span>
+              <span style="color:#6b7280;font-size:0.8rem;"><%= a.email %></span>
             </td>
             <td><%= a.interestedIn %></td>
-            <td style="color:#8b96a8;font-size:0.85rem;"><%= a.homeOwnership %></td>
+            <td style="color:#6b7280;font-size:0.85rem;"><%= a.homeOwnership %></td>
             <td>
-              <span style="background:<%= a.status === 'Approved' ? '#2e9e4f' : a.status === 'Declined' ? '#c0392b' : '#8b96a8' %>;color:#fff;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;"><%= a.status %></span>
+              <span style="background:<%= a.status === 'Approved' ? '#2e9e4f' : a.status === 'Declined' ? '#c0392b' : '#6b7280' %>;color:#fff;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;"><%= a.status %></span>
             </td>
-            <td style="color:#8b96a8;font-size:0.82rem;"><%= a.createdAt.toLocaleDateString() %></td>
+            <td style="color:#6b7280;font-size:0.82rem;"><%= a.createdAt.toLocaleDateString() %></td>
             <td class="admin-actions">
               <a href="/admin/applications/<%= a._id %>" class="admin-btn-sm" title="View Details"><i class="fa-solid fa-eye"></i></a>
               <a href="/admin/applications/<%= a._id %>/delete" class="admin-btn-sm admin-btn-danger" onclick="return confirm('Delete this application?')"><i class="fa-solid fa-trash"></i></a>

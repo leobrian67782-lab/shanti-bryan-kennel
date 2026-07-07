@@ -34,7 +34,7 @@
       <span class="admin-overview-sub">
         <span style="color:#2e9e4f;"><%= puppies.filter(p => p.status === 'Available').length %> available</span> •
         <span style="color:var(--gold);"><%= puppies.filter(p => p.status === 'Reserved').length %> reserved</span> •
-        <span style="color:#8b96a8;"><%= puppies.filter(p => p.status === 'Sold').length %> sold</span>
+        <span style="color:#6b7280;"><%= puppies.filter(p => p.status === 'Sold').length %> sold</span>
       </span>
     </div>
   </div>
@@ -174,11 +174,11 @@
           <tr>
             <td>
               <span style="font-weight:600;"><%= p.name %></span><br>
-              <span style="color:#8b96a8;font-size:0.82rem;"><%= p.gender %> • <%= p.color %></span>
+              <span style="color:#6b7280;font-size:0.82rem;"><%= p.gender %> • <%= p.color %></span>
             </td>
             <td><span class="status-badge status-<%= p.status.toLowerCase() %>"><%= p.status %></span></td>
             <td style="color:var(--maroon);font-weight:600;">$<%= p.price %></td>
-            <td style="color:#8b96a8;font-size:0.85rem;"><%= p.createdAt.toLocaleDateString() %></td>
+            <td style="color:#6b7280;font-size:0.85rem;"><%= p.createdAt.toLocaleDateString() %></td>
             <td class="admin-actions">
               <a href="/admin/puppies/edit/<%= p._id %>" class="admin-btn-sm"><i class="fa-solid fa-pen"></i></a>
               <a href="/admin/puppies/delete/<%= p._id %>" class="admin-btn-sm admin-btn-danger" onclick="return confirm('Delete this puppy?')"><i class="fa-solid fa-trash"></i></a>
@@ -206,7 +206,7 @@
           <tr>
             <td><%= p.title %></td>
             <td><span class="status-badge status-available">Published</span></td>
-            <td style="color:#8b96a8;font-size:0.85rem;"><%= p.createdAt.toLocaleDateString() %></td>
+            <td style="color:#6b7280;font-size:0.85rem;"><%= p.createdAt.toLocaleDateString() %></td>
             <td class="admin-actions">
               <a href="/blog/<%= p.slug %>" target="_blank" class="admin-btn-sm"><i class="fa-solid fa-eye"></i></a>
               <a href="/admin/posts/edit/<%= p._id %>" class="admin-btn-sm"><i class="fa-solid fa-pen"></i></a>
@@ -226,23 +226,23 @@
   <div class="admin-section-head">
     <h3><i class="fa-solid fa-robot" style="color:var(--gold);"></i> AI Assistant</h3>
     <div style="display:flex;align-items:center;gap:12px;">
-      <span style="color:#8b96a8;font-size:0.8rem;">Knows everything about your site in real time</span>
-      <button id="adminChatClear" title="Clear conversation" style="background:none;border:1px solid #2a3441;color:#8b96a8;padding:4px 10px;border-radius:6px;font-size:0.72rem;cursor:pointer;"><i class="fa-solid fa-trash"></i> Clear</button>
+      <span style="color:#6b7280;font-size:0.8rem;">Knows everything about your site in real time</span>
+      <button id="adminChatClear" title="Clear conversation" style="background:none;border:1px solid #d1d5db;color:#6b7280;padding:4px 10px;border-radius:6px;font-size:0.72rem;cursor:pointer;"><i class="fa-solid fa-trash"></i> Clear</button>
     </div>
   </div>
   <div id="adminChatMsgs" style="min-height:120px;max-height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 0 12px;"></div>
   <div style="display:flex;gap:8px;margin-top:12px;align-items:flex-end;">
-    <label id="adminImgBtn" title="Upload a puppy photo for AI analysis" style="width:42px;height:42px;background:#1c2430;border:1px solid #2a3441;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#c9a227;font-size:1rem;flex-shrink:0;">
+    <label id="adminImgBtn" title="Upload a puppy photo for AI analysis" style="width:42px;height:42px;background:#f9fafb;border:1px solid #d1d5db;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#c9a227;font-size:1rem;flex-shrink:0;">
       <i class="fa-solid fa-image"></i>
       <input type="file" id="adminImgInput" accept="image/*" style="display:none;">
     </label>
-    <textarea id="adminChatInp" placeholder="Ask anything, or upload a photo above for AI to describe the puppy…" style="flex:1;background:#1c2430;border:1.5px solid #2a3441;color:#fff;border-radius:8px;padding:10px 12px;font-family:'Poppins',sans-serif;font-size:0.85rem;resize:none;outline:none;line-height:1.5;max-height:80px;" rows="2"></textarea>
-    <button id="adminChatSend" style="background:var(--gold);color:#0d1117;border:none;border-radius:8px;width:42px;height:42px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-solid fa-paper-plane"></i></button>
+    <textarea id="adminChatInp" placeholder="Ask anything, or upload a photo above for AI to describe the puppy…" style="flex:1;background:#f9fafb;border:1.5px solid #d1d5db;color:#111827;border-radius:8px;padding:10px 12px;font-family:'Poppins',sans-serif;font-size:0.85rem;resize:none;outline:none;line-height:1.5;max-height:80px;" rows="2"></textarea>
+    <button id="adminChatSend" style="background:var(--gold);color:var(--navy);border:none;border-radius:8px;width:42px;height:42px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-solid fa-paper-plane"></i></button>
   </div>
-  <div id="adminImgPreview" style="display:none;margin-top:8px;padding:8px 10px;background:#1c2430;border:1px solid #2a3441;border-radius:8px;align-items:center;gap:10px;">
+  <div id="adminImgPreview" style="display:none;margin-top:8px;padding:8px 10px;background:#f9fafb;border:1px solid #d1d5db;border-radius:8px;align-items:center;gap:10px;">
     <img id="adminImgThumb" style="width:50px;height:50px;object-fit:cover;border-radius:6px;">
-    <span style="color:#c5cdd8;font-size:0.8rem;flex:1;" id="adminImgName"></span>
-    <button onclick="clearImg()" style="background:none;border:none;color:#e8848f;cursor:pointer;font-size:0.8rem;"><i class="fa-solid fa-xmark"></i></button>
+    <span style="color:#374151;font-size:0.8rem;flex:1;" id="adminImgName"></span>
+    <button onclick="clearImg()" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:0.8rem;"><i class="fa-solid fa-xmark"></i></button>
   </div>
   <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;" id="adminChatQR"></div>
 </div>
@@ -298,8 +298,8 @@
   function addMsg(role, text) {
     const d = document.createElement('div');
     d.style.cssText = role === 'user'
-      ? 'align-self:flex-end;background:var(--gold);color:#0d1117;padding:8px 13px;border-radius:12px 12px 3px 12px;font-size:0.84rem;max-width:85%;line-height:1.5;font-family:Poppins,sans-serif;'
-      : 'align-self:flex-start;background:#151b26;border:1px solid #1f2733;color:#c5cdd8;padding:10px 14px;border-radius:12px 12px 12px 3px;font-size:0.84rem;max-width:90%;line-height:1.6;font-family:Poppins,sans-serif;';
+      ? 'align-self:flex-end;background:var(--gold);color:var(--navy);padding:8px 13px;border-radius:12px 12px 3px 12px;font-size:0.84rem;max-width:85%;line-height:1.5;font-family:Poppins,sans-serif;'
+      : 'align-self:flex-start;background:#ffffff;border:1px solid #e5e7eb;color:#374151;padding:10px 14px;border-radius:12px 12px 12px 3px;font-size:0.84rem;max-width:90%;line-height:1.6;font-family:Poppins,sans-serif;';
     d.innerHTML = fmt(text);
     msgs.appendChild(d);
     msgs.scrollTop = msgs.scrollHeight;
@@ -308,7 +308,7 @@
   function showTyping() {
     const d = document.createElement('div');
     d.id = 'adminTyping';
-    d.style.cssText = 'align-self:flex-start;background:#151b26;border:1px solid #1f2733;padding:12px 16px;border-radius:12px;display:flex;gap:4px;align-items:center;';
+    d.style.cssText = 'align-self:flex-start;background:#ffffff;border:1px solid #e5e7eb;padding:12px 16px;border-radius:12px;display:flex;gap:4px;align-items:center;';
     d.innerHTML = '<span class="admin-dot"></span><span class="admin-dot"></span><span class="admin-dot"></span>';
     msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
   }
@@ -319,9 +319,9 @@
     items.forEach(item => {
       const b = document.createElement('button');
       b.textContent = item;
-      b.style.cssText = 'background:transparent;border:1px solid #2a3441;color:#c5cdd8;padding:5px 12px;border-radius:20px;font-size:0.75rem;cursor:pointer;font-family:Poppins,sans-serif;';
+      b.style.cssText = 'background:transparent;border:1px solid #d1d5db;color:#374151;padding:5px 12px;border-radius:20px;font-size:0.75rem;cursor:pointer;font-family:Poppins,sans-serif;';
       b.onmouseover = () => { b.style.borderColor='var(--gold)'; b.style.color='var(--gold)'; };
-      b.onmouseout  = () => { b.style.borderColor='#2a3441'; b.style.color='#c5cdd8'; };
+      b.onmouseout  = () => { b.style.borderColor='#d1d5db'; b.style.color='#374151'; };
       b.onclick = () => go(item);
       qr.appendChild(b);
     });

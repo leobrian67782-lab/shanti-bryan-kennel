@@ -15,11 +15,11 @@
           <tr>
             <td>
               <span style="font-weight:600;"><%= p.name %></span><br>
-              <span style="color:#8b96a8;font-size:0.82rem;"><%= p.gender %> • <%= p.color %></span>
+              <span style="color:#6b7280;font-size:0.82rem;"><%= p.gender %> • <%= p.color %></span>
             </td>
             <td><span class="status-badge status-<%= p.status.toLowerCase() %>"><%= p.status %></span></td>
             <td style="color:var(--maroon);font-weight:600;">$<%= p.price %></td>
-            <td style="color:#8b96a8;font-size:0.85rem;"><%= p.createdAt.toLocaleDateString() %></td>
+            <td style="color:#6b7280;font-size:0.85rem;"><%= p.createdAt.toLocaleDateString() %></td>
             <td class="admin-actions">
               <a href="/admin/puppies/edit/<%= p._id %>" class="admin-btn-sm"><i class="fa-solid fa-pen"></i></a>
               <a href="/admin/puppies/delete/<%= p._id %>" class="admin-btn-sm admin-btn-danger" onclick="return confirm('Delete this puppy?')"><i class="fa-solid fa-trash"></i></a>

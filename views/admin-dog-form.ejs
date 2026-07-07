@@ -34,7 +34,7 @@
     <div class="form-group">
       <label>Photos (you can select up to 8 at once)</label>
       <input type="file" name="photos" accept="image/*" multiple>
-      <small style="color:#8b96a8;display:block;margin-top:4px;">Tip: Hold Ctrl (or Cmd) to select multiple photos. New photos are added to the gallery below, they won't remove your existing ones.</small>
+      <small style="color:#6b7280;display:block;margin-top:4px;">Tip: Hold Ctrl (or Cmd) to select multiple photos. New photos are added to the gallery below, they won't remove your existing ones.</small>
       <%
         var existingDogPhotos = [];
         if (dog) {
@@ -42,12 +42,12 @@
         }
       %>
       <% if (existingDogPhotos.length > 0) { %>
-        <p style="margin-top:14px;color:#c5cdd8;">Current photos <span style="color:#8b96a8;font-weight:400;">(check a photo to remove it when you save)</span>:</p>
+        <p style="margin-top:14px;color:#374151;">Current photos <span style="color:#6b7280;font-weight:400;">(check a photo to remove it when you save)</span>:</p>
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;">
           <% existingDogPhotos.forEach(function(p, i) { %>
             <label class="photo-remove-card" style="display:block;width:100px;flex-shrink:0;position:relative;border-radius:8px;overflow:hidden;cursor:pointer;">
               <img src="<%= p %>" alt="Photo <%= i + 1 %>" style="width:100px;height:100px;object-fit:cover;display:block;">
-              <span class="photo-remove-overlay" style="display:flex;align-items:center;justify-content:center;gap:4px;font-size:0.68rem;font-weight:600;color:#e8848f;background:#1c2430;padding:5px 0;">
+              <span class="photo-remove-overlay" style="display:flex;align-items:center;justify-content:center;gap:4px;font-size:0.68rem;font-weight:600;color:#dc2626;background:#f9fafb;padding:5px 0;">
                 <input type="checkbox" name="deletePhotos" value="<%= p %>" style="width:auto;margin:0;">
                 <i class="fa-solid fa-trash"></i> Remove
               </span>

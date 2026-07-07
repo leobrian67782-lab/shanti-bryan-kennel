@@ -4,7 +4,7 @@
   <form method="POST" action="/admin/invoices/new" id="invoiceForm">
 
     <!-- Puppy Selection -->
-    <h3 style="color:#c5cdd8;margin-bottom:16px;font-size:1rem;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #1f2733;padding-bottom:10px;">Puppy Details</h3>
+    <h3 style="color:#374151;margin-bottom:16px;font-size:1rem;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e5e7eb;padding-bottom:10px;">Puppy Details</h3>
 
     <div class="form-group">
       <label>Select Puppy (optional — or fill in manually)</label>
@@ -43,7 +43,7 @@
     </div>
 
     <!-- Client Details -->
-    <h3 style="color:#c5cdd8;margin:24px 0 16px;font-size:1rem;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #1f2733;padding-bottom:10px;">Client Details</h3>
+    <h3 style="color:#374151;margin:24px 0 16px;font-size:1rem;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e5e7eb;padding-bottom:10px;">Client Details</h3>
 
     <div class="form-group">
       <label>Client Full Name *</label>
@@ -63,7 +63,7 @@
     </div>
 
     <!-- Payment -->
-    <h3 style="color:#c5cdd8;margin:24px 0 16px;font-size:1rem;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #1f2733;padding-bottom:10px;">Payment</h3>
+    <h3 style="color:#374151;margin:24px 0 16px;font-size:1rem;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e5e7eb;padding-bottom:10px;">Payment</h3>
 
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;">
       <div class="form-group">
@@ -72,7 +72,7 @@
       </div>
       <div class="form-group">
         <label>Balance Due ($)</label>
-        <input type="number" name="balanceDue" id="balanceDue" readonly style="background:#0d1117;color:var(--gold);font-weight:700;">
+        <input type="number" name="balanceDue" id="balanceDue" readonly style="background:#f7f8fa;color:var(--gold);font-weight:700;">
       </div>
       <div class="form-group">
         <label>Delivery Method</label>
@@ -90,14 +90,14 @@
     </div>
 
     <!-- Signature -->
-    <h3 style="color:#c5cdd8;margin:24px 0 16px;font-size:1rem;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #1f2733;padding-bottom:10px;">Your Signature</h3>
-    <p style="color:#8b96a8;font-size:0.82rem;margin-bottom:10px;">Draw your signature below using your finger or mouse. This will appear on the PDF.</p>
+    <h3 style="color:#374151;margin:24px 0 16px;font-size:1rem;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e5e7eb;padding-bottom:10px;">Your Signature</h3>
+    <p style="color:#6b7280;font-size:0.82rem;margin-bottom:10px;">Draw your signature below using your finger or mouse. This will appear on the PDF.</p>
     <div style="position:relative;background:#fff;border-radius:8px;overflow:hidden;">
       <canvas id="sigPad" width="640" height="160" style="width:100%;height:160px;cursor:crosshair;touch-action:none;display:block;"></canvas>
     </div>
     <div style="display:flex;gap:10px;margin-top:8px;">
-      <button type="button" onclick="clearSig()" style="background:#1c2430;border:1px solid #2a3441;color:#c5cdd8;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:0.8rem;"><i class="fa-solid fa-eraser"></i> Clear</button>
-      <span style="color:#8b96a8;font-size:0.75rem;align-self:center;">Clear to redraw if needed</span>
+      <button type="button" onclick="clearSig()" style="background:#f9fafb;border:1px solid #d1d5db;color:#374151;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:0.8rem;"><i class="fa-solid fa-eraser"></i> Clear</button>
+      <span style="color:#6b7280;font-size:0.75rem;align-self:center;">Clear to redraw if needed</span>
     </div>
     <input type="hidden" name="signatureData" id="signatureData">
 

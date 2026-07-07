@@ -3,22 +3,22 @@
 <% if (typeof pending !== 'undefined' && pending.length > 0) { %>
 <div class="admin-section" style="border:1px solid #c9a22740;margin-bottom:24px;">
   <div class="admin-section-head">
-    <h3><i class="fa-solid fa-clock" style="color:var(--gold);"></i> Pending Approval <span style="background:var(--gold);color:#0d1117;font-size:0.75rem;font-weight:700;padding:2px 10px;border-radius:20px;margin-left:8px;"><%= pending.length %></span></h3>
+    <h3><i class="fa-solid fa-clock" style="color:var(--gold);"></i> Pending Approval <span style="background:var(--gold);color:var(--navy);font-size:0.75rem;font-weight:700;padding:2px 10px;border-radius:20px;margin-left:8px;"><%= pending.length %></span></h3>
   </div>
   <% pending.forEach(function(t) { %>
-    <div style="border-bottom:1px solid #1f2733;padding:18px 0;">
+    <div style="border-bottom:1px solid #e5e7eb;padding:18px 0;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
         <div style="flex:1;min-width:0;">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;">
             <% if (t.photo) { %><img src="<%= t.photo %>" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0;"><% } %>
-            <span style="font-weight:600;color:#fff;"><%= t.customerName %></span>
-            <% if (t.location) { %><span style="color:#8b96a8;font-size:0.82rem;"><i class="fa-solid fa-location-dot"></i> <%= t.location %></span><% } %>
+            <span style="font-weight:600;color:#111827;"><%= t.customerName %></span>
+            <% if (t.location) { %><span style="color:#6b7280;font-size:0.82rem;"><i class="fa-solid fa-location-dot"></i> <%= t.location %></span><% } %>
             <span style="color:var(--gold);font-size:0.85rem;">
               <% for(let i=0;i<t.rating;i++){%><i class="fa-solid fa-star"></i><%}%>
             </span>
           </div>
-          <p style="color:#c5cdd8;font-size:0.9rem;line-height:1.6;margin:0;"><%= t.message %></p>
-          <small style="color:#8b96a8;margin-top:6px;display:block;"><%= t.createdAt.toLocaleDateString() %></small>
+          <p style="color:#374151;font-size:0.9rem;line-height:1.6;margin:0;"><%= t.message %></p>
+          <small style="color:#6b7280;margin-top:6px;display:block;"><%= t.createdAt.toLocaleDateString() %></small>
         </div>
         <div style="display:flex;gap:8px;flex-shrink:0;">
           <a href="/admin/testimonials/approve/<%= t._id %>" class="admin-btn" style="background:#2e9e4f;"><i class="fa-solid fa-check"></i> Approve</a>
@@ -46,13 +46,13 @@
             <td>
               <span style="font-weight:600;"><%= t.customerName %></span><br>
               <% if (t.location || t.tag) { %>
-                <span style="color:#8b96a8;font-size:0.82rem;"><%= t.location %><% if (t.location && t.tag) { %> • <% } %><%= t.tag %></span>
+                <span style="color:#6b7280;font-size:0.82rem;"><%= t.location %><% if (t.location && t.tag) { %> • <% } %><%= t.tag %></span>
               <% } %>
             </td>
             <td style="color:var(--gold);white-space:nowrap;">
               <% for (let i = 0; i < t.rating; i++) { %><i class="fa-solid fa-star"></i><% } %>
             </td>
-            <td style="max-width:320px;color:#8b96a8;font-size:0.88rem;"><%= t.message %></td>
+            <td style="max-width:320px;color:#6b7280;font-size:0.88rem;"><%= t.message %></td>
             <td class="admin-actions">
               <a href="/admin/testimonials/edit/<%= t._id %>" class="admin-btn-sm"><i class="fa-solid fa-pen"></i></a>
               <a href="/admin/testimonials/delete/<%= t._id %>" class="admin-btn-sm admin-btn-danger" onclick="return confirm('Delete this testimonial?')"><i class="fa-solid fa-trash"></i></a>
