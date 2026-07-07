@@ -873,11 +873,36 @@ app.get('/admin/dashboard', requireLogin, async (req, res) => {
   const unpaidInvoices = await Invoice.countDocuments({ status: { $ne: 'Paid' } });
   const totalCertificates = await Certificate.countDocuments();
 
+  // ── Chart data: last 6 months of actual sales activity, from real invoices ──
+  const monthLabels = [];
+  const monthKeys = [];
+  const now = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    monthLabels.push(d.toLocaleDateString('en-US', { month: 'short' }));
+    monthKeys.push(`${d.getFullYear()}-${d.getMonth()}`);
+  }
+  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+  const recentInvoices = await Invoice.find({ createdAt: { $gte: sixMonthsAgo } }).select('createdAt puppyPrice').lean();
+
+  const puppiesPlacedByMonth = monthKeys.map(() => 0);
+  const revenueByMonth = monthKeys.map(() => 0);
+  recentInvoices.forEach(inv => {
+    const d = new Date(inv.createdAt);
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    const idx = monthKeys.indexOf(key);
+    if (idx !== -1) {
+      puppiesPlacedByMonth[idx] += 1;
+      revenueByMonth[idx] += (inv.puppyPrice || 0);
+    }
+  });
+
   res.render('admin-dashboard', {
     puppies, litters, testimonials, pendingReviews, faqs, posts, inquiries, dogs,
     pendingApplications, totalApplications,
     waitlistPendingDeposit, waitlistActive, totalWaitlist,
-    totalInvoices, unpaidInvoices, totalCertificates
+    totalInvoices, unpaidInvoices, totalCertificates,
+    chartLabels: monthLabels, puppiesPlacedByMonth, revenueByMonth
   });
 });
 
@@ -1855,8 +1880,11 @@ app.post('/api/admin-vision', requireLogin, async (req, res) => {
 
 // ===== PUPPY APPLICATIONS (ADMIN) =====
 app.get('/admin/applications', requireLogin, async (req, res) => {
-  const applications = await Application.find().sort({ createdAt: -1 });
-  res.render('admin-applications-list', { applications });
+  const all = await Application.find().sort({ createdAt: -1 });
+  const pending = all.filter(a => a.status === 'Pending');
+  const approved = all.filter(a => a.status === 'Approved');
+  const declined = all.filter(a => a.status === 'Declined');
+  res.render('admin-applications-list', { pending, approved, declined });
 });
 
 app.get('/admin/applications/:id', requireLogin, async (req, res) => {
@@ -1886,9 +1914,12 @@ app.get('/admin/applications/:id/delete', requireLogin, async (req, res) => {
 
 // ===== PUPPY WAITLIST (ADMIN) =====
 app.get('/admin/waitlist', requireLogin, async (req, res) => {
-  const pending = await Waitlist.find({ status: 'Pending Deposit' }).sort({ createdAt: 1 });
-  const active = await Waitlist.find({ status: { $in: ['Active', 'Matched', 'Fulfilled'] } }).sort({ createdAt: 1 });
-  res.render('admin-waitlist-list', { pending, active });
+  const all = await Waitlist.find().sort({ createdAt: 1 });
+  const pending = all.filter(w => w.status === 'Pending Deposit');
+  const active = all.filter(w => w.status === 'Active');
+  const matched = all.filter(w => w.status === 'Matched');
+  const fulfilled = all.filter(w => w.status === 'Fulfilled');
+  res.render('admin-waitlist-list', { pending, active, matched, fulfilled });
 });
 
 app.get('/admin/waitlist/:id/matched', requireLogin, async (req, res) => {
