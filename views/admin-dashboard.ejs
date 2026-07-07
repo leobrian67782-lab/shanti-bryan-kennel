@@ -99,6 +99,71 @@
   </a>
 </div>
 
+<!-- Charts -->
+<div class="admin-charts-grid">
+  <div class="admin-chart-card">
+    <h4><i class="fa-solid fa-heart" style="color:var(--gold);"></i> Puppies Placed</h4>
+    <p>Based on invoices created, last 6 months</p>
+    <canvas id="puppiesPlacedChart"></canvas>
+  </div>
+  <div class="admin-chart-card">
+    <h4><i class="fa-solid fa-sack-dollar" style="color:#16a34a;"></i> Revenue</h4>
+    <p>Based on invoice totals, last 6 months</p>
+    <canvas id="revenueChart"></canvas>
+  </div>
+</div>
+
+<script>
+  (function() {
+    var chartLabels = <%- JSON.stringify(typeof chartLabels !== 'undefined' ? chartLabels : []) %>;
+    var puppiesData  = <%- JSON.stringify(typeof puppiesPlacedByMonth !== 'undefined' ? puppiesPlacedByMonth : []) %>;
+    var revenueData  = <%- JSON.stringify(typeof revenueByMonth !== 'undefined' ? revenueByMonth : []) %>;
+
+    if (typeof Chart === 'undefined') return; // CDN failed to load — fail silently, rest of dashboard still works
+
+    new Chart(document.getElementById('puppiesPlacedChart'), {
+      type: 'bar',
+      data: {
+        labels: chartLabels,
+        datasets: [{ data: puppiesData, backgroundColor: '#c9a227', borderRadius: 6, maxBarThickness: 40 }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { precision: 0, color: '#9ca3af' }, grid: { color: '#f1f2f4' } },
+          x: { ticks: { color: '#9ca3af' }, grid: { display: false } }
+        }
+      }
+    });
+
+    new Chart(document.getElementById('revenueChart'), {
+      type: 'line',
+      data: {
+        labels: chartLabels,
+        datasets: [{
+          data: revenueData,
+          borderColor: '#16a34a',
+          backgroundColor: 'rgba(22,163,74,0.08)',
+          fill: true,
+          tension: 0.35,
+          pointBackgroundColor: '#16a34a',
+          pointRadius: 4
+        }]
+      },
+      options: {
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: function(ctx) { return '$' + ctx.parsed.y.toLocaleString(); } } }
+        },
+        scales: {
+          y: { beginAtZero: true, ticks: { color: '#9ca3af', callback: function(v) { return '$' + v; } }, grid: { color: '#f1f2f4' } },
+          x: { ticks: { color: '#9ca3af' }, grid: { display: false } }
+        }
+      }
+    });
+  })();
+</script>
+
 <!-- Quick Actions -->
 <div class="admin-section">
   <div class="admin-section-head">

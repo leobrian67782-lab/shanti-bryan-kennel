@@ -1,37 +1,78 @@
 <%- include('partials/admin-header', {title: 'Applications | Admin', active: 'applications', heading: 'Puppy Applications'}) %>
 
-<div class="admin-section">
-  <div class="admin-section-head">
-    <h3><i class="fa-solid fa-clipboard-list" style="color:var(--gold);"></i> All Applications</h3>
+<div class="admin-board">
+
+  <div class="admin-board-col col-gold">
+    <div class="admin-board-col-head">
+      <span class="admin-board-col-title">Pending Review</span>
+      <span class="admin-board-col-count"><%= pending.length %></span>
+    </div>
+    <div class="admin-board-cards">
+      <% if (pending.length === 0) { %>
+        <div class="admin-board-empty">Nothing waiting on you.</div>
+      <% } %>
+      <% pending.forEach(function(a) { %>
+        <div class="admin-board-card">
+          <div class="admin-board-card-name"><%= a.applicantName %></div>
+          <div class="admin-board-card-sub"><%= a.interestedIn %> · <%= a.homeOwnership %></div>
+          <div class="admin-board-card-meta"><%= a.createdAt.toLocaleDateString() %></div>
+          <div class="admin-board-card-actions">
+            <a href="/admin/applications/<%= a._id %>" class="admin-board-btn"><i class="fa-solid fa-eye"></i> View</a>
+            <a href="/admin/applications/<%= a._id %>/approve" class="admin-board-btn admin-board-btn-primary"><i class="fa-solid fa-check"></i> Approve</a>
+            <a href="/admin/applications/<%= a._id %>/decline" class="admin-board-btn admin-board-btn-danger" onclick="return confirm('Decline this application?')"><i class="fa-solid fa-xmark"></i></a>
+          </div>
+        </div>
+      <% }); %>
+    </div>
   </div>
 
-  <% if (applications.length === 0) { %>
-    <p class="admin-empty">No applications yet.</p>
-  <% } else { %>
-    <table class="admin-table">
-      <thead><tr><th>Applicant</th><th>Interested In</th><th>Home</th><th>Status</th><th>Date</th><th></th></tr></thead>
-      <tbody>
-        <% applications.forEach(function(a) { %>
-          <tr>
-            <td>
-              <span style="font-weight:600;"><%= a.applicantName %></span><br>
-              <span style="color:#6b7280;font-size:0.8rem;"><%= a.email %></span>
-            </td>
-            <td><%= a.interestedIn %></td>
-            <td style="color:#6b7280;font-size:0.85rem;"><%= a.homeOwnership %></td>
-            <td>
-              <span style="background:<%= a.status === 'Approved' ? '#2e9e4f' : a.status === 'Declined' ? '#c0392b' : '#6b7280' %>;color:#fff;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;"><%= a.status %></span>
-            </td>
-            <td style="color:#6b7280;font-size:0.82rem;"><%= a.createdAt.toLocaleDateString() %></td>
-            <td class="admin-actions">
-              <a href="/admin/applications/<%= a._id %>" class="admin-btn-sm" title="View Details"><i class="fa-solid fa-eye"></i></a>
-              <a href="/admin/applications/<%= a._id %>/delete" class="admin-btn-sm admin-btn-danger" onclick="return confirm('Delete this application?')"><i class="fa-solid fa-trash"></i></a>
-            </td>
-          </tr>
-        <% }); %>
-      </tbody>
-    </table>
-  <% } %>
+  <div class="admin-board-col col-green">
+    <div class="admin-board-col-head">
+      <span class="admin-board-col-title">Approved</span>
+      <span class="admin-board-col-count"><%= approved.length %></span>
+    </div>
+    <div class="admin-board-cards">
+      <% if (approved.length === 0) { %>
+        <div class="admin-board-empty">No approved applications yet.</div>
+      <% } %>
+      <% approved.forEach(function(a) { %>
+        <div class="admin-board-card">
+          <div class="admin-board-card-name"><%= a.applicantName %></div>
+          <div class="admin-board-card-sub"><%= a.interestedIn %> · <%= a.homeOwnership %></div>
+          <div class="admin-board-card-meta"><%= a.createdAt.toLocaleDateString() %></div>
+          <div class="admin-board-card-actions">
+            <a href="/admin/applications/<%= a._id %>" class="admin-board-btn"><i class="fa-solid fa-eye"></i> View</a>
+            <a href="/admin/invoices/new" class="admin-board-btn admin-board-btn-primary"><i class="fa-solid fa-file-invoice-dollar"></i> Invoice</a>
+            <a href="/admin/applications/<%= a._id %>/delete" class="admin-board-btn admin-board-btn-danger" onclick="return confirm('Delete this application?')"><i class="fa-solid fa-trash"></i></a>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+
+  <div class="admin-board-col col-red">
+    <div class="admin-board-col-head">
+      <span class="admin-board-col-title">Declined</span>
+      <span class="admin-board-col-count"><%= declined.length %></span>
+    </div>
+    <div class="admin-board-cards">
+      <% if (declined.length === 0) { %>
+        <div class="admin-board-empty">No declined applications.</div>
+      <% } %>
+      <% declined.forEach(function(a) { %>
+        <div class="admin-board-card">
+          <div class="admin-board-card-name"><%= a.applicantName %></div>
+          <div class="admin-board-card-sub"><%= a.interestedIn %> · <%= a.homeOwnership %></div>
+          <div class="admin-board-card-meta"><%= a.createdAt.toLocaleDateString() %></div>
+          <div class="admin-board-card-actions">
+            <a href="/admin/applications/<%= a._id %>" class="admin-board-btn"><i class="fa-solid fa-eye"></i> View</a>
+            <a href="/admin/applications/<%= a._id %>/delete" class="admin-board-btn admin-board-btn-danger" onclick="return confirm('Delete this application?')"><i class="fa-solid fa-trash"></i> Delete</a>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+
 </div>
 
 <%- include('partials/admin-footer') %>
