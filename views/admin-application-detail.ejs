@@ -24,7 +24,7 @@
   <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:20px 24px;">
 
     <h4 style="color:var(--gold);font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;">Contact Info</h4>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;font-size:0.9rem;">
+    <div class="admin-form-grid-2" style="margin-bottom:24px;font-size:0.9rem;">
       <div><span style="color:#6b7280;">Email:</span> <span style="color:#111827;"><%= app.email %></span></div>
       <div><span style="color:#6b7280;">Phone:</span> <span style="color:#111827;"><%= app.phone || '—' %></span></div>
       <div><span style="color:#6b7280;">Location:</span> <span style="color:#111827;"><%= app.location || '—' %></span><% if (app.detectedLocation) { %> <span style="color:#6b7280;font-size:0.8rem;">(auto: <%= app.detectedLocation %>)</span><% } %></div>
