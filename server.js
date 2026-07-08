@@ -130,7 +130,7 @@ async function sendNotification(subject, html) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: '"Shanti & Bryan Pinscher Kennel" <info@shantibryankennel.com>',
+        from: '"Shanti and Bryan Pinscher Kennel" <info@shantibryankennel.com>',
         to: [NOTIFY_EMAIL],
         subject,
         html
@@ -159,19 +159,19 @@ async function sendClientAutoReply(name, email, subject) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: '"Shanti & Bryan Pinscher Kennel" <info@shantibryankennel.com>',
+        from: '"Shanti and Bryan Pinscher Kennel" <info@shantibryankennel.com>',
         to: [email],
         replyTo: NOTIFY_EMAIL,
-        subject: `We've received your message — Shanti & Bryan Pinscher Kennel`,
+        subject: `We've received your message — Shanti and Bryan Pinscher Kennel`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;">
             <div style="background:#7a1e1e;padding:26px 30px;border-radius:8px 8px 0 0;text-align:center;">
               <h1 style="color:#fff;margin:0;font-size:19px;">Thank You for Reaching Out!</h1>
-              <p style="color:rgba(255,255,255,0.8);margin:6px 0 0;font-size:12px;">Shanti & Bryan Pinscher Kennel</p>
+              <p style="color:rgba(255,255,255,0.8);margin:6px 0 0;font-size:12px;">Shanti and Bryan Pinscher Kennel</p>
             </div>
             <div style="background:#fff;padding:26px 30px;border:1px solid #e6ddc8;">
               <p style="color:#1e293b;font-size:14px;">Hi <strong>${name}</strong>,</p>
-              <p style="color:#4a5568;font-size:14px;line-height:1.6;">Thank you for contacting Shanti & Bryan Pinscher Kennel! We've received your message${subject ? ` about "<strong>${subject}</strong>"` : ''} and a member of our team will get back to you personally, usually within 24 hours.</p>
+              <p style="color:#4a5568;font-size:14px;line-height:1.6;">Thank you for contacting Shanti and Bryan Pinscher Kennel! We've received your message${subject ? ` about "<strong>${subject}</strong>"` : ''} and a member of our team will get back to you personally, usually within 24 hours.</p>
               <div style="background:#f9f7f4;border:1px solid #ece5d8;border-radius:8px;padding:16px 18px;margin:18px 0;">
                 <p style="margin:0 0 8px;color:#7a1e1e;font-weight:700;font-size:13px;">While you wait, feel free to:</p>
                 <p style="margin:0 0 6px;font-size:13px;"><a href="https://shantibryankennel.com/puppies" style="color:#7a1e1e;text-decoration:none;">🐾 Browse our available puppies</a></p>
@@ -179,7 +179,7 @@ async function sendClientAutoReply(name, email, subject) {
                 <p style="margin:0;font-size:13px;"><a href="https://shantibryankennel.com/testimonials" style="color:#7a1e1e;text-decoration:none;">⭐ Read reviews from happy families</a></p>
               </div>
               <p style="color:#4a5568;font-size:13px;">If your inquiry is urgent, you can reply directly to this email.</p>
-              <p style="color:#4a5568;font-size:14px;margin-top:20px;">With love,<br><strong>Shanti & Bryan Pinscher Kennel</strong></p>
+              <p style="color:#4a5568;font-size:14px;margin-top:20px;">With love,<br><strong>Shanti and Bryan Pinscher Kennel</strong></p>
             </div>
             <div style="background:#f0ece3;padding:12px 30px;text-align:center;border-radius:0 0 8px 8px;">
               <p style="margin:0;color:#9ca3af;font-size:10px;">shantibryankennel.com | info@shantibryankennel.com</p>
@@ -203,22 +203,22 @@ async function sendApplicationAutoReply(name, email) {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: '"Shanti & Bryan Pinscher Kennel" <info@shantibryankennel.com>',
+        from: '"Shanti and Bryan Pinscher Kennel" <info@shantibryankennel.com>',
         to: [email],
         replyTo: NOTIFY_EMAIL,
-        subject: `We've received your application — Shanti & Bryan Pinscher Kennel`,
+        subject: `We've received your application — Shanti and Bryan Pinscher Kennel`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;">
             <div style="background:#7a1e1e;padding:26px 30px;border-radius:8px 8px 0 0;text-align:center;">
               <h1 style="color:#fff;margin:0;font-size:19px;">Application Received!</h1>
-              <p style="color:rgba(255,255,255,0.8);margin:6px 0 0;font-size:12px;">Shanti & Bryan Pinscher Kennel</p>
+              <p style="color:rgba(255,255,255,0.8);margin:6px 0 0;font-size:12px;">Shanti and Bryan Pinscher Kennel</p>
             </div>
             <div style="background:#fff;padding:26px 30px;border:1px solid #e6ddc8;">
               <p style="color:#1e293b;font-size:14px;">Hi <strong>${name}</strong>,</p>
-              <p style="color:#4a5568;font-size:14px;line-height:1.6;">Thank you for applying to adopt a puppy from Shanti & Bryan Pinscher Kennel! We take great care in reviewing every application personally to make sure our puppies go to the right homes.</p>
+              <p style="color:#4a5568;font-size:14px;line-height:1.6;">Thank you for applying to adopt a puppy from Shanti and Bryan Pinscher Kennel! We take great care in reviewing every application personally to make sure our puppies go to the right homes.</p>
               <p style="color:#4a5568;font-size:14px;line-height:1.6;">We will review your application and reach out within 2-3 days with next steps.</p>
               <p style="color:#4a5568;font-size:13px;">If you have any questions in the meantime, feel free to reply directly to this email.</p>
-              <p style="color:#4a5568;font-size:14px;margin-top:20px;">With love,<br><strong>Shanti & Bryan Pinscher Kennel</strong></p>
+              <p style="color:#4a5568;font-size:14px;margin-top:20px;">With love,<br><strong>Shanti and Bryan Pinscher Kennel</strong></p>
             </div>
             <div style="background:#f0ece3;padding:12px 30px;text-align:center;border-radius:0 0 8px 8px;">
               <p style="margin:0;color:#9ca3af;font-size:10px;">shantibryankennel.com | info@shantibryankennel.com</p>
@@ -242,15 +242,15 @@ async function sendWaitlistAutoReply(name, email) {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: '"Shanti & Bryan Pinscher Kennel" <info@shantibryankennel.com>',
+        from: '"Shanti and Bryan Pinscher Kennel" <info@shantibryankennel.com>',
         to: [email],
         replyTo: NOTIFY_EMAIL,
-        subject: `We've received your waitlist request — Shanti & Bryan Pinscher Kennel`,
+        subject: `We've received your waitlist request — Shanti and Bryan Pinscher Kennel`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;">
             <div style="background:#7a1e1e;padding:26px 30px;border-radius:8px 8px 0 0;text-align:center;">
               <h1 style="color:#fff;margin:0;font-size:19px;">Waitlist Request Received!</h1>
-              <p style="color:rgba(255,255,255,0.8);margin:6px 0 0;font-size:12px;">Shanti & Bryan Pinscher Kennel</p>
+              <p style="color:rgba(255,255,255,0.8);margin:6px 0 0;font-size:12px;">Shanti and Bryan Pinscher Kennel</p>
             </div>
             <div style="background:#fff;padding:26px 30px;border:1px solid #e6ddc8;">
               <p style="color:#1e293b;font-size:14px;">Hi <strong>${name}</strong>,</p>
@@ -260,7 +260,7 @@ async function sendWaitlistAutoReply(name, email) {
                 <p style="margin:0;color:#4a5568;font-size:13px;line-height:1.6;">To secure an active spot on our waitlist, a deposit is required. We will personally reach out within 2-3 days to arrange this with you. Once received, your place will be confirmed and the deposit applied toward your future puppy.</p>
               </div>
               <p style="color:#4a5568;font-size:13px;">If you have any questions in the meantime, feel free to reply directly to this email.</p>
-              <p style="color:#4a5568;font-size:14px;margin-top:20px;">With love,<br><strong>Shanti & Bryan Pinscher Kennel</strong></p>
+              <p style="color:#4a5568;font-size:14px;margin-top:20px;">With love,<br><strong>Shanti and Bryan Pinscher Kennel</strong></p>
             </div>
             <div style="background:#f0ece3;padding:12px 30px;text-align:center;border-radius:0 0 8px 8px;">
               <p style="margin:0;color:#9ca3af;font-size:10px;">shantibryankennel.com | info@shantibryankennel.com</p>
@@ -492,7 +492,7 @@ app.get('/puppies/:id', async (req, res) => {
   try {
     const puppy = await Puppy.findById(req.params.id);
     if (!puppy) return res.redirect('/puppies');
-    res.render('puppy-detail', { puppy, description: `Meet ${puppy.name} — a ${puppy.color} ${puppy.gender} Miniature Pinscher available from Shanti & Bryan Pinscher Kennel. ${puppy.description ? puppy.description.substring(0, 100) : ''}`, ogImg: puppy.photos && puppy.photos.length > 0 ? puppy.photos[0] : '' });
+    res.render('puppy-detail', { puppy, description: `Meet ${puppy.name} — a ${puppy.color} ${puppy.gender} Miniature Pinscher available from Shanti and Bryan Pinscher Kennel. ${puppy.description ? puppy.description.substring(0, 100) : ''}`, ogImg: puppy.photos && puppy.photos.length > 0 ? puppy.photos[0] : '' });
   } catch (err) {
     console.error(err);
     res.redirect('/puppies');
@@ -1559,10 +1559,10 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
     const liveContext = await buildSiteContext(false);
     const settings = res.locals.settings || {};
 
-    const systemText = `You are Bella, the friendly and knowledgeable AI assistant for Shanti & Bryan Pinscher Kennel. You are warm, helpful, and passionate about Miniature Pinschers. You work exclusively for this kennel.
+    const systemText = `You are Bella, the friendly and knowledgeable AI assistant for Shanti and Bryan Pinscher Kennel. You are warm, helpful, and passionate about Miniature Pinschers. You work exclusively for this kennel.
 
 ABOUT THE KENNEL:
-- Name: Shanti & Bryan Pinscher Kennel
+- Name: Shanti and Bryan Pinscher Kennel
 - Website: shantibryankennel.com
 - Specialization: Home-raised Miniature Pinscher (Min Pin) puppies
 - Experience: 15+ years of breeding experience
@@ -1773,7 +1773,7 @@ app.post('/api/admin-chat', requireLogin, async (req, res) => {
 
     const liveContext = await buildSiteContext(true);
 
-    const systemText = `You are an all-powerful AI admin for Shanti & Bryan Pinscher Kennel. You speak directly with Bryan the owner. You know everything about the site AND can take real actions.
+    const systemText = `You are an all-powerful AI admin for Shanti and Bryan Pinscher Kennel. You speak directly with Bryan the owner. You know everything about the site AND can take real actions.
 
 HOW TO TRIGGER ACTIONS:
 When you want to do something, include this in your reply:
@@ -2068,7 +2068,7 @@ async function generateWaitlistInvoicePDF(wInv) {
       '4. Once you are matched with a specific puppy, a separate Puppy Purchase Invoice will be issued for the remaining balance.',
       '5. You are responsible for keeping your contact information up to date so we can reach you when a match is available.',
       '6. Waitlist position is maintained in the order deposits are received, though matching also depends on puppy availability, gender, and color preferences.',
-      '7. Shanti & Bryan Pinscher Kennel will make reasonable efforts to match you within a fair timeframe, but cannot guarantee an exact date.',
+      '7. Shanti and Bryan Pinscher Kennel will make reasonable efforts to match you within a fair timeframe, but cannot guarantee an exact date.',
       '8. By signing below, you acknowledge and accept these waitlist terms.',
     ];
     doc.fillColor(navy).font('Helvetica').fontSize(7.8);
@@ -2130,15 +2130,15 @@ async function sendWaitlistInvoiceEmail(wInv, pdfBuf) {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: '"Shanti & Bryan Pinscher Kennel" <info@shantibryankennel.com>',
+        from: '"Shanti and Bryan Pinscher Kennel" <info@shantibryankennel.com>',
         to: [wInv.clientEmail],
         replyTo: NOTIFY_EMAIL,
-        subject: `Waitlist Deposit Receipt ${wInv.receiptNumber} | Shanti & Bryan Pinscher Kennel`,
+        subject: `Waitlist Deposit Receipt ${wInv.receiptNumber} | Shanti and Bryan Pinscher Kennel`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;">
             <div style="background:#7a1e1e;padding:28px 32px;border-radius:8px 8px 0 0;">
               <h1 style="color:#fff;margin:0;font-size:20px;">Waitlist Deposit Receipt</h1>
-              <p style="color:rgba(255,255,255,0.8);margin:6px 0 0;font-size:13px;">Shanti & Bryan Pinscher Kennel</p>
+              <p style="color:rgba(255,255,255,0.8);margin:6px 0 0;font-size:13px;">Shanti and Bryan Pinscher Kennel</p>
             </div>
             <div style="background:#fff;padding:28px 32px;border:1px solid #e6ddc8;">
               <p style="color:#1e293b;font-size:15px;">Dear <strong>${wInv.clientName}</strong>,</p>
@@ -2155,7 +2155,7 @@ async function sendWaitlistInvoiceEmail(wInv, pdfBuf) {
                 <p style="margin:0;color:#4a5568;font-size:13px;">Please sign the attached receipt, photograph the signed page, and email it back to <a href="mailto:info@shantibryankennel.com" style="color:#7a1e1e;">info@shantibryankennel.com</a>.</p>
               </div>
               <p style="color:#4a5568;font-size:13px;">We'll reach out as soon as a matching puppy becomes available. Thank you for your patience!</p>
-              <p style="color:#4a5568;font-size:14px;margin-top:20px;">With love,<br><strong>Shanti & Bryan Pinscher Kennel</strong></p>
+              <p style="color:#4a5568;font-size:14px;margin-top:20px;">With love,<br><strong>Shanti and Bryan Pinscher Kennel</strong></p>
             </div>
             <div style="background:#f0ece3;padding:14px 32px;text-align:center;border-radius:0 0 8px 8px;">
               <p style="margin:0;color:#9ca3af;font-size:11px;">shantibryankennel.com | info@shantibryankennel.com</p>
@@ -2306,7 +2306,7 @@ async function generateInvoicePDF(inv) {
       '3. The buyer is responsible for all delivery/transport costs unless otherwise agreed in writing.',
       '4. This puppy comes with a 1-Year Written Health Guarantee against heritable genetic defects.',
       '5. The buyer agrees to provide proper veterinary care, nutrition, shelter, and a safe loving home.',
-      '6. Shanti & Bryan Pinscher Kennel reserves the right to cancel the sale if welfare concerns arise.',
+      '6. Shanti and Bryan Pinscher Kennel reserves the right to cancel the sale if welfare concerns arise.',
       '7. Once the puppy is in the buyer\'s care, the buyer assumes full legal responsibility for the animal.',
       '8. By proceeding with this purchase, the buyer confirms acceptance of all terms in this invoice.',
     ];
@@ -2373,7 +2373,7 @@ async function generateInvoicePDF(inv) {
     doc.rect(50, y, W, 1).fill('#ece5d8');
     y += 8;
     doc.fillColor(gray).font('Helvetica').fontSize(7)
-       .text('Thank you for choosing Shanti & Bryan Pinscher Kennel. We are honored to place one of our beloved puppies with your family.', 50, y, { width: W, align: 'center' });
+       .text('Thank you for choosing Shanti and Bryan Pinscher Kennel. We are honored to place one of our beloved puppies with your family.', 50, y, { width: W, align: 'center' });
     y += 12;
     doc.fillColor(maroon).font('Helvetica-Bold').fontSize(7)
        .text('info@shantibryankennel.com  |  shantibryankennel.com', 50, y, { width: W, align: 'center' });
@@ -2480,19 +2480,19 @@ async function sendInvoiceEmail(inv, pdfBuf) {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: '"Shanti & Bryan Pinscher Kennel" <info@shantibryankennel.com>',
+        from: '"Shanti and Bryan Pinscher Kennel" <info@shantibryankennel.com>',
         to: [inv.clientEmail],
         replyTo: NOTIFY_EMAIL,
-        subject: `Invoice ${inv.invoiceNumber} — ${inv.puppyName} | Shanti & Bryan Pinscher Kennel`,
+        subject: `Invoice ${inv.invoiceNumber} — ${inv.puppyName} | Shanti and Bryan Pinscher Kennel`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;">
             <div style="background:#7a1e1e;padding:28px 32px;border-radius:8px 8px 0 0;">
-              <h1 style="color:#fff;margin:0;font-size:20px;">Shanti & Bryan Pinscher Kennel</h1>
+              <h1 style="color:#fff;margin:0;font-size:20px;">Shanti and Bryan Pinscher Kennel</h1>
               <p style="color:rgba(255,255,255,0.8);margin:6px 0 0;font-size:13px;">Your Puppy Invoice</p>
             </div>
             <div style="background:#fff;padding:28px 32px;border:1px solid #e6ddc8;">
               <p style="color:#1e293b;font-size:15px;">Dear <strong>${inv.clientName}</strong>,</p>
-              <p style="color:#4a5568;font-size:14px;line-height:1.6;">Thank you for choosing Shanti & Bryan Pinscher Kennel! We're so excited to place <strong>${inv.puppyName}</strong> with your family.</p>
+              <p style="color:#4a5568;font-size:14px;line-height:1.6;">Thank you for choosing Shanti and Bryan Pinscher Kennel! We're so excited to place <strong>${inv.puppyName}</strong> with your family.</p>
               <p style="color:#4a5568;font-size:14px;line-height:1.6;">Please find your invoice attached to this email (Invoice <strong>${inv.invoiceNumber}</strong>).</p>
               <div style="background:#f9f7f4;border:1px solid #ece5d8;border-radius:8px;padding:18px;margin:20px 0;">
                 <table style="width:100%;border-collapse:collapse;">
@@ -2520,7 +2520,7 @@ async function sendInvoiceEmail(inv, pdfBuf) {
 
               <p style="color:#4a5568;font-size:13px;">If you have any questions, please don't hesitate to reach out:</p>
               <p style="color:#4a5568;font-size:13px;">📧 <a href="mailto:info@shantibryankennel.com" style="color:#7a1e1e;">info@shantibryankennel.com</a></p>
-              <p style="color:#4a5568;font-size:14px;margin-top:20px;">With love,<br><strong>Shanti & Bryan Pinscher Kennel</strong></p>
+              <p style="color:#4a5568;font-size:14px;margin-top:20px;">With love,<br><strong>Shanti and Bryan Pinscher Kennel</strong></p>
             </div>
             <div style="background:#f0ece3;padding:14px 32px;text-align:center;border-radius:0 0 8px 8px;">
               <p style="margin:0;color:#9ca3af;font-size:11px;">shantibryankennel.com | info@shantibryankennel.com</p>
@@ -2670,7 +2670,7 @@ async function generateCertificatePDF(cert) {
 
     doc.fillColor(gray).font('Helvetica').fontSize(10)
        .text('This document certifies the legal transfer of ownership of the below-described puppy', 60, titleY+14, { width: W-120, align: 'center' })
-       .text('from Shanti & Bryan Pinscher Kennel to the new owner named herein.', 60, titleY+28, { width: W-120, align: 'center' });
+       .text('from Shanti and Bryan Pinscher Kennel to the new owner named herein.', 60, titleY+28, { width: W-120, align: 'center' });
 
     // ── Certificate Number & Date ──
     doc.rect(40, 222, W-80, 28).fill('#f9f7f4');
@@ -2678,7 +2678,7 @@ async function generateCertificatePDF(cert) {
        .text(`Certificate No: ${cert.certificateNumber}`, 55, 231, { continued: true })
        .fillColor(gray).font('Helvetica').fontSize(9)
        .text(`          Transfer Date: ${new Date(cert.transferDate).toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'})}`, { continued: true })
-       .text(`          Ref: Shanti & Bryan Pinscher Kennel`, 55);
+       .text(`          Ref: Shanti and Bryan Pinscher Kennel`, 55);
 
     let y = 265;
 
@@ -2735,7 +2735,7 @@ async function generateCertificatePDF(cert) {
     y += 12;
 
     const transferDate = new Date(cert.transferDate).toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
-    const declaration = `We, Shanti & Bryan Pinscher Kennel, hereby certify that on ${transferDate}, full and complete ownership of the above-described Miniature Pinscher puppy named "${cert.puppyName}" has been legally and irrevocably transferred to ${cert.buyerName}. The puppy has been raised in our home with the highest standards of care, socialization, and veterinary attention. The new owner has been provided with all health records, vaccination certificates, and applicable documentation pertaining to this animal.`;
+    const declaration = `We, Shanti and Bryan Pinscher Kennel, hereby certify that on ${transferDate}, full and complete ownership of the above-described Miniature Pinscher puppy named "${cert.puppyName}" has been legally and irrevocably transferred to ${cert.buyerName}. The puppy has been raised in our home with the highest standards of care, socialization, and veterinary attention. The new owner has been provided with all health records, vaccination certificates, and applicable documentation pertaining to this animal.`;
 
     doc.fillColor(navy).font('Helvetica').fontSize(9.5)
        .text(declaration, 45, y, { width: W-90, align: 'justify', lineGap: 3 });
@@ -2791,7 +2791,7 @@ async function generateCertificatePDF(cert) {
 
     y += 6;
     doc.fillColor(navy).font('Helvetica-Bold').fontSize(8)
-       .text('Shanti & Bryan Pinscher Kennel', sig1X, y)
+       .text('Shanti and Bryan Pinscher Kennel', sig1X, y)
        .text('New Owner Signature & Date', sig2X, y);
     doc.fillColor(gray).font('Helvetica').fontSize(7.5)
        .text('Authorized Breeder Signature', sig1X, y + 11)
@@ -2802,7 +2802,7 @@ async function generateCertificatePDF(cert) {
     doc.fillColor('#fff').font('Helvetica-Bold').fontSize(10)
        .text('OFFICIAL DOCUMENT — RETAIN FOR YOUR RECORDS', 0, H-44, { width: W, align: 'center' });
     doc.fillColor('rgba(255,255,255,0.75)').font('Helvetica').fontSize(8)
-       .text('Shanti & Bryan Pinscher Kennel  •  info@shantibryankennel.com  •  shantibryankennel.com', 0, H-30, { width: W, align: 'center' });
+       .text('Shanti and Bryan Pinscher Kennel  •  info@shantibryankennel.com  •  shantibryankennel.com', 0, H-30, { width: W, align: 'center' });
 
     doc.end();
   });
@@ -2816,15 +2816,15 @@ async function sendCertificateEmail(cert, pdfBuf) {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: '"Shanti & Bryan Pinscher Kennel" <info@shantibryankennel.com>',
+        from: '"Shanti and Bryan Pinscher Kennel" <info@shantibryankennel.com>',
         to: [cert.buyerEmail],
         replyTo: NOTIFY_EMAIL,
-        subject: `Certificate of Ownership — ${cert.puppyName} | Shanti & Bryan Pinscher Kennel`,
+        subject: `Certificate of Ownership — ${cert.puppyName} | Shanti and Bryan Pinscher Kennel`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;">
             <div style="background:#7a1e1e;padding:28px 32px;border-radius:8px 8px 0 0;text-align:center;">
               <h1 style="color:#fff;margin:0;font-size:20px;">Certificate of Transfer of Ownership</h1>
-              <p style="color:rgba(255,255,255,0.8);margin:6px 0 0;font-size:13px;">Shanti & Bryan Pinscher Kennel</p>
+              <p style="color:rgba(255,255,255,0.8);margin:6px 0 0;font-size:13px;">Shanti and Bryan Pinscher Kennel</p>
             </div>
             <div style="background:#fff;padding:28px 32px;border:1px solid #e6ddc8;">
               <p style="color:#1e293b;font-size:15px;">Dear <strong>${cert.buyerName}</strong>,</p>
@@ -2841,7 +2841,7 @@ async function sendCertificateEmail(cert, pdfBuf) {
                 <p style="margin:0 0 8px;color:#7a1e1e;font-weight:700;font-size:13px;">✍️ Action Required</p>
                 <p style="margin:0;color:#4a5568;font-size:13px;">Please sign the certificate, take a photo of the signed page, and email it back to <a href="mailto:info@shantibryankennel.com" style="color:#7a1e1e;">info@shantibryankennel.com</a> to complete the transfer.</p>
               </div>
-              <p style="color:#4a5568;font-size:14px;margin-top:20px;">Welcome to the Shanti & Bryan family! 🐾<br><br>With love,<br><strong>Shanti & Bryan Pinscher Kennel</strong></p>
+              <p style="color:#4a5568;font-size:14px;margin-top:20px;">Welcome to the Shanti & Bryan family! 🐾<br><br>With love,<br><strong>Shanti and Bryan Pinscher Kennel</strong></p>
             </div>
             <div style="background:#f0ece3;padding:14px 32px;text-align:center;border-radius:0 0 8px 8px;">
               <p style="margin:0;color:#9ca3af;font-size:11px;">shantibryankennel.com | info@shantibryankennel.com</p>
