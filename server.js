@@ -2132,6 +2132,7 @@ async function sendWaitlistInvoiceEmail(wInv, pdfBuf) {
       body: JSON.stringify({
         from: '"Shanti & Bryan Pinscher Kennel" <notifications@shantibryankennel.com>',
         to: [wInv.clientEmail],
+        replyTo: NOTIFY_EMAIL,
         subject: `Waitlist Deposit Receipt ${wInv.receiptNumber} | Shanti & Bryan Pinscher Kennel`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;">
@@ -2481,6 +2482,7 @@ async function sendInvoiceEmail(inv, pdfBuf) {
       body: JSON.stringify({
         from: '"Shanti & Bryan Pinscher Kennel" <notifications@shantibryankennel.com>',
         to: [inv.clientEmail],
+        replyTo: NOTIFY_EMAIL,
         subject: `Invoice ${inv.invoiceNumber} — ${inv.puppyName} | Shanti & Bryan Pinscher Kennel`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;">
@@ -2816,6 +2818,7 @@ async function sendCertificateEmail(cert, pdfBuf) {
       body: JSON.stringify({
         from: '"Shanti & Bryan Pinscher Kennel" <notifications@shantibryankennel.com>',
         to: [cert.buyerEmail],
+        replyTo: NOTIFY_EMAIL,
         subject: `Certificate of Ownership — ${cert.puppyName} | Shanti & Bryan Pinscher Kennel`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;">
