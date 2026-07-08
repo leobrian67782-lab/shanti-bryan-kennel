@@ -72,7 +72,17 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
 }
 .logo-img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
 .logo-text span { color: var(--gold); }
-.main-nav { display: flex; gap: 26px; flex-wrap: wrap; }
+.main-nav {
+  display: flex;
+  gap: 22px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  max-width: 100%;
+}
+.main-nav::-webkit-scrollbar { display: none; }
+.main-nav a { white-space: nowrap; flex-shrink: 0; }
 .main-nav a {
   color: #e8e2d8;
   text-decoration: none;
@@ -1959,10 +1969,19 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
 /* Mobile */
 @media (max-width: 768px) {
   /* Navigation */
-  .menu-toggle { display: flex; }
-  .main-nav { display: none; width: 100%; flex-direction: column; gap: 0; margin-top: 16px; }
-  .main-nav.nav-open { display: flex; }
-  .main-nav a { padding: 14px 0; border-top: 1px solid #1e2d40; width: 100%; }
+  /* Navigation: one-row scrollable strip on mobile (all links visible, swipe sideways) */
+  .menu-toggle { display: none; }
+  .main-nav {
+    display: flex;
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 20px;
+    margin-top: 12px;
+    padding-bottom: 4px;
+  }
+  .main-nav a { padding: 10px 0; border-top: none; width: auto; font-size: 0.88rem; }
   .header-inner { flex-wrap: wrap; }
   .logo { font-size: 1.15rem; gap: 8px; }
   .logo-img { width: 34px; height: 34px; }
@@ -2136,27 +2155,9 @@ html, body {
   .footer-links { display: inline-block; text-align: left; }
 }
 
-/* Slide-in mobile menu with dark overlay */
+/* Mobile nav is a one-row scrollable strip (see rules above) — slide-in drawer removed */
 @media (max-width: 768px) {
-  .main-nav {
-    position: fixed;
-    top: 0;
-    right: -100%;
-    width: 75%;
-    max-width: 300px;
-    height: 100vh;
-    background: var(--navy);
-    flex-direction: column;
-    gap: 0;
-    margin-top: 0;
-    padding: 80px 24px 24px;
-    transition: right 0.3s ease;
-    z-index: 999;
-    box-shadow: -8px 0 24px rgba(0,0,0,0.3);
-    overflow-y: auto;
-  }
-  .main-nav.nav-open { right: 0; }
-  .main-nav a { border-top: 1px solid #1e2d40; }
+  .main-nav a { border-top: none; }
 
   /* Dark overlay behind the menu */
   .nav-overlay {
