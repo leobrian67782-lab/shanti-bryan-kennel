@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title %></title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <link rel="stylesheet" href="/style.css">
@@ -13,97 +13,70 @@
   <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
 </head>
 <body>
-  <div class="admin-layout-v2">
+  <%
+    // Map each page to its section for the eyebrow label
+    var sectionMap = {
+      dashboard: 'Overview',
+      puppy: 'Kennel', litter: 'Kennel', dog: 'Kennel',
+      inquiries: 'Pipeline', applications: 'Pipeline', waitlist: 'Pipeline', invoice: 'Pipeline', certificate: 'Pipeline',
+      testimonial: 'Website', faq: 'Website', post: 'Website',
+      settings: 'Configuration'
+    };
+    var sectionName = sectionMap[active] || 'Admin';
+  %>
+  <div class="admin-layout" id="adminLayout">
 
-    <!-- Top Navigation Bar -->
-    <header class="admin-topnav">
-      <div class="admin-topnav-inner">
-        <a href="/admin/dashboard" class="admin-topnav-brand">
-          <img src="/images/emblem.png" alt="Shanti & Bryan Pinscher Kennel">
-          <span>Shanti & Bryan <small>Admin</small></span>
-        </a>
+    <div class="admin-sidebar-backdrop" id="adminSidebarBackdrop"></div>
 
-        <nav class="admin-topnav-nav" id="adminTopnavNav">
-          <a href="/admin/dashboard" class="admin-topnav-link <%= active === 'dashboard' ? 'active' : '' %>">
-            <i class="fa-solid fa-table-columns"></i> Dashboard
-          </a>
-
-          <div class="admin-topnav-dropdown">
-            <button type="button" class="admin-topnav-link <%= ['puppy','litter','dog'].includes(active) ? 'active' : '' %>">
-              <i class="fa-solid fa-paw"></i> Puppies <i class="fa-solid fa-chevron-down admin-topnav-caret"></i>
-            </button>
-            <div class="admin-topnav-menu">
-              <a href="/admin/puppies" class="<%= active === 'puppy' ? 'active' : '' %>"><i class="fa-solid fa-heart"></i> Puppies</a>
-              <a href="/admin/litters" class="<%= active === 'litter' ? 'active' : '' %>"><i class="fa-solid fa-paw"></i> Litters</a>
-              <a href="/admin/dogs" class="<%= active === 'dog' ? 'active' : '' %>"><i class="fa-solid fa-dog"></i> Our Dogs</a>
-            </div>
-          </div>
-
-          <div class="admin-topnav-dropdown">
-            <button type="button" class="admin-topnav-link <%= ['inquiries','applications','waitlist','invoice','certificate'].includes(active) ? 'active' : '' %>">
-              <i class="fa-solid fa-people-arrows"></i> Pipeline <i class="fa-solid fa-chevron-down admin-topnav-caret"></i>
-            </button>
-            <div class="admin-topnav-menu">
-              <a href="/admin/inquiries" class="<%= active === 'inquiries' ? 'active' : '' %>"><i class="fa-solid fa-envelope"></i> Messages</a>
-              <a href="/admin/applications" class="<%= active === 'applications' ? 'active' : '' %>"><i class="fa-solid fa-clipboard-list"></i> Applications</a>
-              <a href="/admin/waitlist" class="<%= active === 'waitlist' ? 'active' : '' %>"><i class="fa-solid fa-list-check"></i> Waitlist</a>
-              <a href="/admin/invoices" class="<%= active === 'invoice' ? 'active' : '' %>"><i class="fa-solid fa-file-invoice-dollar"></i> Invoices</a>
-              <a href="/admin/certificates" class="<%= active === 'certificate' ? 'active' : '' %>"><i class="fa-solid fa-certificate"></i> Certificates</a>
-            </div>
-          </div>
-
-          <div class="admin-topnav-dropdown">
-            <button type="button" class="admin-topnav-link <%= ['testimonial','faq','post'].includes(active) ? 'active' : '' %>">
-              <i class="fa-solid fa-file-lines"></i> Content <i class="fa-solid fa-chevron-down admin-topnav-caret"></i>
-            </button>
-            <div class="admin-topnav-menu">
-              <a href="/admin/testimonials" class="<%= active === 'testimonial' ? 'active' : '' %>"><i class="fa-solid fa-star"></i> Testimonials</a>
-              <a href="/admin/faqs" class="<%= active === 'faq' ? 'active' : '' %>"><i class="fa-solid fa-circle-question"></i> FAQs</a>
-              <a href="/admin/posts" class="<%= active === 'post' ? 'active' : '' %>"><i class="fa-solid fa-newspaper"></i> Blog Posts</a>
-            </div>
-          </div>
-
-          <a href="/admin/settings" class="admin-topnav-link <%= active === 'settings' ? 'active' : '' %>">
-            <i class="fa-solid fa-gear"></i> Settings
-          </a>
-        </nav>
-
-        <div class="admin-topnav-right">
-          <a href="/" target="_blank" class="admin-topnav-icon-btn" title="View Live Site"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
-          <a href="/admin/logout" class="admin-topnav-icon-btn admin-topnav-logout" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></a>
-          <div class="admin-avatar">A</div>
-          <button class="admin-menu-toggle" id="adminMenuToggle"><i class="fa-solid fa-bars"></i></button>
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="admin-brand">
+        <img src="/images/emblem.png" alt="Shanti & Bryan Pinscher Kennel" class="admin-brand-img">
+        <div>
+          <span class="admin-brand-name">Shanti &amp; Bryan</span>
+          <span class="admin-brand-sub">Kennel Registry</span>
         </div>
       </div>
 
-      <!-- Mobile menu (slides down) -->
-      <nav class="admin-mobile-nav" id="adminMobileNav">
-        <p class="admin-mobile-nav-group">Overview</p>
+      <nav class="admin-nav">
+        <p class="admin-nav-group">Overview</p>
         <a href="/admin/dashboard" class="<%= active === 'dashboard' ? 'active' : '' %>"><i class="fa-solid fa-table-columns"></i> Dashboard</a>
-        <p class="admin-mobile-nav-group">Puppies</p>
+
+        <p class="admin-nav-group">Kennel</p>
         <a href="/admin/puppies" class="<%= active === 'puppy' ? 'active' : '' %>"><i class="fa-solid fa-heart"></i> Puppies</a>
         <a href="/admin/litters" class="<%= active === 'litter' ? 'active' : '' %>"><i class="fa-solid fa-paw"></i> Litters</a>
         <a href="/admin/dogs" class="<%= active === 'dog' ? 'active' : '' %>"><i class="fa-solid fa-dog"></i> Our Dogs</a>
-        <p class="admin-mobile-nav-group">Pipeline</p>
+
+        <p class="admin-nav-group">Pipeline</p>
         <a href="/admin/inquiries" class="<%= active === 'inquiries' ? 'active' : '' %>"><i class="fa-solid fa-envelope"></i> Messages</a>
         <a href="/admin/applications" class="<%= active === 'applications' ? 'active' : '' %>"><i class="fa-solid fa-clipboard-list"></i> Applications</a>
         <a href="/admin/waitlist" class="<%= active === 'waitlist' ? 'active' : '' %>"><i class="fa-solid fa-list-check"></i> Waitlist</a>
         <a href="/admin/invoices" class="<%= active === 'invoice' ? 'active' : '' %>"><i class="fa-solid fa-file-invoice-dollar"></i> Invoices</a>
         <a href="/admin/certificates" class="<%= active === 'certificate' ? 'active' : '' %>"><i class="fa-solid fa-certificate"></i> Certificates</a>
-        <p class="admin-mobile-nav-group">Content</p>
+
+        <p class="admin-nav-group">Website</p>
         <a href="/admin/testimonials" class="<%= active === 'testimonial' ? 'active' : '' %>"><i class="fa-solid fa-star"></i> Testimonials</a>
         <a href="/admin/faqs" class="<%= active === 'faq' ? 'active' : '' %>"><i class="fa-solid fa-circle-question"></i> FAQs</a>
         <a href="/admin/posts" class="<%= active === 'post' ? 'active' : '' %>"><i class="fa-solid fa-newspaper"></i> Blog Posts</a>
-        <p class="admin-mobile-nav-group">Configuration</p>
+
+        <p class="admin-nav-group">Configuration</p>
         <a href="/admin/settings" class="<%= active === 'settings' ? 'active' : '' %>"><i class="fa-solid fa-gear"></i> Site Settings</a>
         <a href="/" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square"></i> View Live Site</a>
-        <a href="/admin/logout" class="admin-mobile-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
-      </nav>
-    </header>
 
-    <!-- Main content area -->
-    <div class="admin-main-v2">
-      <div class="admin-page-head">
-        <h2><%= heading %></h2>
-      </div>
+        <a href="/admin/logout" class="admin-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+      </nav>
+    </aside>
+
+    <!-- Main column -->
+    <div class="admin-main">
+      <header class="admin-topbar">
+        <button class="admin-menu-toggle" id="adminMenuToggle" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
+        <div class="admin-topbar-titles">
+          <span class="admin-topbar-eyebrow"><%= sectionName %></span>
+          <h2><%= heading %></h2>
+        </div>
+        <a href="/" target="_blank" class="admin-topnav-icon-btn" title="View Live Site"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+        <div class="admin-avatar">A</div>
+      </header>
+
       <div class="admin-content">
