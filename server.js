@@ -130,7 +130,7 @@ async function sendNotification(subject, html) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: '"Shanti & Bryan Pinscher Kennel" <notifications@shantibryankennel.com>',
+        from: '"Shanti & Bryan Pinscher Kennel" <info@shantibryankennel.com>',
         to: [NOTIFY_EMAIL],
         subject,
         html
@@ -159,7 +159,7 @@ async function sendClientAutoReply(name, email, subject) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: '"Shanti & Bryan Pinscher Kennel" <notifications@shantibryankennel.com>',
+        from: '"Shanti & Bryan Pinscher Kennel" <info@shantibryankennel.com>',
         to: [email],
         replyTo: NOTIFY_EMAIL,
         subject: `We've received your message — Shanti & Bryan Pinscher Kennel`,
@@ -203,7 +203,7 @@ async function sendApplicationAutoReply(name, email) {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: '"Shanti & Bryan Pinscher Kennel" <notifications@shantibryankennel.com>',
+        from: '"Shanti & Bryan Pinscher Kennel" <info@shantibryankennel.com>',
         to: [email],
         replyTo: NOTIFY_EMAIL,
         subject: `We've received your application — Shanti & Bryan Pinscher Kennel`,
@@ -242,7 +242,7 @@ async function sendWaitlistAutoReply(name, email) {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: '"Shanti & Bryan Pinscher Kennel" <notifications@shantibryankennel.com>',
+        from: '"Shanti & Bryan Pinscher Kennel" <info@shantibryankennel.com>',
         to: [email],
         replyTo: NOTIFY_EMAIL,
         subject: `We've received your waitlist request — Shanti & Bryan Pinscher Kennel`,
@@ -2130,7 +2130,7 @@ async function sendWaitlistInvoiceEmail(wInv, pdfBuf) {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: '"Shanti & Bryan Pinscher Kennel" <notifications@shantibryankennel.com>',
+        from: '"Shanti & Bryan Pinscher Kennel" <info@shantibryankennel.com>',
         to: [wInv.clientEmail],
         replyTo: NOTIFY_EMAIL,
         subject: `Waitlist Deposit Receipt ${wInv.receiptNumber} | Shanti & Bryan Pinscher Kennel`,
@@ -2480,7 +2480,7 @@ async function sendInvoiceEmail(inv, pdfBuf) {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: '"Shanti & Bryan Pinscher Kennel" <notifications@shantibryankennel.com>',
+        from: '"Shanti & Bryan Pinscher Kennel" <info@shantibryankennel.com>',
         to: [inv.clientEmail],
         replyTo: NOTIFY_EMAIL,
         subject: `Invoice ${inv.invoiceNumber} — ${inv.puppyName} | Shanti & Bryan Pinscher Kennel`,
@@ -2816,7 +2816,7 @@ async function sendCertificateEmail(cert, pdfBuf) {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: '"Shanti & Bryan Pinscher Kennel" <notifications@shantibryankennel.com>',
+        from: '"Shanti & Bryan Pinscher Kennel" <info@shantibryankennel.com>',
         to: [cert.buyerEmail],
         replyTo: NOTIFY_EMAIL,
         subject: `Certificate of Ownership — ${cert.puppyName} | Shanti & Bryan Pinscher Kennel`,
