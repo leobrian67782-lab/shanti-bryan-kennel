@@ -1400,10 +1400,12 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
 /* Dashboard charts */
 .admin-charts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 18px;
   margin-bottom: 24px;
 }
+.admin-form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.admin-form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
 .admin-chart-card {
   background: #ffffff;
   border: 1px solid #e6e0d0;
@@ -1572,6 +1574,8 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   padding: 24px;
   margin-bottom: 22px;
   box-shadow: 0 1px 2px rgba(16,24,40,0.04);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .admin-section-head {
   display: flex;
@@ -1779,6 +1783,36 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   .admin-content { padding: 18px 16px 24px; }
   .admin-page-footer { padding: 14px 16px 20px; }
   .admin-zone-head { margin: 26px 0 12px; gap: 10px; }
+
+  /* Cards/sections: less padding, still comfortable */
+  .admin-section { padding: 16px; }
+
+  /* Every multi-column grid collapses to one column on phones */
+  .admin-overview-grid,
+  .admin-stat-pills,
+  .admin-quick-grid,
+  .admin-attention-grid,
+  .admin-charts-grid,
+  .admin-form-grid-2,
+  .admin-form-grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Kanban boards: one card-width column at a time, clearly swipeable */
+  .admin-board { grid-auto-columns: minmax(84vw, 1fr); gap: 12px; }
+
+  /* Tables: allow horizontal swipe instead of clipping columns,
+     with a subtle fade to hint there's more to scroll */
+  .admin-table { min-width: 560px; }
+
+  /* Topbar: icons/avatar don't crowd the title on narrow screens */
+  .admin-topbar { gap: 10px; }
+  .admin-topbar-eyebrow { font-size: 0.6rem; }
+  .admin-topnav-icon-btn { width: 32px; height: 32px; }
+  .admin-avatar { width: 34px; height: 34px; font-size: 0.8rem; }
+
+  /* Chart canvases stay readable rather than squeezed */
+  .admin-chart-card canvas { max-height: 180px; }
 }
 /* Blog post detail */
 .post-detail { max-width: 760px; margin: 0 auto; text-align: left; }
