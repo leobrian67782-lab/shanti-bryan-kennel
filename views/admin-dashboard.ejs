@@ -1,5 +1,9 @@
 <%- include('partials/admin-header', {title: 'Dashboard | Admin', active: 'dashboard', heading: 'Dashboard Overview'}) %>
 
+<div class="admin-zone-head">
+  <span class="admin-zone-eyebrow">Today</span>
+  <span class="admin-zone-title">Needs Your Attention</span>
+</div>
 <!-- Needs Your Attention -->
 <% 
   var attentionItems = [];
@@ -24,6 +28,10 @@
   <% } %>
 </div>
 
+<div class="admin-zone-head">
+  <span class="admin-zone-eyebrow">Kennel</span>
+  <span class="admin-zone-title">At a Glance</span>
+</div>
 <!-- Summary cards -->
 <div class="admin-overview-grid">
   <div class="admin-overview-card card-gold">
@@ -75,6 +83,10 @@
   </div>
 </div>
 
+<div class="admin-zone-head">
+  <span class="admin-zone-eyebrow">Pipeline</span>
+  <span class="admin-zone-title">Customer Journey</span>
+</div>
 <!-- Pipeline at a glance -->
 <div class="admin-stat-pills">
   <a href="/admin/litters" class="admin-stat-pill">
@@ -99,6 +111,10 @@
   </a>
 </div>
 
+<div class="admin-zone-head">
+  <span class="admin-zone-eyebrow">Performance</span>
+  <span class="admin-zone-title">Last 6 Months</span>
+</div>
 <!-- Charts -->
 <div class="admin-charts-grid">
   <div class="admin-chart-card">
@@ -164,6 +180,10 @@
   })();
 </script>
 
+<div class="admin-zone-head">
+  <span class="admin-zone-eyebrow">Shortcuts</span>
+  <span class="admin-zone-title">Quick Actions</span>
+</div>
 <!-- Quick Actions -->
 <div class="admin-section">
   <div class="admin-section-head">
@@ -197,7 +217,10 @@
   </div>
 </div>
 
-<h3 style="color:#6b7585;font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;margin:32px 0 16px;font-weight:700;">Recent Activity</h3>
+<div class="admin-zone-head">
+  <span class="admin-zone-eyebrow">Latest</span>
+  <span class="admin-zone-title">Recent Activity</span>
+</div>
 
 <!-- Recent Messages -->
 <div class="admin-section">
@@ -284,7 +307,10 @@
   <% } %>
 </div>
 
-<h3 style="color:#6b7585;font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;margin:32px 0 16px;font-weight:700;">Assistant</h3>
+<div class="admin-zone-head">
+  <span class="admin-zone-eyebrow">Tools</span>
+  <span class="admin-zone-title">AI Assistant</span>
+</div>
 
 <!-- Admin AI Assistant -->
 <div class="admin-section" style="margin-top:0;">
